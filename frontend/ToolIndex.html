@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <title>Vikaa.AI - Tool Workspace</title>
+
+  <!-- Config & Auth -->
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="LoginPage.js?v=<%= Date.now() %>" defer></script>
+
+  <!-- Google Fonts & Font Awesome -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@300;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="icon" type="image/png" href="image/Logo4.jpeg">
+
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: #eaeaea;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      color: #333;
+      overflow: hidden;
+    }
+
+    /* --- Header --- */
+    header {
+      background-color: #ffffff;
+      padding: 10px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #ddd;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      font-weight: 700;
+      color: #575757;
+      font-size: 1.1rem;
+    }
+
+    .logo img {
+      height: 32px;
+      margin-right: 10px;
+      border-radius: 4px;
+    }
+
+    nav a, .nav-logout-btn {
+      margin-left: 20px;
+      font-weight: 600;
+      text-decoration: none;
+      color: #17bcfe;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .nav-logout-btn {
+      background: none;
+      border: none;
+      font-family: 'Montserrat', sans-serif;
+      padding: 0;
+    }
+    .nav-logout-btn:hover, nav a:hover { color: #0891b2; }
+    .nav-user-email {
+      margin-left: 20px;
+      font-size: 0.8rem;
+      color: #999;
+      font-style: italic;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    /* Styles for login buttons in modal */
+    .login-button {
+      display: block;
+      width: 80%;
+      padding: 12px;
+      margin: 10px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .login-button.google {
+      background-color: #db4437;
+    }
+    .login-button.github {
+      background-color: #333;
+    }
+    .login-button:hover {
+      opacity: 0.9;
+    }
+
+    .horizontal-border {
+      background-color: #17bcfe;
+      padding: 2px;
+      width: 100%;
+      flex-shrink: 0;
+    }
+
+    /* --- Main Layout --- */
+    .workspace {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* --- Left Sidebar: Tools --- */
+    .tool-sidebar {
+      width: 308px;
+      background-color: #ffffff;
+      border-right: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      min-height: 0;
+      overflow: hidden;
+      padding: 20px 10px;
+    }
+
+    .tool-sidebar-categories {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 8px;
+    }
+
+    .sidebar-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #0391b5;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      padding-left: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tool-category {
+      margin: 0 10px 7px 10px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #edf2f7;
+      background: #fff;
+    }
+
+    .tool-category summary {
+      list-style: none;
+      cursor: pointer;
+      user-select: none;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #0891b2;
+    }
+
+    .tool-category summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .tool-category summary i {
+      color: #17bcfe;
+      transition: transform 0.15s ease;
+    }
+
+    .tool-category[open] summary {
+      background: #f0faff;
+      color: #0891b2;
+    }
+
+    .tool-category[open] summary i {
+      transform: rotate(90deg);
+    }
+
+    .tool-category .tool-list {
+      padding: 5px 8px 6px 8px;
+      margin: 0;
+    }
+
+    .tool-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .tool-item {
+      padding: 5px 10px;
+      margin-bottom: 4px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+      transition: all 0.2s ease;
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: #575757;
+    }
+    .tool-item-main {
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+      min-width: 0;
+      flex: 1;
+    }
+    .tool-item-main span {
+      min-width: 0;
+      flex: 1;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      line-height: 1.35;
+    }
+
+    .tool-item-main > i {
+      color: #17bcfe;
+      width: 20px;
+      flex-shrink: 0;
+      text-align: center;
+      margin-top: 1px;
+    }
+
+    .tool-item:hover {
+      background-color: #f0faff;
+      color: #17bcfe;
+    }
+
+    .tool-item.active {
+      background-color: #17bcfe;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .tool-item.active i {
+      color: #ffffff;
+    }
+    .tool-link-btn {
+      border: none;
+      background: transparent;
+      color: #6b7280;
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      align-self: flex-start;
+      margin-top: 1px;
+    }
+    .tool-link-btn i {
+      font-size: 0.55rem;
+      line-height: 1;
+    }
+    .tool-link-btn:hover {
+      background: #eaf7ff;
+      color: #0ea5e9;
+    }
+    .tool-item.active .tool-link-btn {
+      color: #e6f7ff;
+    }
+    .tool-item.active .tool-link-btn:hover {
+      background: rgba(255,255,255,0.22);
+      color: #ffffff;
+    }
+
+    /* --- Right Area: Activity & Communication --- */
+    .activity-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: #f9fafb;
+      position: relative;
+      min-height: 0;
+    }
+    #toolFrame {
+      flex: 1;
+      min-height: 0;
+      height: 100%;
+      border: none;
+      width: 100%;
+    }
+
+    .activity-header {
+      padding: 15px 25px;
+      background-color: #fff;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .access-mode-banner {
+      margin: 10px 25px 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: none;
+      border: 1px solid transparent;
+    }
+    .access-mode-banner.readonly { display:block; background:#fff7ed; color:#9a3412; border-color:#fdba74; }
+    .access-mode-banner.execute { display:block; background:#ecfeff; color:#0f766e; border-color:#67e8f9; }
+
+    .activity-header h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #444;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .title-access-tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 3px 10px;
+      border: 1px solid transparent;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .title-access-tag.execute {
+      background: #ecfeff;
+      color: #0f766e;
+      border-color: #67e8f9;
+    }
+    .title-access-tag.readonly {
+      background: #fff7ed;
+      color: #9a3412;
+      border-color: #fdba74;
+    }
+
+    .activity-content {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    /* Placeholder Status Card */
+    .status-card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border-left: 4px solid #17bcfe;
+    }
+
+    /* Prompt Box Area */
+    .communication-hub {
+      padding: 20px;
+      background-color: #fff;
+      border-top: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .prompt-container {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      background: #f3f4f6;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .prompt-container textarea {
+      flex: 1;
+      border: none;
+      background: transparent;
+      resize: none;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.9rem;
+      padding: 5px;
+      max-height: 150px;
+      outline: none;
+    }
+
+    .send-btn {
+      background-color: #17bcfe;
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .send-btn:hover {
+      background-color: #0891b2;
+    }
+
+    /* Utilities — tool status */
+    .badge {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.7rem;
+      padding: 4px 10px;
+      border-radius: 10px;
+      font-weight: 700;
+      display: inline-block;
+    }
+    .badge-ready {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+    }
+    .badge-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+    .tool-popup-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .tool-popup-backdrop.open { display: flex; }
+    .tool-popup {
+      width: min(1360px, 96vw);
+      height: min(94vh, 980px);
+      /* Tool Info only: ~20% neutral grey on white (fallback + color-mix) */
+      background: #e6e6e6;
+      background: color-mix(in srgb, rgb(204, 204, 204) 20%, white);
+      border-radius: 14px;
+      box-shadow: 0 18px 48px rgba(0,0,0,0.2);
+      border: 1px solid #e5e7eb;
+      display: flex;
+      flex-direction: column;
+    }
+    .tool-popup-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid #eef2f7;
+    }
+    .tool-popup-head h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      color: #1f2937;
+    }
+    .tool-popup-close {
+      border: none;
+      background: transparent;
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      color: #6b7280;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tool-popup-close:hover {
+      background: #f3f4f6;
+      color: #111827;
+    }
+    .tool-popup-body {
+      padding: 16px 18px 20px;
+      font-size: 0.84rem;
+      color: #4b5563;
+      line-height: 1.6;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+    }
+    .tool-popup-body h1,
+    .tool-popup-body h2,
+    .tool-popup-body h3 {
+      margin: 0.35rem 0 0.55rem;
+      color: #111827;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+    }
+    .tool-popup-body h1 { font-size: 1.06rem; }
+    .tool-popup-body h2 { font-size: 0.95rem; }
+    .tool-popup-body h3 { font-size: 0.88rem; }
+    .tool-popup-body p { margin: 0.48rem 0; }
+    .tool-popup-body ul { margin: 0.36rem 0 0.72rem 1rem; padding: 0; }
+    .tool-popup-body code {
+      background: #f3f4f6;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 0.78rem;
+      color: #334155;
+    }
+    .tool-popup-body pre {
+      margin: 0.6rem 0 0.9rem;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #0f172a;
+      color: #e2e8f0;
+      overflow-x: auto;
+      font-size: 0.76rem;
+      line-height: 1.5;
+    }
+    .tool-popup-note {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .tool-sidebar { width: 70px; padding: 15px 5px; }
+      .tool-item-main span, .sidebar-title span { display: none; }
+      .tool-item { justify-content: center; padding: 8px; }
+      .tool-link-btn { display: none; }
+      header { padding: 10px 20px; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <img src="image/Logo4.jpeg" alt="Vikaa Logo">
+      <span>Vikaa.AI - Tools</span>
+    </div>
+    <nav>
+      <span class="nav-user-email" id="navUserEmail"></span>
+      <button class="nav-logout-btn" onclick="window.location.href='LandingPage.html'">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <button class="nav-logout-btn" onclick="doLogout()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </nav>
+  </header>
+
+  <div class="horizontal-border"></div>
+
+  <div class="tool-popup-backdrop" id="toolPopupBackdrop" aria-hidden="true">
+    <div class="tool-popup" role="dialog" aria-modal="true" aria-labelledby="toolPopupTitle">
+      <div class="tool-popup-head">
+        <h3 id="toolPopupTitle">Tool Info</h3>
+        <button class="tool-popup-close" id="toolPopupCloseBtn" type="button" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="tool-popup-body" id="toolPopupBody"></div>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <!-- Left Sidebar -->
+    <aside class="tool-sidebar">
+      <div class="sidebar-title">
+        <i class="fas fa-toolbox"></i> <span>Available Tools</span>
+      </div>
+
+      <div class="tool-sidebar-categories">
+      <details class="tool-category" id="toolCatPersonalized" open>
+        <summary>
+          <span>Personalized</span>
+          <i class="fas fa-chevron-right"></i>
+        </summary>
+        <ul class="tool-list" id="toolListPersonalized">
+          <li style="padding:6px 12px; color:#bbb; font-size:0.85rem;">Loading tools…</li>
+        </ul>
+      </details>
+
+      <details class="tool-category" id="toolCatEnterprise">
+        <summary>
+          <span>Enterprise</span>
+          <i class="fas fa-chevron-right"></i>
+        </summary>
+        <ul class="tool-list" id="toolListEnterprise">
+          <li style="padding:6px 12px; color:#bbb; font-size:0.85rem;">Loading tools…</li>
+        </ul>
+      </details>
+
+      <details class="tool-category" id="toolCatExperimental">
+        <summary>
+          <span>Experimental</span>
+          <i class="fas fa-chevron-right"></i>
+        </summary>
+        <ul class="tool-list" id="toolListExperimental">
+          <li style="padding:6px 12px; color:#bbb; font-size:0.85rem;">Loading tools…</li>
+        </ul>
+      </details>
+      </div>
+    </aside>
+
+    <!-- Right Area -->
+    <main class="activity-area">
+      <div class="activity-header">
+        <h2>
+          <span id="activeToolName">Select a Tool</span>
+          <span id="activeToolAccessTag" class="title-access-tag" style="display:none;"></span>
+        </h2>
+        <span class="badge badge-ready" id="toolStatus">Status: Ready</span>
+      </div>
+      <div id="accessModeBanner" class="access-mode-banner"></div>
+
+      <!-- iframe for tools that have their own page -->
+      <iframe id="toolFrame" style="display:none; flex:1; min-height:0; border:none; width:100%;" allowfullscreen></iframe>
+
+      <!-- Generic feed for placeholder tools -->
+      <div class="activity-content" id="activityFeed" style="display:flex;">
+        <div class="status-card">
+          <h4 style="margin-bottom: 10px;">Activity Log</h4>
+          <p style="font-size: 0.85rem; color: #666; line-height: 1.5;">
+            Welcome to the Tool Workspace. Select a tool from the left to begin.
+          </p>
+        </div>
+      </div>
+
+      <div class="communication-hub" id="communicationHub">
+        <div style="font-size: 0.75rem; font-weight: 700; color: #999; margin-bottom: 5px;">COMMUNICATION & PROMPTS</div>
+        <div class="prompt-container">
+          <textarea id="toolPrompt" rows="1" placeholder="Type your instruction for the selected tool..."></textarea>
+          <button class="send-btn" onclick="executePrompt()">
+            <i class="fas fa-play"></i>
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+
+  <script>
+    function isLocalDevHost() {
+      if (typeof vikaaIsTrustedDevFrontend === 'function') return vikaaIsTrustedDevFrontend();
+      const h = (window.location.hostname || '').toLowerCase();
+      return h === 'localhost' || h === '127.0.0.1';
+    }
+
+    async function fetchAccessMode() {
+      const raw = localStorage.getItem('authData');
+      let token = null;
+      try { token = raw ? JSON.parse(raw)?.accessToken : null; } catch (_) { token = null; }
+      if (!token) {
+        if (isLocalDevHost()) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+        return { can_execute: false, mode: 'read-only' };
+      }
+      try {
+        const base = (typeof CONFIG !== 'undefined') ? CONFIG.API_BASE_URL : 'https://app-wtiw.onrender.com';
+        const r = await fetch(`${base}/auth/access-mode`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!r.ok) {
+          if (isLocalDevHost()) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+          return { can_execute: false, mode: 'read-only' };
+        }
+        return await r.json();
+      } catch (_) {
+        if (isLocalDevHost()) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+        return { can_execute: false, mode: 'read-only' };
+      }
+    }
+
+    let ACCESS_MODE = { can_execute: false, mode: 'read-only' };
+
+    function updateToolAccessTag() {
+      const tag = document.getElementById('activeToolAccessTag');
+      if (!tag) return;
+      tag.style.display = 'inline-flex';
+      if (ACCESS_MODE.can_execute) {
+        tag.className = 'title-access-tag execute';
+        tag.textContent = 'Open for Execution';
+      } else {
+        tag.className = 'title-access-tag readonly';
+        tag.textContent = 'Cannot Run/Execute. Contact ADMIN for Permission';
+      }
+    }
+
+    (async function applyAccessModeBanner() {
+      const b = document.getElementById('accessModeBanner');
+      ACCESS_MODE = await fetchAccessMode();
+      // Replaced top banner copy with concise title keyword tag.
+      b.style.display = 'none';
+      updateToolAccessTag();
+    })();
+
+    // Push auth/session into tool iframe. `load` can fire more than once per navigation (e.g. blank -> doc); debounce so children do not hammer /tools/gmail/*.
+    let _toolFrameBridgeTimer = null;
+    document.getElementById('toolFrame').addEventListener('load', function () {
+      const frame = document.getElementById('toolFrame');
+      if (!frame || frame.style.display === 'none') return;
+      if (_toolFrameBridgeTimer) clearTimeout(_toolFrameBridgeTimer);
+      _toolFrameBridgeTimer = setTimeout(function () {
+        _toolFrameBridgeTimer = null;
+        try {
+          const w = frame.contentWindow;
+          if (!w) return;
+          w.postMessage({
+            type: 'vikaa-session-bridge',
+            authData: localStorage.getItem('authData'),
+            userInfo: localStorage.getItem('userInfo')
+          }, window.location.origin);
+        } catch (_) {}
+      }, 150);
+    });
+
+    // ---- Load tools from ToolConfig.json ----
+    (async function loadTools() {
+      try {
+        const res  = await fetch('ToolConfig.json');
+        const data = await res.json();
+        const listPersonalized = document.getElementById('toolListPersonalized');
+        const listEnterprise = document.getElementById('toolListEnterprise');
+        const listExperimental = document.getElementById('toolListExperimental');
+        listPersonalized.innerHTML = '';
+        listEnterprise.innerHTML = '';
+        listExperimental.innerHTML = '';
+
+        const enabled = data.tools.filter(t => t.enabled);
+        let defaultTool = enabled.find(t => t.default) || enabled[0];
+
+        const VALID_GROUPS = new Set(['personalized', 'enterprise', 'experimental']);
+        const listByGroup = {
+          personalized: listPersonalized,
+          enterprise: listEnterprise,
+          experimental: listExperimental,
+        };
+        function targetListForTool(tool) {
+          const raw = (tool.group != null ? String(tool.group) : '').toLowerCase().trim();
+          if (raw && !VALID_GROUPS.has(raw)) {
+            console.warn(
+              `ToolConfig: unknown group "${tool.group}" for tool "${tool.id}"; using experimental.`
+            );
+          }
+          const key = VALID_GROUPS.has(raw) ? raw : 'experimental';
+          return listByGroup[key];
+        }
+
+        enabled.forEach(tool => {
+          const targetList = targetListForTool(tool);
+
+          const li = document.createElement('li');
+          li.className = 'tool-item' + (tool.id === defaultTool.id ? ' active' : '');
+          li.dataset.toolId = tool.id;
+          li.innerHTML = `
+            <div class="tool-item-main">
+              <i class="${tool.icon}"></i>
+              <span>${tool.name}</span>
+            </div>
+            <button type="button" class="tool-link-btn" title="Open tool info" aria-label="Open tool info">
+              <i class="fas fa-up-right-from-square"></i>
+            </button>`;
+          li.querySelector('.tool-link-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openToolInfoPopup(tool);
+          });
+          li.addEventListener('click', () => selectTool(tool));
+          targetList.appendChild(li);
+        });
+
+        const emptyGroupMsg = 'No tools in this group are enabled yet.';
+        [listPersonalized, listEnterprise, listExperimental].forEach((ul) => {
+          if (!ul.children.length) {
+            const emptyLi = document.createElement('li');
+            emptyLi.style.cssText = 'padding:6px 12px; color:#bbb; font-size:0.82rem; line-height:1.4;';
+            emptyLi.textContent = emptyGroupMsg;
+            ul.appendChild(emptyLi);
+          }
+        });
+
+        // Expand all categories on first load/refresh (user can collapse afterward).
+        document.getElementById('toolCatPersonalized').open = true;
+        document.getElementById('toolCatEnterprise').open = true;
+        document.getElementById('toolCatExperimental').open = true;
+
+        // Activate the default tool on load
+        selectTool(defaultTool, false);
+
+      } catch (err) {
+        const errHtml = '<li style="padding:6px 12px; color:#e53e3e; font-size:0.85rem;">Failed to load tools.</li>';
+        document.getElementById('toolListPersonalized').innerHTML = errHtml;
+        document.getElementById('toolListEnterprise').innerHTML = errHtml;
+        document.getElementById('toolListExperimental').innerHTML = errHtml;
+        const st = document.getElementById('toolStatus');
+        st.innerText = 'Status: Error';
+        st.className = 'badge badge-error';
+        console.error('ToolConfig.json load error:', err);
+      }
+    })();
+
+    let activeTool = null;
+    let popupTool = null;
+
+    const popupBackdrop = document.getElementById('toolPopupBackdrop');
+    const popupTitle = document.getElementById('toolPopupTitle');
+    const popupBody = document.getElementById('toolPopupBody');
+    const popupCloseBtn = document.getElementById('toolPopupCloseBtn');
+    const TOOL_DOC_MAP = {
+      "gmail-intelligence": "Gmail_Intelligence.md",
+      "web-research": "ReAct_Research_Agent.md",
+      "ai-scout": "AI_Scout.md",
+      "github-code-mining": "GitHub_Code_Miner.md",
+      "unity-catalog": "Databricks_Unity_Browser.md",
+      "sql-agent": "Databricks_Conversational_SQL.md",
+      "databricks-synth-data": "Synthetic_Data_Generation_Databricks.md",
+      "rag-config": "RAG_Configurator.md",
+    };
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function renderMarkdown(mdRaw) {
+      let md = mdRaw || '';
+      const blocks = [];
+      md = md.replace(/```([\s\S]*?)```/g, (_, code) => {
+        const token = `__CODE_BLOCK_${blocks.length}__`;
+        blocks.push(`<pre><code>${escapeHtml(code.trim())}</code></pre>`);
+        return token;
+      });
+
+      let html = escapeHtml(md);
+      html = html.replace(/^###\s+(.*)$/gm, '<h3>$1</h3>');
+      html = html.replace(/^##\s+(.*)$/gm, '<h2>$1</h2>');
+      html = html.replace(/^#\s+(.*)$/gm, '<h1>$1</h1>');
+      html = html.replace(/^\s*[-*]\s+(.*)$/gm, '<li>$1</li>');
+      html = html.replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>');
+      html = html.replace(/<\/ul>\s*<ul>/g, '');
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      html = html.replace(/\n{2,}/g, '</p><p>');
+      html = `<p>${html}</p>`;
+      html = html.replace(/<p>\s*(<h[1-3]>)/g, '$1');
+      html = html.replace(/(<\/h[1-3]>)\s*<\/p>/g, '$1');
+      html = html.replace(/<p>\s*(<ul>)/g, '$1');
+      html = html.replace(/(<\/ul>)\s*<\/p>/g, '$1');
+
+      blocks.forEach((block, i) => {
+        html = html.replace(`__CODE_BLOCK_${i}__`, block);
+      });
+      return html;
+    }
+
+    async function loadToolMarkdown(tool) {
+      const docFile = TOOL_DOC_MAP[tool.id];
+      if (!docFile) return null;
+      const apiBase = (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL)
+        ? String(CONFIG.API_BASE_URL).replace(/\/$/, '')
+        : null;
+      const candidates = [
+        ...(apiBase ? [`${apiBase}/tools/docs/${encodeURIComponent(docFile)}`] : []),
+        `../docs/tools/${docFile}`,
+        `docs/tools/${docFile}`,
+        `/docs/tools/${docFile}`,
+      ];
+      for (const url of candidates) {
+        try {
+          const r = await fetch(url);
+          if (r.ok) return await r.text();
+        } catch (_) { /* try next */ }
+      }
+      return null;
+    }
+
+    async function openToolInfoPopup(tool) {
+      popupTool = tool;
+      popupTitle.textContent = `${tool.name} — Tool Info`;
+      const status = tool._status || 'Status not set';
+      popupBody.innerHTML = `<div style="font-size:0.82rem;color:#6b7280;">Loading from <code>docs/tools</code>…</div>`;
+      popupBackdrop.classList.add('open');
+      popupBackdrop.setAttribute('aria-hidden', 'false');
+
+      const md = await loadToolMarkdown(tool);
+      const docHtml = md
+        ? renderMarkdown(md)
+        : `<div class="tool-popup-note">No markdown doc mapped yet for this tool in <code>docs/tools</code>.</div>`;
+
+      popupBody.innerHTML = `
+        <div><strong>Tool:</strong> ${tool.emoji || ''} ${tool.name}</div>
+        <div><strong>ID:</strong> <code>${tool.id}</code></div>
+        <div><strong>Status:</strong> ${status}</div>
+        <div><strong>Page:</strong> ${tool.page ? `<code>${tool.page}</code>` : 'No dedicated page yet'}</div>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0 10px;" />
+        ${docHtml}`;
+    }
+
+    function closeToolInfoPopup() {
+      popupBackdrop.classList.remove('open');
+      popupBackdrop.setAttribute('aria-hidden', 'true');
+      popupTool = null;
+    }
+
+    popupCloseBtn.addEventListener('click', closeToolInfoPopup);
+    popupBackdrop.addEventListener('click', (e) => {
+      if (e.target === popupBackdrop) closeToolInfoPopup();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && popupBackdrop.classList.contains('open')) {
+        closeToolInfoPopup();
+      }
+    });
+
+    function selectTool(tool, log = true) {
+      activeTool = tool;
+      document.getElementById('activeToolName').innerText = tool.name;
+      const toolStatusEl = document.getElementById('toolStatus');
+      toolStatusEl.innerText = 'Status: Active';
+      toolStatusEl.className = 'badge badge-ready';
+
+      document.querySelectorAll('.tool-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.toolId === tool.id);
+      });
+
+      const frame = document.getElementById('toolFrame');
+      const feed  = document.getElementById('activityFeed');
+      const hub   = document.getElementById('communicationHub');
+
+      if (tool.page) {
+        // Tool has its own page — show iframe, hide generic feed & hub
+        frame.src = tool.page;
+        frame.style.display = 'block';
+        feed.style.display  = 'none';
+        hub.style.display   = 'none';
+      } else {
+        // Generic placeholder tool
+        frame.style.display = 'none';
+        frame.src = '';
+        feed.style.display  = 'flex';
+        hub.style.display   = 'flex';
+        document.getElementById('toolPrompt').placeholder =
+          'Type your instruction for the selected tool…';
+        if (log) logActivity(`Switched to <strong>${tool.name}</strong>`);
+      }
+    }
+
+    async function executePrompt() {
+      const query = document.getElementById('toolPrompt').value.trim();
+      if (!query) return;
+      document.getElementById('toolPrompt').value = '';
+      logActivity(`<span style="color:#17bcfe">You:</span> ${query}`);
+      logActivity(`<strong>Vikaa.AI:</strong> <em>${activeTool ? activeTool.name : 'This tool'}</em> is not yet implemented.`);
+    }
+
+    function logActivity(html) {
+      const feed = document.getElementById('activityFeed');
+      const entry = document.createElement('div');
+      entry.className = "status-card";
+      entry.style.marginBottom = "10px";
+      entry.style.fontSize = "0.85rem";
+      entry.innerHTML = html;
+      feed.appendChild(entry);
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    // Auto-resize textarea + Enter to send (Shift+Enter for newline)
+    const tx = document.getElementById('toolPrompt');
+    tx.addEventListener("input", function() {
+      this.style.height = "auto";
+      this.style.height = (this.scrollHeight) + "px";
+    }, false);
+    tx.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        executePrompt();
+      }
+    });
+
+    // ---- Show user email in nav if available ----
+    (function() {
+      try {
+        const raw = localStorage.getItem("userInfo");
+        const info = raw ? JSON.parse(raw) : null;
+        if (info && info.email) {
+          document.getElementById('navUserEmail').textContent = info.email;
+        }
+      } catch(e) {}
+    })();
+
+    // ---- Logout (mirrors doLogout in vikaa_ai_agent.js) ----
+    async function doLogout() {
+      const SUPABASE_URL = "https://dvawnejohsmjycxuhenu.supabase.co";
+      const BACKEND_URL  = (typeof CONFIG !== 'undefined')
+        ? CONFIG.API_BASE_URL
+        : "https://app-wtiw.onrender.com";
+
+      const tokenDataRaw = localStorage.getItem("authData");
+      const accessToken  = tokenDataRaw ? JSON.parse(tokenDataRaw)?.accessToken : null;
+      const sessionId    = localStorage.getItem("session_id");
+
+      if (accessToken && sessionId) {
+        try {
+          await fetch(`${BACKEND_URL}/auth/logout`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${accessToken}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ session_id: sessionId })
+          });
+        } catch(err) { console.error("Backend logout failed:", err); }
+      }
+
+      if (accessToken) {
+        try {
+          await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${accessToken}`,
+              "Content-Type": "application/json"
+            }
+          });
+        } catch(err) { console.error("Supabase logout failed:", err); }
+      }
+
+      localStorage.removeItem("authData");
+      localStorage.removeItem("session_id");
+      localStorage.removeItem("userEmail");
+      const base = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+      window.location.href = base + "/index.html";
+    }
+
+    // Anti-copy logic
+    document.addEventListener("contextmenu", e => e.preventDefault());
+    document.onkeydown = e => {
+      if (e.ctrlKey && ['u','s','c'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Synthetic Data Generation (Databricks)</title>
+  <script src="config.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #f3f5f8; color: #0f172a; font-family: 'Montserrat', sans-serif; }
+    .status-bar { position: sticky; top: 0; z-index: 5; background: #fff; border-bottom: 1px solid #e2e8f0; padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .pill { border: 1px solid #dbe3ef; background: #f8fafc; border-radius: 999px; padding: 4px 10px; font-size: 0.72rem; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .g { background: #16a34a; } .a { background: #d97706; } .r { background: #dc2626; }
+    .copy-btn, .btn { border: none; border-radius: 8px; padding: 8px 12px; font-size: 0.76rem; font-weight: 700; cursor: pointer; }
+    .copy-btn { background: #e2e8f0; color: #0f172a; }
+    .btn { background: #0f2942; color: #fff; }
+    .btn.primary { background: #0ea5e9; }
+    .btn.good { background: #15803d; }
+    .btn.bad { background: #b91c1c; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .layout { max-width: 1220px; margin: 0 auto; padding: 14px; display: grid; grid-template-columns: 1fr 330px; gap: 14px; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+    .stepper { display: flex; gap: 8px; margin-bottom: 12px; }
+    .step { flex: 1; border-radius: 8px; padding: 8px 10px; font-size: 0.75rem; border: 1px solid #dbe3ef; background: #f8fafc; color: #64748b; }
+    .step.current { background: #e0f2fe; color: #0c4a6e; border-color: #7dd3fc; font-weight: 700; }
+    .step.done { background: #ecfdf5; color: #065f46; border-color: #86efac; font-weight: 700; }
+    .step.locked { opacity: 0.7; }
+    label { display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; font-size: 0.68rem; font-weight: 700; }
+    input, select { width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 9px 10px; font-size: 0.83rem; font-family: 'Montserrat', sans-serif; }
+    input:disabled, select:disabled { background: #f1f5f9; color: #94a3b8; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .toolbar { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .hint { font-size: 0.73rem; color: #64748b; font-family: 'Roboto', sans-serif; margin-top: 4px; }
+    .estimating { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #0c4a6e; margin-top: 4px; }
+    .estimating .spin {
+      width: 12px; height: 12px; border: 2px solid #bae6fd; border-top-color: #0284c7;
+      border-radius: 50%; animation: sdg-spin .8s linear infinite;
+    }
+    @keyframes sdg-spin { to { transform: rotate(360deg); } }
+    .err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 8px; padding: 10px; font-size: 0.8rem; margin-bottom: 8px; }
+    .table-list { max-height: 220px; overflow: auto; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px; background: #fff; }
+    .table-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+    .trow { border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 6px; background: #f8fafc; font-size: 0.68rem; }
+    .trow .name { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; display: block; margin-bottom: 2px; }
+    .trow .meta { color: #64748b; font-size: 0.64rem; white-space: nowrap; display: inline-block; }
+    .checks .ok { color: #166534; } .checks .warn { color: #92400e; } .checks .fail { color: #991b1b; }
+    .checks li { margin-bottom: 5px; font-size: 0.78rem; }
+    .run-head { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .badge { border-radius: 999px; padding: 3px 9px; font-size: 0.68rem; border: 1px solid #cbd5e1; background: #f8fafc; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .progress-row { border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; margin-bottom: 6px; background: #fff; }
+    .bar-wrap { height: 7px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+    .bar-fill { height: 100%; background: #0ea5e9; width: 0%; }
+    .logs { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 8px; max-height: 180px; overflow: auto; font-size: 0.7rem; }
+    .audit-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+    .audit-table th, .audit-table td { border-bottom: 1px solid #e2e8f0; padding: 6px; text-align: left; vertical-align: top; }
+    @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) { .row2, .row3 { grid-template-columns: 1fr; } .table-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="status-bar">
+    <strong style="font-size:0.82rem;">Synthetic Data Generation (Databricks)</strong>
+    <span id="connPill" class="pill"><span class="dot a"></span>Checking</span>
+    <span id="clusterPill" class="pill">State: UNKNOWN</span>
+    <span id="latencyPill" class="pill">Latency: -- ms</span>
+    <span id="tokenPill" class="pill">Token: configured/not-configured</span>
+    <span id="warehousePill" class="pill mono">Warehouse: --</span>
+    <button id="btnCopyWarehouse" class="copy-btn" type="button">Copy Warehouse</button>
+    <button id="btnStartStop" class="btn" type="button">Refresh Status</button>
+  </div>
+
+  <div class="layout">
+    <div>
+      <div class="card">
+        <div class="stepper">
+          <div id="s1" class="step current">Step-1 Source</div>
+          <div id="s2" class="step locked">Step-2 Sampling</div>
+          <div id="s3" class="step locked">Step-3 Output &amp; Run</div>
+        </div>
+
+        <div id="errorBox" class="err" style="display:none;"></div>
+
+        <div id="step1">
+          <div class="row2">
+            <div>
+              <label for="warehouseId">Warehouse ID</label>
+              <input id="warehouseId" value="f0ec353cb2780a8c" />
+            </div>
+            <div style="display:flex; gap:8px; align-items:flex-end;">
+              <button id="btnLoadMeta" class="btn" type="button">Load Metadata</button>
+            </div>
+          </div>
+          <div class="row2" style="margin-top:10px;">
+            <div>
+              <label for="catalogName">Catalog</label>
+              <select id="catalogName"><option value="">-- Select catalog --</option></select>
+            </div>
+            <div>
+              <label for="schemaName">Schema</label>
+              <select id="schemaName" disabled><option value="">-- Select schema --</option></select>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <label>Table selection</label>
+            <div class="row3">
+              <div><input id="tableSearch" placeholder="Search tables..." /></div>
+              <div>
+                <select id="tableTypeFilter">
+                  <option value="ALL">ALL</option>
+                  <option value="FORECAST">FORECAST</option>
+                  <option value="HISTORICAL">HISTORICAL</option>
+                </select>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="margin:0; font-size:0.75rem; text-transform:none;"><input id="tblAll" type="checkbox" style="width:auto;"> Select all visible</label>
+                <span id="tblCounter" class="hint">0 selected</span>
+              </div>
+            </div>
+            <div class="table-list" style="margin-top:8px;">
+              <div id="tableGrid" class="table-grid"></div>
+            </div>
+            <div id="estimateBusy" class="estimating" style="display:none;"><span class="spin"></span><span>Estimating rows...</span></div>
+            <p id="tableEst" class="hint">Estimated source rows: 0</p>
+          </div>
+        </div>
+
+        <div id="step2" style="display:none;">
+          <div class="row3">
+            <div>
+              <label for="sampleAnchor">Sample anchor</label>
+              <select id="sampleAnchor">
+                <option value="initial">full</option>
+                <option value="delta">delta</option>
+                <option value="snapshot">snapshot</option>
+              </select>
+            </div>
+            <div>
+              <label for="samplePercent">Sample percent</label>
+              <input id="samplePercent" type="range" min="1" max="100" value="5" />
+              <p class="hint"><span id="samplePercentView">5</span>%</p>
+            </div>
+            <div>
+              <label for="deltaLookbackDays">Lookback days</label>
+              <input id="deltaLookbackDays" type="number" min="1" value="5" />
+            </div>
+          </div>
+          <div class="row2" style="margin-top:10px;">
+            <div>
+              <label for="snapshotTs">Snapshot timestamp (for snapshot)</label>
+              <input id="snapshotTs" type="datetime-local" />
+            </div>
+            <div>
+              <label for="maxRowsCap">Max rows cap (optional)</label>
+              <input id="maxRowsCap" type="number" min="1" placeholder="optional" />
+            </div>
+          </div>
+          <p id="estLine" class="hint">Estimated output rows: 0</p>
+        </div>
+
+        <div id="step3" style="display:none;">
+          <div class="row3">
+            <div>
+              <label for="frequencyMode">Frequency mode</label>
+              <select id="frequencyMode">
+                <option value="one-time">once</option>
+                <option value="interval">interval</option>
+                <option value="scheduled">scheduled</option>
+              </select>
+            </div>
+            <div>
+              <label for="intervalMinutes">Interval minutes</label>
+              <input id="intervalMinutes" type="number" min="1" disabled />
+            </div>
+            <div>
+              <label for="llmModelName">Databricks model</label>
+              <select id="llmModelName">
+                <option value="databricks-sonnet-4-5">databricks-sonnet-4-5 (fidelity)</option>
+                <option value="databricks-claude-opus-4-1">databricks-claude-opus-4-1</option>
+                <option value="databricks-claude-sonnet-4">databricks-claude-sonnet-4</option>
+                <option value="databricks-llama-3-3-70b-instruct">databricks-llama-3-3-70b-instruct</option>
+                <option value="databricks-mixtral-8x7b-instruct">databricks-mixtral-8x7b-instruct</option>
+              </select>
+            </div>
+          </div>
+          <div class="row2" style="margin-top:10px;">
+            <div>
+              <label for="outputVolume">Output volume (DBFS)</label>
+              <select id="outputVolume">
+                <option value="dbfs:/FileStore/vikaa/synthetic-data/">Default: dbfs:/FileStore/vikaa/synthetic-data/</option>
+              </select>
+              <p class="hint">Select a Unity Catalog volume. Falls back to default DBFS path if none found.</p>
+            </div>
+            <div style="display:flex; align-items:flex-end; gap:8px;">
+              <button id="btnSaveDraft" class="btn" type="button">Save draft</button>
+              <button id="btnPreflight" class="btn" type="button">Pre-flight</button>
+              <button id="btnRun" class="btn primary" type="button" disabled>Run</button>
+            </div>
+          </div>
+          <div id="preflightBox" class="card" style="margin-top:10px; display:none; padding:10px;">
+            <h4 style="margin:0 0 6px 0; font-size:0.82rem;">Pre-flight checks</h4>
+            <ul id="preflightList" class="checks" style="margin:0; padding-left:18px;"></ul>
+            <label id="largeConfirmWrap" style="display:none; margin-top:8px; text-transform:none; letter-spacing:0; font-size:0.74rem;">
+              <input id="largeConfirm" type="checkbox" style="width:auto;"> I confirm this large run is intentional.
+            </label>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button id="btnBack" class="btn" type="button" disabled>Back</button>
+          <button id="btnNext" class="btn" type="button">Next</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="run-head">
+          <strong>Execution</strong>
+          <span id="runStatusBadge" class="badge">IDLE</span>
+          <span id="runIdView" class="mono hint"></span>
+          <span id="elapsedView" class="hint"></span>
+        </div>
+        <div id="progressHost"></div>
+        <div id="logHost" class="logs"></div>
+      </div>
+
+      <div class="card">
+        <strong style="font-size:0.82rem;">Audit Log</strong>
+        <div style="margin-top:8px;">
+          <button id="btnLoadAudit" class="btn" type="button">Refresh audit</button>
+        </div>
+        <div style="margin-top:8px; overflow:auto;">
+          <table class="audit-table">
+            <thead><tr><th>Run ID</th><th>User</th><th>Time</th><th>Status</th><th>Source</th><th>Model</th></tr></thead>
+            <tbody id="auditBody"><tr><td colspan="6">No data</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <strong style="font-size:0.82rem;">Summary</strong>
+        <div id="summaryBox" class="hint" style="margin-top:8px; white-space:pre-wrap;"></div>
+      </div>
+      <div class="card">
+        <strong style="font-size:0.82rem;">Schedules</strong>
+        <div id="scheduleBox" class="hint" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PREFIX_SYNTH = ['/tools/databricks-synth-data', '/api/tools/databricks-synth-data', '/databricks-synth-data'];
+    const PREFIX_UC = ['/tools/unity-catalog', '/api/tools/unity-catalog', '/unity-catalog'];
+    const STEP_STATE = { step: 1 };
+    const TABLES = { all: [], selected: new Set(), visible: [] };
+    let LAST_PREFLIGHT = null;
+    let LAST_RUN_TIMER = null;
+    let RUN_STARTED_AT = null;
+    let WAREHOUSE_STATE = 'UNKNOWN';
+    let ESTIMATE_TIMER = null;
+    let ESTIMATING = false;
+
+    function apiBase() { const b = (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) ? CONFIG.API_BASE_URL : 'http://localhost:10000'; return String(b).replace(/\/$/, ''); }
+    function trustLocal() { if (typeof vikaaIsTrustedDevFrontend === 'function') return vikaaIsTrustedDevFrontend(); const h = (window.location.hostname || '').toLowerCase(); return h === 'localhost' || h === '127.0.0.1'; }
+    function hdr() {
+      const raw = localStorage.getItem('authData');
+      let token = null;
+      try { token = raw ? JSON.parse(raw).accessToken : null; } catch (_) {}
+      if (token) return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+      if (trustLocal()) return { 'Content-Type': 'application/json' };
+      throw new Error('Login required for this host.');
+    }
+    async function call(method, prefixes, suffix, body) {
+      const t0 = Date.now();
+      let lastErr = null;
+      for (const p of prefixes) {
+        try {
+          const r = await fetch(apiBase() + p + suffix, { method, headers: hdr(), body: body ? JSON.stringify(body) : undefined });
+          const j = await r.json().catch(() => ({}));
+          document.getElementById('latencyPill').textContent = 'Latency: ' + (Date.now() - t0) + ' ms';
+          if (r.ok) return j;
+          const msg = typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail || j);
+          throw new Error(msg || r.statusText);
+        } catch (e) { lastErr = e; }
+      }
+      throw lastErr || new Error('Request failed');
+    }
+    function showErr(msg) { const b = document.getElementById('errorBox'); b.style.display = 'block'; b.textContent = String(msg || 'Error'); }
+    function clearErr() { const b = document.getElementById('errorBox'); b.style.display = 'none'; b.textContent = ''; }
+    function logLine(level, text) {
+      const host = document.getElementById('logHost');
+      const ts = new Date().toISOString();
+      host.textContent += '[' + ts + '] ' + level.toUpperCase() + ' ' + text + '\n';
+      host.scrollTop = host.scrollHeight;
+    }
+    function formatNum(v) { const n = Number(v); if (!Number.isFinite(n)) return '—'; if (n >= 1e6) return (n/1e6).toFixed(1) + 'M'; if (n >= 1e3) return (n/1e3).toFixed(1) + 'K'; return String(Math.round(n)); }
+    function updateSummary() {
+      const txt = [
+        'Step: ' + STEP_STATE.step,
+        'Warehouse: ' + (document.getElementById('warehouseId').value || '—'),
+        'Catalog.Schema: ' + (document.getElementById('catalogName').value || '—') + '.' + (document.getElementById('schemaName').value || '—'),
+        'Tables selected: ' + TABLES.selected.size,
+        'Anchor: ' + document.getElementById('sampleAnchor').value,
+        'Sample %: ' + document.getElementById('samplePercentView').textContent,
+        'Lookback days: ' + (document.getElementById('deltaLookbackDays').value || '—'),
+        'Frequency: ' + document.getElementById('frequencyMode').value,
+      ].join('\n');
+      document.getElementById('summaryBox').textContent = txt;
+    }
+    function setSteps() {
+      for (let i = 1; i <= 3; i++) {
+        const el = document.getElementById('s' + i);
+        el.className = 'step' + (i < STEP_STATE.step ? ' done' : i === STEP_STATE.step ? ' current' : ' locked');
+        document.getElementById('step' + i).style.display = i === STEP_STATE.step ? '' : 'none';
+      }
+      document.getElementById('btnBack').disabled = STEP_STATE.step === 1;
+      document.getElementById('btnNext').style.display = STEP_STATE.step === 3 ? 'none' : '';
+      updateSummary();
+    }
+    function stepValid(step) {
+      if (step === 1) return !!document.getElementById('catalogName').value && !!document.getElementById('schemaName').value && TABLES.selected.size > 0;
+      if (step === 2) return Number(document.getElementById('samplePercent').value) > 0;
+      return true;
+    }
+    function setEstimating(on) {
+      ESTIMATING = !!on;
+      document.getElementById('estimateBusy').style.display = ESTIMATING ? 'inline-flex' : 'none';
+      if (STEP_STATE.step === 1) {
+        document.getElementById('btnNext').disabled = ESTIMATING;
+      }
+    }
+    function updateTableCounter() {
+      const estSource = TABLES.all.filter(t => TABLES.selected.has(t.name)).reduce((a, b) => a + (Number(b.row_count) || 0), 0);
+      document.getElementById('tblCounter').textContent = TABLES.selected.size + ' selected';
+      document.getElementById('tableEst').textContent = 'Estimated source rows: ' + formatNum(estSource);
+      const pct = Number(document.getElementById('samplePercent').value || 0);
+      document.getElementById('estLine').textContent = 'Estimated output rows: ~' + formatNum(estSource * pct / 100);
+      updateSummary();
+    }
+    function queueEstimate() {
+      setEstimating(true);
+      clearTimeout(ESTIMATE_TIMER);
+      ESTIMATE_TIMER = setTimeout(() => {
+        updateTableCounter();
+        setEstimating(false);
+      }, 350);
+    }
+    function renderTables() {
+      const q = (document.getElementById('tableSearch').value || '').trim().toLowerCase();
+      const t = document.getElementById('tableTypeFilter').value;
+      TABLES.visible = TABLES.all.filter(x => {
+        const okName = !q || String(x.name || '').toLowerCase().includes(q);
+        const okType = t === 'ALL' || x.group === t;
+        return okName && okType;
+      });
+      const host = document.getElementById('tableGrid');
+      if (!TABLES.visible.length) {
+        host.innerHTML = '<div class="hint">No tables found.</div>';
+        queueEstimate();
+        return;
+      }
+      host.innerHTML = TABLES.visible.map((x) => {
+        const checked = TABLES.selected.has(x.name) ? 'checked' : '';
+        const staleBadge = x.stale ? ' | stale' : '';
+        return '<label class="trow">' +
+          '<input type="checkbox" data-tbl="' + x.name + '" ' + checked + ' style="width:auto;margin-right:6px;">' +
+          '<span class="name">' + x.name + '</span>' +
+          '<span class="meta">{rows: ' + formatNum(x.row_count) + ' | cols: ' + (x.column_count ?? '—') + (staleBadge ? ' | stale' : '') + '}</span>' +
+          '</label>';
+      }).join('');
+      Array.from(host.querySelectorAll('input[data-tbl]')).forEach((cb) => {
+        cb.addEventListener('change', () => {
+          const n = cb.getAttribute('data-tbl');
+          if (!n) return;
+          if (cb.checked) TABLES.selected.add(n); else TABLES.selected.delete(n);
+          queueEstimate();
+        });
+      });
+      const allVisibleSelected = TABLES.visible.length > 0 && TABLES.visible.every(x => TABLES.selected.has(x.name));
+      document.getElementById('tblAll').checked = allVisibleSelected;
+      queueEstimate();
+    }
+    async function refreshConn() {
+      try {
+        const h = await call('GET', PREFIX_SYNTH, '/health');
+        const ok = !!(h.databricks_host_configured && h.databricks_token_configured);
+        document.getElementById('connPill').innerHTML = '<span class="dot ' + (ok ? 'g' : 'r') + '"></span>' + (ok ? 'Connected' : 'Disconnected');
+        document.getElementById('tokenPill').textContent = 'Token: ' + (h.databricks_token_configured ? 'valid (unknown expiry)' : 'missing');
+        if (h.defaults && h.defaults.warehouse_id) document.getElementById('warehouseId').value = h.defaults.warehouse_id;
+      } catch (e) { document.getElementById('connPill').innerHTML = '<span class="dot r"></span>Disconnected'; }
+      await refreshWarehouseStatus();
+    }
+    async function refreshWarehouseStatus() {
+      const wid = document.getElementById('warehouseId').value.trim();
+      document.getElementById('warehousePill').textContent = 'Warehouse: ' + (wid || '--');
+      if (!wid) return;
+      try {
+        const st = await call('GET', PREFIX_SYNTH, '/warehouse/' + encodeURIComponent(wid) + '/status');
+        WAREHOUSE_STATE = String(st.state || 'UNKNOWN').toUpperCase();
+      } catch (_) { WAREHOUSE_STATE = 'UNKNOWN'; }
+      document.getElementById('clusterPill').textContent = 'State: ' + WAREHOUSE_STATE;
+      const b = document.getElementById('btnStartStop');
+      b.className = 'btn ' + (WAREHOUSE_STATE === 'RUNNING' ? 'bad' : WAREHOUSE_STATE === 'STOPPED' ? 'good' : '');
+      b.textContent = WAREHOUSE_STATE === 'RUNNING' ? 'Stop Warehouse' : WAREHOUSE_STATE === 'STOPPED' ? 'Start Warehouse' : 'Refresh Status';
+    }
+    async function loadCatalogs() {
+      const c = document.getElementById('catalogName');
+      c.innerHTML = '<option value="">-- Loading --</option>';
+      const d = await call('GET', PREFIX_UC, '/catalogs');
+      const names = (d.catalogs || []).map(x => x.name).filter(Boolean).sort();
+      c.innerHTML = '<option value="">-- Select catalog --</option>' + names.map(n => '<option value="' + n + '">' + n + '</option>').join('');
+      const s = document.getElementById('schemaName');
+      s.disabled = true;
+      s.innerHTML = '<option value="">-- Select schema --</option>';
+    }
+    async function loadSchemas(catalog) {
+      const s = document.getElementById('schemaName');
+      if (!catalog) { s.disabled = true; s.innerHTML = '<option value="">-- Select schema --</option>'; return; }
+      s.disabled = true;
+      s.innerHTML = '<option value="">-- Loading --</option>';
+      const d = await call('GET', PREFIX_UC, '/schemas?catalog_name=' + encodeURIComponent(catalog));
+      const names = (d.schemas || []).map(x => x.name).filter(Boolean).sort();
+      s.innerHTML = '<option value="">-- Select schema --</option>' + names.map(n => '<option value="' + n + '">' + n + '</option>').join('');
+      s.disabled = false;
+    }
+    async function loadTablesMeta() {
+      const c = document.getElementById('catalogName').value;
+      const s = document.getElementById('schemaName').value;
+      if (!c || !s) throw new Error('Select catalog and schema first.');
+      const wid = document.getElementById('warehouseId').value.trim();
+      const d = await call('GET', PREFIX_SYNTH, '/tables-meta?catalog_name=' + encodeURIComponent(c) + '&schema_name=' + encodeURIComponent(s) + '&warehouse_id=' + encodeURIComponent(wid));
+      TABLES.all = d.tables || [];
+      TABLES.selected = new Set(TABLES.all.map(t => t.name));
+      renderTables();
+      await loadVolumes(c, s);
+    }
+    async function loadVolumes(catalog, schema) {
+      const sel = document.getElementById('outputVolume');
+      sel.innerHTML = '<option value="dbfs:/FileStore/vikaa/synthetic-data/">Default: dbfs:/FileStore/vikaa/synthetic-data/</option>';
+      if (!catalog) return;
+      try {
+        const q = schema
+          ? ('/volumes?catalog_name=' + encodeURIComponent(catalog) + '&schema_name=' + encodeURIComponent(schema))
+          : ('/volumes?catalog_name=' + encodeURIComponent(catalog));
+        const d = await call('GET', PREFIX_SYNTH, q);
+        const vols = d.volumes || [];
+        vols.forEach((v) => {
+          const opt = document.createElement('option');
+          opt.value = v.output_path;
+          const display = (v.full_name || (catalog + '.' + (v.schema_name || '?') + '.' + v.name));
+          opt.textContent = display + ' -> ' + v.output_path;
+          sel.appendChild(opt);
+        });
+        if (vols.length) {
+          // Prefer same-schema volume when schema is selected; else first available volume in catalog.
+          const preferred = schema
+            ? vols.find((v) => String(v.schema_name || '').trim() === String(schema).trim())
+            : vols[0];
+          if (preferred) sel.value = preferred.output_path;
+          else sel.selectedIndex = 1;
+        }
+      } catch (_) {
+        // Keep default option when volume listing is unavailable.
+      }
+    }
+    function payloadFromUi() {
+      const anchorRaw = document.getElementById('sampleAnchor').value;
+      const anchor = anchorRaw === 'snapshot' ? 'initial' : anchorRaw;
+      const modeRaw = document.getElementById('frequencyMode').value;
+      const mode = modeRaw === 'scheduled' ? 'interval' : modeRaw;
+      const pct = Number(document.getElementById('samplePercent').value || 1);
+      return {
+        catalog_name: document.getElementById('catalogName').value.trim(),
+        schema_name: document.getElementById('schemaName').value.trim(),
+        table_names: TABLES.selected.size === TABLES.all.length ? null : Array.from(TABLES.selected),
+        output_format: 'csv',
+        output_path: document.getElementById('outputVolume').value.trim(),
+        sample_percent: pct,
+        sample_anchor: anchor,
+        frequency_mode: mode,
+        interval_minutes: mode === 'interval' ? Number(document.getElementById('intervalMinutes').value || 60) : null,
+        delta_lookback_minutes: anchor === 'delta' ? Number(document.getElementById('deltaLookbackDays').value || 5) * 1440 : null,
+        llm_model_name: document.getElementById('llmModelName').value.trim(),
+        warehouse_id: document.getElementById('warehouseId').value.trim(),
+        max_rows_cap: document.getElementById('maxRowsCap').value ? Number(document.getElementById('maxRowsCap').value) : null
+      };
+    }
+    async function runPreflight() {
+      const payload = payloadFromUi();
+      payload.large_run_threshold = 100000;
+      const d = await call('POST', PREFIX_SYNTH, '/preflight', payload);
+      LAST_PREFLIGHT = d;
+      const box = document.getElementById('preflightBox');
+      box.style.display = '';
+      const ul = document.getElementById('preflightList');
+      ul.innerHTML = (d.checks || []).map((c) => '<li class="' + c.status + '"><strong>[' + c.status.toUpperCase() + ']</strong> ' + c.label + ' — ' + (c.hint || '') + '</li>').join('');
+      const confirmWrap = document.getElementById('largeConfirmWrap');
+      confirmWrap.style.display = d.large_run_confirmation_required ? '' : 'none';
+      document.getElementById('btnRun').disabled = d.gate === 'blocked';
+      logLine('info', 'Preflight gate=' + d.gate + ', est_out=' + ((d.estimates || {}).estimated_output_rows || 0));
+    }
+    function startTimer() {
+      RUN_STARTED_AT = Date.now();
+      clearInterval(LAST_RUN_TIMER);
+      LAST_RUN_TIMER = setInterval(() => {
+        const sec = Math.max(0, Math.floor((Date.now() - RUN_STARTED_AT) / 1000));
+        document.getElementById('elapsedView').textContent = 'Elapsed: ' + sec + 's';
+      }, 1000);
+    }
+    function stopTimer() { clearInterval(LAST_RUN_TIMER); LAST_RUN_TIMER = null; }
+    function renderExecution(data) {
+      const host = document.getElementById('progressHost');
+      const ex = data.executions || [];
+      if (!ex.length) { host.innerHTML = '<div class="hint">No per-table execution rows.</div>'; return; }
+      host.innerHTML = ex.map((e) => {
+        const pct = e.state === 'SUCCEEDED' ? 100 : 0;
+        return '<div class="progress-row"><div style="display:flex;justify-content:space-between;gap:8px;"><strong class="mono">' + e.table_name + '</strong><span class="hint">' + e.state + ' · ' + (e.elapsed_ms || 0) + ' ms</span></div><div class="bar-wrap"><div class="bar-fill" style="width:' + pct + '%"></div></div><div class="hint mono">' + (e.statement_id || '') + '</div></div>';
+      }).join('');
+    }
+    async function loadAudit() {
+      const d = await call('GET', PREFIX_SYNTH, '/audit?limit=200');
+      const rows = d.records || [];
+      const body = document.getElementById('auditBody');
+      if (!rows.length) { body.innerHTML = '<tr><td colspan="6">No audit records.</td></tr>'; return; }
+      body.innerHTML = rows.map((r) => {
+        const src = (r.source && r.source.catalog && r.source.schema) ? (r.source.catalog + '.' + r.source.schema) : '-';
+        return '<tr><td class="mono">' + (r.run_id || '-') + '</td><td>' + (r.initiated_by || '-') + '</td><td>' + (r.timestamp_utc || '-') + '</td><td>' + (r.status || '-') + '</td><td>' + src + '</td><td>' + (r.model || '-') + '</td></tr>';
+      }).join('');
+    }
+    async function loadSchedules() {
+      const d = await call('GET', PREFIX_SYNTH, '/schedules');
+      document.getElementById('scheduleBox').textContent = 'Active entries: ' + (d.count || 0);
+    }
+    function saveDraft() { localStorage.setItem('synth_data_draft_v1', JSON.stringify(payloadFromUi())); logLine('info', 'Draft saved.'); }
+    function restoreDraft() {
+      const raw = localStorage.getItem('synth_data_draft_v1');
+      if (!raw) return;
+      try {
+        const d = JSON.parse(raw);
+        if (d.warehouse_id) document.getElementById('warehouseId').value = d.warehouse_id;
+        if (d.sample_percent) document.getElementById('samplePercent').value = String(d.sample_percent);
+        if (d.output_path) {
+          const sel = document.getElementById('outputVolume');
+          const exists = Array.from(sel.options).some((o) => o.value === d.output_path);
+          if (!exists) {
+            const opt = document.createElement('option');
+            opt.value = d.output_path;
+            opt.textContent = 'Draft: ' + d.output_path;
+            sel.appendChild(opt);
+          }
+          sel.value = d.output_path;
+        }
+        if (d.llm_model_name) document.getElementById('llmModelName').value = d.llm_model_name;
+      } catch (_) {}
+    }
+
+    document.getElementById('btnCopyWarehouse').addEventListener('click', () => navigator.clipboard && navigator.clipboard.writeText(document.getElementById('warehouseId').value || ''));
+    document.getElementById('btnStartStop').addEventListener('click', async () => {
+      clearErr();
+      try {
+        const wid = document.getElementById('warehouseId').value.trim();
+        if (!wid) throw new Error('Warehouse ID is required.');
+        const action = WAREHOUSE_STATE === 'RUNNING' ? 'stop' : WAREHOUSE_STATE === 'STOPPED' ? 'wake' : 'status';
+        if (action !== 'status') await call('POST', PREFIX_SYNTH, '/warehouse/' + encodeURIComponent(wid) + '/' + action);
+        await refreshWarehouseStatus();
+      } catch (e) { showErr(e.message); }
+    });
+    document.getElementById('warehouseId').addEventListener('blur', () => { void refreshWarehouseStatus(); });
+    document.getElementById('btnLoadMeta').addEventListener('click', async () => { clearErr(); try { await loadCatalogs(); } catch (e) { showErr(e.message); } });
+    document.getElementById('catalogName').addEventListener('change', async () => {
+      clearErr();
+      try {
+        const c = document.getElementById('catalogName').value;
+        await loadSchemas(c);
+        await loadVolumes(c, null);
+      } catch (e) { showErr(e.message); }
+    });
+    document.getElementById('schemaName').addEventListener('change', async () => { clearErr(); try { await loadTablesMeta(); } catch (e) { showErr(e.message); } });
+    document.getElementById('tableSearch').addEventListener('input', renderTables);
+    document.getElementById('tableTypeFilter').addEventListener('change', renderTables);
+    document.getElementById('tblAll').addEventListener('change', (e) => {
+      const checked = e.target.checked;
+      TABLES.visible.forEach((t) => { if (checked) TABLES.selected.add(t.name); else TABLES.selected.delete(t.name); });
+      renderTables();
+    });
+    document.getElementById('samplePercent').addEventListener('input', (e) => { document.getElementById('samplePercentView').textContent = String(e.target.value); queueEstimate(); });
+    document.getElementById('sampleAnchor').addEventListener('change', () => {
+      const a = document.getElementById('sampleAnchor').value;
+      document.getElementById('deltaLookbackDays').disabled = a !== 'delta';
+      document.getElementById('snapshotTs').disabled = a !== 'snapshot';
+      updateSummary();
+    });
+    document.getElementById('frequencyMode').addEventListener('change', () => {
+      const m = document.getElementById('frequencyMode').value;
+      document.getElementById('intervalMinutes').disabled = (m === 'one-time');
+      updateSummary();
+    });
+    document.getElementById('btnBack').addEventListener('click', () => { STEP_STATE.step = Math.max(1, STEP_STATE.step - 1); setSteps(); });
+    document.getElementById('btnNext').addEventListener('click', () => {
+      if (!stepValid(STEP_STATE.step)) { showErr('Please complete required fields in this step.'); return; }
+      clearErr();
+      STEP_STATE.step = Math.min(3, STEP_STATE.step + 1);
+      setSteps();
+    });
+    document.getElementById('btnSaveDraft').addEventListener('click', saveDraft);
+    document.getElementById('btnPreflight').addEventListener('click', async () => { clearErr(); try { await runPreflight(); } catch (e) { showErr(e.message); } });
+    document.getElementById('btnRun').addEventListener('click', async () => {
+      clearErr();
+      try {
+        if (!LAST_PREFLIGHT) await runPreflight();
+        if (!LAST_PREFLIGHT) throw new Error('Preflight did not complete.');
+        if (LAST_PREFLIGHT.gate === 'blocked') throw new Error('Preflight blocked. Resolve failed checks.');
+        if (LAST_PREFLIGHT.large_run_confirmation_required && !document.getElementById('largeConfirm').checked) {
+          throw new Error('Large-run confirmation required.');
+        }
+        document.getElementById('runStatusBadge').textContent = 'RUNNING';
+        startTimer();
+        logLine('info', 'Run started.');
+        const payload = payloadFromUi();
+        const res = await call('POST', PREFIX_SYNTH, '/run', payload);
+        document.getElementById('runStatusBadge').textContent = String(res.status || 'COMPLETED').toUpperCase();
+        document.getElementById('runIdView').textContent = String(res.run_id || '');
+        renderExecution(res);
+        stopTimer();
+        logLine('info', 'Run finished with status=' + res.status);
+        await loadAudit();
+        await loadSchedules();
+      } catch (e) {
+        stopTimer();
+        document.getElementById('runStatusBadge').textContent = 'FAILED';
+        showErr(e.message);
+        logLine('error', e.message);
+      }
+    });
+    document.getElementById('btnLoadAudit').addEventListener('click', async () => { clearErr(); try { await loadAudit(); } catch (e) { showErr(e.message); } });
+
+    (async function init() {
+      setSteps();
+      restoreDraft();
+      document.getElementById('sampleAnchor').dispatchEvent(new Event('change'));
+      document.getElementById('frequencyMode').dispatchEvent(new Event('change'));
+      try {
+        await refreshConn();
+        await loadCatalogs();
+        await loadSchedules();
+        await loadAudit();
+      } catch (e) { showErr(e.message); }
+      updateSummary();
+      logLine('info', 'Tool ready.');
+    })();
+  </script>
+</body>
+</html>

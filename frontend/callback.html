@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+<head>
+    <title>Signing you in...</title>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="image\Logo4.jpeg">
+
+</head>
+<body style="background-color:#17bcfe;">
+    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; color: #fff; text-align: center;">
+        <h2>Signing you in...</h2>
+        <h3>Please wait for server wake up... this may take 50 to 100 seconds depending upon server capacity</h3>
+        <h3>We are currently under Free Subscription for Hobby Project</h3>    
+    </div>
+    <script src="config.js"></script>
+    <script>
+        // Helper: Parse URL fragment params
+        function parseFragment() {
+            const params = {};
+            window.location.hash.substring(1).split('&').forEach(pair => {
+                const [key, value] = pair.split('=');
+                params[key] = decodeURIComponent(value);
+            });
+            return params;
+        }
+
+        // Extract tokens
+        const tokens = parseFragment();
+        const accessToken = tokens['access_token'];
+        const refreshToken = tokens['refresh_token'];
+        const expiresIn = tokens['expires_in'];
+        const providerToken = tokens['provider_token'];
+        
+        localStorage.setItem('userType', '0');
+        localStorage.setItem('access_mode', 'read-only');
+        localStorage.setItem('acl_status', 'guest');
+
+        // Save tokens to localStorage for vika_ai_agent.html
+        const authData = { accessToken, refreshToken, expiresIn, providerToken };
+        localStorage.setItem('authData', JSON.stringify(authData));
+        console.log("🛠️ Callback.html: Tokens saved to localStorage.");
+
+        // ✅ Clear token from URL to avoid leakage
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        // Proceed only if access token exists
+        if (!accessToken) {
+            console.error("❌ No access token found in URL fragment.");
+            alert("No access token found. Redirecting to home...");
+            window.location.href = "index.html";
+        } else {
+            fetchUserProfile();
+        }
+
+        // Fetch user profile from Supabase
+        async function fetchUserProfile() {
+            try {
+                console.log("🔄 Fetching user profile from Supabase...");
+                const SUPABASE_URL = 'https://dvawnejohsmjycxuhenu.supabase.co'; 
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR2YXduZWpvaHNtanljeHVoZW51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4MzcxMTgsImV4cCI6MjA2NDQxMzExOH0.uLMiPNKawJwuMV9zg60736gQUVhS5jJJ88EnFUHuRmQ';
+
+                const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+                    headers: {
+                        "Authorization": "Bearer " + accessToken,
+                        "apikey": SUPABASE_ANON_KEY
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error("❌ Failed to fetch user profile:", errorText);
+                    throw new Error("Failed to fetch user profile. Status: " + response.status);
+                }
+
+                const userInfo = await response.json();
+                console.log("✅ User info received:", userInfo.email);
+
+                const userPayload = {
+                    email: userInfo.email,
+                    full_name: userInfo.user_metadata?.full_name || "",
+                    provider: userInfo.app_metadata?.provider || "",
+                    avatar_url: userInfo.user_metadata?.avatar_url || ""
+                };
+                
+                // Step 1: Fetch access control info from Supabase
+                const userEmail = userInfo.email?.trim().toLowerCase();
+                const ACL_API = `${SUPABASE_URL}/rest/v1/access_control_list?email=eq.` + encodeURIComponent(userEmail);
+
+                console.log("🔍 Checking ACL for:", userEmail);
+                const aclResponse = await fetch(ACL_API, {
+                    headers: {
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Authorization": "Bearer " + accessToken,
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    }
+                });
+
+                const aclData = await aclResponse.json();
+                let aclStatus = "guest";
+                if (aclData.length === 0) {
+                    console.warn("ℹ️ User not in ACL. Login allowed in read-only mode.");
+                    aclStatus = "guest";
+                } else {
+                    aclStatus = (aclData[0].status || "").toLowerCase();
+                    if (aclStatus === "whitelist") {
+                        console.log("✅ Execution allowed (whitelist).");
+                        localStorage.setItem("access_mode", "execute");
+                    } else if (aclStatus === "blacklist") {
+                        console.warn("🚫 User blacklisted. Login allowed but run-actions blocked.");
+                    } else {
+                        console.warn("ℹ️ ACL status not whitelist; defaulting to read-only.");
+                    }
+                }
+                localStorage.setItem("acl_status", aclStatus || "guest");
+                if (localStorage.getItem("access_mode") !== "execute") {
+                    localStorage.setItem("access_mode", "read-only");
+                }
+
+                // Align with backend: localhost / LAN / Cursor-style dev hosts can always execute.
+                if (typeof vikaaIsTrustedDevFrontend === 'function' && vikaaIsTrustedDevFrontend()) {
+                    localStorage.setItem("access_mode", "execute");
+                    localStorage.setItem("acl_status", "local-dev");
+                }
+
+                localStorage.setItem('userInfo', JSON.stringify(userPayload));
+
+                // Send to backend
+                await trackUser(userPayload);
+
+            } catch (error) {
+                console.error("❌ Error in fetchUserProfile:", error);
+                alert("Error fetching user profile. Redirecting to home.\n" + error);
+                window.location.href = "index.html";
+            }
+        }
+
+        // Backend call
+        async function trackUser(userPayload) {
+            try {
+                const backendUrl = CONFIG.API_BASE_URL + "/auth/track";
+                console.log("📤 Tracking user at:", backendUrl);
+
+                const response = await fetch(backendUrl, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(userPayload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Backend track failed with status ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result.session_id) {
+                    localStorage.setItem("session_id", result.session_id);
+                }
+                console.log("✅ User tracked successfully.");
+
+            } catch (err) {
+                console.error("❌ Track user failed:", err);
+            } finally {
+                console.log("🏁 Final redirect to: LandingPage.html");
+                window.location.href = "LandingPage.html";
+            }
+        }
+    </script>
+</body>
+</html>

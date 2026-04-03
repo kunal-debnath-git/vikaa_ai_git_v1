@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gmail Intelligence — Vikaa.AI</title>
+
+  <script src="config.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0; padding: 0;
+      height: 100%;
+      font-family: 'Montserrat', sans-serif;
+      background: #f4f6f9;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top action bar ── */
+    .action-bar {
+      padding: 14px 20px;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .action-bar h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0f2942;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .demo-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffc107;
+      border-radius: 10px;
+      padding: 2px 8px;
+      letter-spacing: 0.5px;
+    }
+    .live-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+      border-radius: 10px;
+      padding: 2px 8px;
+    }
+    .btn {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+    .btn-primary   { background: #0f2942; color: #fff; }
+    .btn-primary:hover  { background: #17bcfe; }
+    .btn-secondary { background: #e1f5fe; color: #0277bd; }
+    .btn-secondary:hover { background: #17bcfe; color: #fff; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .access-banner {
+      margin: 10px 20px 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: none;
+      border: 1px solid transparent;
+    }
+    .access-banner.readonly { display:block; background:#fff7ed; color:#9a3412; border-color:#fdba74; }
+    .access-banner.execute { display:block; background:#ecfeff; color:#0f766e; border-color:#67e8f9; }
+    .access-banner.gmail-google-only {
+      display:block; background:#fef3c7; color:#92400e; border-color:#fbbf24;
+    }
+
+    /* ── Account selector ── */
+    .account-select-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: #6b7280;
+    }
+    .account-select-wrap i { color: #17bcfe; }
+    #accountSelect {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #0f2942;
+      background: #f0faff;
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      outline: none;
+      max-width: 220px;
+    }
+    #accountSelect:focus { border-color: #17bcfe; }
+    #accountSelect:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Scrollable content area ── */
+    #contentArea {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      min-height: 0;
+    }
+
+    /* ── Placeholder / empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #aaa;
+    }
+    .empty-state i { font-size: 3rem; margin-bottom: 16px; display: block; color: #ddd; }
+    .empty-state h4 { margin: 0 0 8px; font-size: 1rem; color: #999; }
+    .empty-state p  { font-size: 0.83rem; line-height: 1.6; max-width: 340px; margin: 0 auto; }
+
+    /* ── Spinner ── */
+    .spinner-wrap {
+      text-align: center;
+      padding: 50px 20px;
+      color: #999;
+      font-size: 0.85rem;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid #e5e7eb;
+      border-top-color: #17bcfe;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Section header ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #0f2942;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .report-meta {
+      font-size: 0.72rem;
+      color: #aaa;
+      font-style: italic;
+    }
+
+    /* ── Tier cards ── */
+    .tier-block { margin-bottom: 24px; }
+    .tier-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tier-label::after { content:''; flex:1; height:1px; background:#e5e7eb; }
+    .tier-act_now    .tier-label { color: #dc2626; }
+    .tier-bill_invoice .tier-label { color: #4f46e5; }
+    .tier-read_today .tier-label { color: #d97706; }
+    .tier-can_wait   .tier-label { color: #16a34a; }
+    .tier-spam       .tier-label { color: #6b7280; }
+
+    .email-card {
+      background: #fff;
+      border-radius: 10px;
+      border-left: 4px solid #e5e7eb;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      transition: box-shadow 0.15s;
+    }
+    .email-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.08); }
+    .tier-act_now    .email-card { border-left-color: #dc2626; }
+    .tier-bill_invoice .email-card { border-left-color: #4f46e5; }
+    .tier-read_today .email-card { border-left-color: #f59e0b; }
+    .tier-can_wait   .email-card { border-left-color: #22c55e; }
+    .tier-spam       .email-card { border-left-color: #9ca3af; }
+
+    .email-subject {
+      font-size: 0.87rem;
+      font-weight: 600;
+      color: #1a202c;
+      margin-bottom: 3px;
+      line-height: 1.4;
+    }
+    .email-sender {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+    .email-summary {
+      font-size: 0.8rem;
+      color: #555;
+      line-height: 1.55;
+      font-family: 'Roboto', sans-serif;
+    }
+    .draft-reply {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: #f0faff;
+      border-left: 3px solid #17bcfe;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      color: #1a3c5e;
+      font-style: italic;
+      line-height: 1.6;
+      font-family: 'Roboto', sans-serif;
+    }
+    .draft-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #17bcfe;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 4px;
+    }
+
+    /* ── Action items ── */
+    .action-list {
+      list-style: none;
+      padding: 0; margin: 0 0 24px;
+    }
+    .action-list li {
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 6px;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      color: #333;
+    }
+    .action-list li::before {
+      content: '→';
+      color: #17bcfe;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* ── Weekly report cards ── */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+    }
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #0f2942;
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.68rem;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-top: 4px;
+    }
+    .health-score-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .health-score-circle {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .score-excellent { background: #16a34a; }
+    .score-good      { background: #22c55e; }
+    .score-needs     { background: #f59e0b; }
+    .score-critical  { background: #dc2626; }
+
+    .insight-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      font-size: 0.82rem;
+      color: #444;
+      line-height: 1.6;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-family: 'Roboto', sans-serif;
+    }
+    .insight-card i { color: #17bcfe; flex-shrink: 0; margin-top: 2px; }
+
+    .sender-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+      border-radius: 8px;
+      padding: 8px 14px;
+      margin-bottom: 6px;
+      font-size: 0.8rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .sender-name { font-weight: 600; color: #1a202c; }
+    .sender-email { font-size: 0.72rem; color: #6b7280; }
+    .sender-count {
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: #e1f5fe;
+      color: #0277bd;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    /* ── Tab bar ── */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid #e5e7eb;
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 10px 18px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: #999;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.15s;
+    }
+    .tab-btn.active { color: #17bcfe; border-bottom-color: #17bcfe; }
+    .tab-btn:hover:not(.active) { color: #555; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- Action bar -->
+  <div class="action-bar">
+    <h3>
+      <i class="fas fa-envelope-open-text" style="color:#17bcfe;"></i>
+      Gmail Intelligence
+      <span id="modeBadge" class="demo-badge">⚙ DEMO MODE</span>
+    </h3>
+    <div class="account-select-wrap">
+      <i class="fas fa-user-circle"></i>
+      <select id="accountSelect" title="Select Gmail account">
+        <option value="">Loading accounts…</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" id="btnBriefing" onclick="loadBriefing()">
+      <i class="fas fa-sun"></i> Daily Briefing
+    </button>
+    <button class="btn btn-secondary" id="btnWeekly" onclick="loadWeekly()">
+      <i class="fas fa-chart-bar"></i> Weekly Report
+    </button>
+  </div>
+  <div id="accessBanner" class="access-banner"></div>
+
+  <!-- Main content -->
+  <div id="contentArea">
+    <div class="empty-state">
+      <i class="fas fa-inbox"></i>
+      <h4>Your AI-powered inbox assistant</h4>
+      <p>
+        Click <strong>Daily Briefing</strong> to rank today's emails into priority tiers,
+        or <strong>Weekly Report</strong> for a 7-day inbox health analysis.<br><br>
+        Running in <strong>demo mode</strong> until Gmail credentials are configured.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const BASE_URL = (typeof CONFIG !== 'undefined') ? CONFIG.API_BASE_URL : 'https://app-wtiw.onrender.com';
+    function isLocalDevHost() {
+      if (typeof vikaaIsTrustedDevFrontend === 'function') return vikaaIsTrustedDevFrontend();
+      const h = (window.location.hostname || '').toLowerCase();
+      return h === 'localhost' || h === '127.0.0.1';
+    }
+
+    /** Parent → iframe postMessage cache (ToolIndex pushes session after load). */
+    window.__vikaaBridgeApplied = false;
+    window.__vikaaBridgedAuth = null;
+    window.__vikaaBridgedUserInfo = null;
+
+    /** Tool may run in ToolIndex iframe: child storage, parent storage, then bridge. */
+    function getStorageItem(key) {
+      try {
+        const v = localStorage.getItem(key);
+        if (v != null && v !== '') return v;
+      } catch (_) {}
+      try {
+        if (window.parent && window.parent !== window) {
+          const v = window.parent.localStorage.getItem(key);
+          if (v != null && v !== '') return v;
+        }
+      } catch (_) {}
+      if (window.__vikaaBridgeApplied) {
+        if (key === 'authData' && window.__vikaaBridgedAuth) return window.__vikaaBridgedAuth;
+        if (key === 'userInfo' && window.__vikaaBridgedUserInfo) return window.__vikaaBridgedUserInfo;
+      }
+      return null;
+    }
+
+    function hasAuthToken() {
+      try {
+        const raw = getStorageItem('authData');
+        if (!raw) return false;
+        return !!JSON.parse(raw).accessToken;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function getAuthHeaderOrThrow() {
+      const raw = getStorageItem('authData');
+      const token = raw ? JSON.parse(raw)?.accessToken : null;
+      if (!token) throw new Error('Please login first.');
+      return { 'Authorization': `Bearer ${token}` };
+    }
+
+    function getAuthHeaderOptional() {
+      try {
+        return getAuthHeaderOrThrow();
+      } catch (_) {
+        return {};
+      }
+    }
+
+    /** Local trusted dev: backend allows missing Bearer for Gmail routes; production always sends token. */
+    function getAuthHeaderForGmailApi() {
+      if (isLocalDevHost() && !hasAuthToken()) return {};
+      return getAuthHeaderOrThrow();
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function showReadonlyBanner(banner, text) {
+      if (!banner) return;
+      banner.className = 'access-banner readonly';
+      banner.style.display = 'block';
+      banner.textContent = text;
+    }
+
+    /**
+     * Production / Render: Google OAuth only (userInfo.provider === "google").
+     * Trusted dev (localhost / LAN / Cursor): any Vikaa login — matches backend local testing;
+     * default mailbox comes from API (story360degree@gmail.com).
+     */
+    function gmailToolSessionAllowed() {
+      if (typeof vikaaIsTrustedDevFrontend === 'function' && vikaaIsTrustedDevFrontend()) {
+        return true;
+      }
+      try {
+        const raw = getStorageItem('userInfo');
+        const info = raw ? JSON.parse(raw) : null;
+        const p = (info && info.provider) ? String(info.provider).toLowerCase() : '';
+        return p === 'google';
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function applyGoogleOAuthGate() {
+      window.__gmailSessionInvalid = false;
+      window.__gmailGoogleOk = false;
+      const banner = document.getElementById('accessBanner');
+      const sel = document.getElementById('accountSelect');
+      const briefing = document.getElementById('btnBriefing');
+      const weekly = document.getElementById('btnWeekly');
+      if (banner) {
+        banner.className = 'access-banner gmail-google-only';
+        banner.style.display = 'block';
+        banner.innerHTML =
+          '<strong>Gmail Intelligence — Gmail OAuth only.</strong> ' +
+          'You must be signed in to Vikaa.AI with <strong>Google</strong> (the same OAuth used for Gmail). ' +
+          'Other sign-in methods (GitHub, Microsoft, etc.) cannot use this tool.';
+      }
+      if (sel) {
+        sel.innerHTML = '<option value="">Sign in with Google to load accounts</option>';
+        sel.disabled = true;
+      }
+      briefing.disabled = true;
+      weekly.disabled = true;
+      document.getElementById('contentArea').innerHTML = `
+        <div class="empty-state">
+          <i class="fab fa-google" style="color:#ea4335;"></i>
+          <h4>This tool requires Gmail OAuth</h4>
+          <p>
+            Sign in to Vikaa.AI with <strong>Google</strong> only (Gmail OAuth). If you used GitHub, Microsoft, or another provider,
+            this inbox assistant stays disabled for security.
+          </p>
+          <p style="margin-top:16px;">
+            <a href="index.html" target="_top" style="color:#17bcfe;font-weight:700;">Go to home</a>,
+            sign out, then sign in with <strong>Google</strong>.
+          </p>
+        </div>`;
+    }
+
+    // ── Check status + load accounts on page load ─────────────────────────────
+    // Parent ToolIndex fires postMessage on every iframe load; debounce + skip duplicate payloads
+    // so /tools/gmail/status and /accounts are not hammered.
+    let _gmailInitDebounce = null;
+    let _lastSessionBridgeSig = null;
+    function scheduleGmailToolInit() {
+      if (_gmailInitDebounce) clearTimeout(_gmailInitDebounce);
+      _gmailInitDebounce = setTimeout(() => {
+        _gmailInitDebounce = null;
+        runGmailToolInit();
+      }, 120);
+    }
+
+    let _gmailInitRunning = false;
+    async function runGmailToolInit() {
+      if (_gmailInitRunning) return;
+      _gmailInitRunning = true;
+      try {
+      const accessBanner = document.getElementById('accessBanner');
+      if (!gmailToolSessionAllowed()) {
+        applyGoogleOAuthGate();
+        return;
+      }
+      window.__gmailSessionInvalid = false;
+      window.__gmailGoogleOk = false;
+
+      // Production / Render: must have a token. Local trusted dev: API allows anonymous Gmail routes.
+      if (!isLocalDevHost() && !hasAuthToken()) {
+        window.__gmailSessionInvalid = true;
+        document.getElementById('accountSelect').innerHTML =
+          '<option value="">Sign in required</option>';
+        document.getElementById('accountSelect').disabled = true;
+        document.getElementById('btnBriefing').disabled = true;
+        document.getElementById('btnWeekly').disabled = true;
+        if (accessBanner) {
+          accessBanner.className = 'access-banner readonly';
+          accessBanner.style.display = 'block';
+          accessBanner.textContent =
+            'No session token. Sign in from Home, then open Tool Mode again.';
+        }
+        document.getElementById('contentArea').innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-key" style="color:#d97706;"></i>
+            <h4>Sign in required</h4>
+            <p>
+              Gmail actions need an auth token. Use
+              <a href="index.html" target="_top" style="color:#17bcfe;font-weight:700;">Home</a>
+              to sign in, then open <strong>Tool Mode</strong> again.
+            </p>
+          </div>`;
+        return;
+      }
+
+      const access = await (async () => {
+        if (isLocalDevHost() && !hasAuthToken()) {
+          return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+        }
+        let headers;
+        try {
+          headers = getAuthHeaderOrThrow();
+        } catch (_) {
+          return { can_execute: false };
+        }
+        try {
+          const r = await fetch(`${BASE_URL}/auth/access-mode`, { headers });
+          if (!r.ok) {
+            if (isLocalDevHost()) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+            return { can_execute: false };
+          }
+          return await r.json();
+        } catch (_) {
+          if (isLocalDevHost()) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+          return { can_execute: false };
+        }
+      })();
+      window.__canExecute = !!access.can_execute;
+      if (accessBanner) {
+        accessBanner.className = 'access-banner';
+        accessBanner.style.display = 'none';
+        accessBanner.textContent = '';
+      }
+      if (!window.__canExecute) {
+        document.getElementById('btnBriefing').disabled = true;
+        document.getElementById('btnWeekly').disabled = true;
+      }
+      try {
+        const authHdr = (isLocalDevHost() && !hasAuthToken())
+          ? {}
+          : getAuthHeaderOptional();
+        const [statusRes, accountsRes] = await Promise.all([
+          fetch(`${BASE_URL}/tools/gmail/status`),
+          fetch(`${BASE_URL}/tools/gmail/accounts`, { headers: { ...authHdr } }),
+        ]);
+
+        if (statusRes.ok) {
+          const s = await statusRes.json();
+          const badge = document.getElementById('modeBadge');
+          if (!s.demo_mode) {
+            badge.textContent = '● LIVE';
+            badge.className = 'live-badge';
+          }
+        }
+
+        if (accountsRes.status === 403) {
+          let detail = 'Google sign-in required.';
+          try {
+            const err = await accountsRes.json();
+            if (err.detail) detail = typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail);
+          } catch (_) {}
+          applyGoogleOAuthGate();
+          const b = document.getElementById('accessBanner');
+          if (b) b.innerHTML = '<strong>Access restricted.</strong> ' + detail;
+          return;
+        }
+
+        if (accountsRes.status === 401) {
+          window.__gmailGoogleOk = false;
+          window.__gmailSessionInvalid = true;
+          document.getElementById('accountSelect').innerHTML =
+            '<option value="">Session expired — sign in again</option>';
+          document.getElementById('accountSelect').disabled = true;
+          document.getElementById('btnBriefing').disabled = true;
+          document.getElementById('btnWeekly').disabled = true;
+          const b = document.getElementById('accessBanner');
+          if (b) {
+            b.className = 'access-banner readonly';
+            b.style.display = 'block';
+            b.textContent = 'Please sign in to Vikaa.AI again (your session may have expired).';
+          }
+          document.getElementById('contentArea').innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-key" style="color:#d97706;"></i>
+              <h4>Sign in required</h4>
+              <p>
+                Your session is missing or expired. Open
+                <a href="index.html" target="_top" style="color:#17bcfe;font-weight:700;">home</a>
+                and sign in again.
+              </p>
+            </div>`;
+          return;
+        }
+
+        if (accountsRes.ok) {
+          const data = await accountsRes.json();
+          const accounts = data.accounts || [];
+          const localDefault = data.local_default_account || '';
+          const sel = document.getElementById('accountSelect');
+          const briefingBtn = document.getElementById('btnBriefing');
+          const weeklyBtn = document.getElementById('btnWeekly');
+
+          if (data.no_gmail_token_for_user) {
+            window.__gmailGoogleOk = false;
+            sel.innerHTML = '<option value="">No Gmail token for your mailbox</option>';
+            sel.disabled = true;
+            briefingBtn.disabled = true;
+            weeklyBtn.disabled = true;
+            showReadonlyBanner(accessBanner, data.message || 'No Gmail API credentials on the server for your signed-in Google account.');
+            document.getElementById('contentArea').innerHTML =
+              '<div class="empty-state">' +
+              '<i class="fas fa-envelope-open" style="color:#d97706;"></i>' +
+              '<h4>Gmail is not set up for your account</h4>' +
+              '<p style="max-width:420px;margin:0 auto;">' +
+              escapeHtml(data.message || '') +
+              '</p></div>';
+            return;
+          }
+
+          window.__gmailGoogleOk = true;
+          if (accounts.length === 0) {
+            sel.innerHTML = '<option value="">No accounts configured</option>';
+          } else {
+            sel.innerHTML = accounts
+              .map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`)
+              .join('');
+            if (localDefault && accounts.includes(localDefault)) {
+              sel.value = localDefault;
+            }
+          }
+          if (localDefault && isLocalDevHost() && accessBanner) {
+            accessBanner.className = 'access-banner execute';
+            accessBanner.style.display = 'block';
+            const noTok = !hasAuthToken();
+            accessBanner.innerHTML =
+              '<strong>Local test</strong>' +
+              (noTok
+                ? ' - Trusted dev allows calls without Bearer. '
+                : ' ') +
+              'Only mailbox: <code>' +
+              escapeHtml(localDefault) +
+              '</code>. <em>Production: your Google login email only (Gmail OAuth).</em>';
+          }
+        }
+      } catch(_) {
+        window.__gmailGoogleOk = false;
+        document.getElementById('accountSelect').innerHTML =
+          '<option value="">Demo mode</option>';
+      }
+      } finally {
+        _gmailInitRunning = false;
+      }
+    }
+
+    window.addEventListener('message', (ev) => {
+      if (ev.origin !== window.location.origin) return;
+      if (!ev.data || ev.data.type !== 'vikaa-session-bridge') return;
+      const sig = String(ev.data.authData || '') + '\0' + String(ev.data.userInfo || '');
+      if (sig === _lastSessionBridgeSig) return;
+      _lastSessionBridgeSig = sig;
+      window.__vikaaBridgeApplied = true;
+      window.__vikaaBridgedAuth = ev.data.authData || null;
+      window.__vikaaBridgedUserInfo = ev.data.userInfo || null;
+      if (window.__vikaaGmailInitFallback) {
+        clearTimeout(window.__vikaaGmailInitFallback);
+        window.__vikaaGmailInitFallback = null;
+      }
+      scheduleGmailToolInit();
+    });
+
+    if (window.parent === window) {
+      scheduleGmailToolInit();
+    } else {
+      // Inside ToolIndex iframe: wait for parent's postMessage — avoids duplicate /status + /accounts
+      // versus an immediate schedule + message. Fallback if parent never posts (standalone embed oddities).
+      window.__vikaaGmailInitFallback = setTimeout(() => {
+        window.__vikaaGmailInitFallback = null;
+        scheduleGmailToolInit();
+      }, 450);
+    }
+
+    function selectedAccount() {
+      return document.getElementById('accountSelect').value || '';
+    }
+
+    // ── Utilities ─────────────────────────────────────────────────────────────
+    function setLoading(message) {
+      document.getElementById('contentArea').innerHTML = `
+        <div class="spinner-wrap">
+          <div class="spinner"></div>
+          ${message}
+        </div>`;
+    }
+
+    function setButtons(disabled) {
+      document.getElementById('btnBriefing').disabled = disabled;
+      document.getElementById('btnWeekly').disabled   = disabled;
+    }
+
+    // ── Daily Briefing ────────────────────────────────────────────────────────
+    async function loadBriefing() {
+      if (window.__gmailSessionInvalid) {
+        document.getElementById('contentArea').innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-key" style="color:#d97706;"></i>
+            <h4>Sign in required</h4>
+            <p>Your session is missing or expired. Sign in from the Vikaa.AI home page and open this tool again.</p>
+          </div>`;
+        return;
+      }
+      if (!window.__gmailGoogleOk) {
+        applyGoogleOAuthGate();
+        return;
+      }
+      if (!window.__canExecute) {
+        document.getElementById('contentArea').innerHTML =
+          `<div class="empty-state"><i class="fas fa-lock" style="color:#d97706;"></i>
+           <h4>Read-only mode</h4><p>Cannot Run/Execute. Contact ADMIN for Permission</p></div>`;
+        return;
+      }
+      setLoading('Fetching and ranking your inbox…');
+      setButtons(true);
+      try {
+        const r = await fetch(`${BASE_URL}/tools/gmail/daily-briefing`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaderForGmailApi() },
+          body: JSON.stringify({ account: selectedAccount() }),
+        });
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          const msg = typeof err.detail === 'string' ? err.detail : (err.detail ? JSON.stringify(err.detail) : 'Request failed');
+          throw new Error(msg);
+        }
+        const data = await r.json();
+        renderBriefing(data);
+      } catch (e) {
+        document.getElementById('contentArea').innerHTML =
+          `<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:#dc2626;"></i>
+           <h4>Error</h4><p>${e.message}</p></div>`;
+      } finally {
+        setButtons(false);
+      }
+    }
+
+    function renderBriefing(d) {
+      const TIER_META = {
+        act_now:    { icon: '🔴', label: 'Act Now',    emoji: '🔴' },
+        bill_invoice: { icon: '🧾', label: 'Bill / Invoice', emoji: '🧾' },
+        read_today: { icon: '🟡', label: 'Read Today', emoji: '🟡' },
+        can_wait:   { icon: '🟢', label: 'Can Wait',   emoji: '🟢' },
+        spam:       { icon: '⚫', label: 'Spam / Junk', emoji: '⚫' },
+      };
+
+      let html = `
+        <div class="section-header">
+          <div class="section-title"><i class="fas fa-sun"></i> Daily Briefing</div>
+          <div class="report-meta">${d.date} · ${d.total_emails} emails${d.demo_mode ? ' · demo data' : ''}</div>
+        </div>`;
+
+      if (d.action_items && d.action_items.length) {
+        html += `
+          <div class="section-title" style="margin-bottom:10px;"><i class="fas fa-bolt"></i> Action Items</div>
+          <ul class="action-list">
+            ${d.action_items.map(a => `<li>${a}</li>`).join('')}
+          </ul>`;
+      }
+
+      for (const [key, meta] of Object.entries(TIER_META)) {
+        const emails = d.tiers[key] || [];
+        if (!emails.length) continue;
+        html += `
+          <div class="tier-block tier-${key}">
+            <div class="tier-label">${meta.emoji} ${meta.label} <span style="font-size:0.7rem;font-weight:400;color:#aaa;">(${emails.length})</span></div>
+            ${emails.map(e => `
+              <div class="email-card">
+                <div class="email-subject">${e.subject}</div>
+                <div class="email-sender">${e.sender}</div>
+                <div class="email-summary">${e.summary}</div>
+                ${e.draft_reply ? `
+                  <div class="draft-reply">
+                    <div class="draft-label"><i class="fas fa-pen"></i> Suggested Reply</div>
+                    ${e.draft_reply}
+                  </div>` : ''}
+              </div>`).join('')}
+          </div>`;
+      }
+
+      document.getElementById('contentArea').innerHTML = html;
+    }
+
+    // ── Weekly Report ─────────────────────────────────────────────────────────
+    async function loadWeekly() {
+      if (window.__gmailSessionInvalid) {
+        document.getElementById('contentArea').innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-key" style="color:#d97706;"></i>
+            <h4>Sign in required</h4>
+            <p>Your session is missing or expired. Sign in from the Vikaa.AI home page and open this tool again.</p>
+          </div>`;
+        return;
+      }
+      if (!window.__gmailGoogleOk) {
+        applyGoogleOAuthGate();
+        return;
+      }
+      if (!window.__canExecute) {
+        document.getElementById('contentArea').innerHTML =
+          `<div class="empty-state"><i class="fas fa-lock" style="color:#d97706;"></i>
+           <h4>Read-only mode</h4><p>Cannot Run/Execute. Contact ADMIN for Permission</p></div>`;
+        return;
+      }
+      setLoading('Analysing your inbox for the past 7 days…');
+      setButtons(true);
+      try {
+        const r = await fetch(`${BASE_URL}/tools/gmail/weekly-report`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaderForGmailApi() },
+          body: JSON.stringify({ account: selectedAccount() }),
+        });
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          const msg = typeof err.detail === 'string' ? err.detail : (err.detail ? JSON.stringify(err.detail) : 'Request failed');
+          throw new Error(msg);
+        }
+        const data = await r.json();
+        renderWeekly(data);
+      } catch (e) {
+        document.getElementById('contentArea').innerHTML =
+          `<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:#dc2626;"></i>
+           <h4>Error</h4><p>${e.message}</p></div>`;
+      } finally {
+        setButtons(false);
+      }
+    }
+
+    function renderWeekly(d) {
+      const scoreClass = {
+        'Excellent': 'score-excellent',
+        'Good':      'score-good',
+        'Needs Attention': 'score-needs',
+        'Critical':  'score-critical',
+      }[d.health_label] || 'score-needs';
+
+      let html = `
+        <div class="section-header">
+          <div class="section-title"><i class="fas fa-chart-bar"></i> Weekly Report</div>
+          <div class="report-meta">Week ending ${d.week_ending}${d.demo_mode ? ' · demo data' : ''}</div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-card">
+            <div class="health-score-wrap">
+              <div class="health-score-circle ${scoreClass}">${d.health_score}</div>
+            </div>
+            <div class="stat-label">Health Score</div>
+            <div style="font-size:0.72rem;color:#555;margin-top:4px;font-weight:700;">${d.health_label}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${d.total_emails}</div>
+            <div class="stat-label">Total Emails</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:#dc2626;">${d.unresolved_threads}</div>
+            <div class="stat-label">Unresolved Threads</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:#6b7280;">${d.spam_candidates.length}</div>
+            <div class="stat-label">Spam Candidates</div>
+          </div>
+        </div>`;
+
+      if (d.insights && d.insights.length) {
+        html += `
+          <div class="section-title" style="margin-bottom:10px;"><i class="fas fa-lightbulb"></i> Insights</div>
+          ${d.insights.map(i => `
+            <div class="insight-card">
+              <i class="fas fa-circle-dot"></i> ${i}
+            </div>`).join('')}`;
+      }
+
+      if (d.action_backlog && d.action_backlog.length) {
+        html += `
+          <div class="section-title" style="margin:20px 0 10px;"><i class="fas fa-list-check"></i> Action Backlog</div>
+          <ul class="action-list">
+            ${d.action_backlog.map(a => `<li>${a}</li>`).join('')}
+          </ul>`;
+      }
+
+      if (d.top_senders && d.top_senders.length) {
+        html += `
+          <div class="section-title" style="margin-bottom:10px;"><i class="fas fa-users"></i> Top Senders</div>
+          ${d.top_senders.map(s => `
+            <div class="sender-row">
+              <div>
+                <div class="sender-name">${s.name || s.email}</div>
+                <div class="sender-email">${s.email}</div>
+              </div>
+              <div class="sender-count">${s.count} emails</div>
+            </div>`).join('')}`;
+      }
+
+      if (d.spam_candidates && d.spam_candidates.length) {
+        html += `
+          <div class="section-title" style="margin:20px 0 10px;"><i class="fas fa-ban"></i> Spam Candidates</div>
+          <ul class="action-list">
+            ${d.spam_candidates.map(s => `<li>${s}</li>`).join('')}
+          </ul>`;
+      }
+
+      document.getElementById('contentArea').innerHTML = html;
+    }
+  </script>
+</body>
+</html>

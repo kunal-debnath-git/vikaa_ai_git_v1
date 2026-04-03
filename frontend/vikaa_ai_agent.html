@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta http-equiv="Cache-Control" content="no-store"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
+  <title>Vikaa.AI — Agent</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="icon" type="image/png" href="image/Logo4.jpeg">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* ============================================================
+       VIKAA.AI — Professional Chat Interface v2
+       Follows frontend_style.md: Montserrat, #17bcfe, #eaeaea
+    ============================================================ */
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: #eaeaea;
+      color: #333333;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* ---- App Shell ---- */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    /* ====================================================
+       HEADER
+    ==================================================== */
+    .v-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #ffffff;
+      padding: 10px 40px;
+      flex-shrink: 0;
+      gap: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+    .v-header-left  { display: flex; align-items: center; gap: 14px; }
+    .v-header-right { display: flex; align-items: center; gap: 20px; }
+
+    /* Brand — match ToolIndex.html (.logo) */
+    .brand-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-area .brand-logo-img {
+      height: 32px;
+      width: auto;
+      border-radius: 4px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+    .brand-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #575757;
+      letter-spacing: -0.3px;
+      white-space: nowrap;
+    }
+    .v-divider {
+      width: 1px;
+      height: 22px;
+      background: #ebebeb;
+      flex-shrink: 0;
+    }
+
+    /* Header buttons */
+    .hdr-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 13px;
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .hdr-btn:hover { background: #ebebeb; border-color: #ccc; }
+    .hdr-btn.accent {
+      color: #17bcfe;
+      border-color: #c5e9f8;
+      background: #eef9ff;
+    }
+    .hdr-btn.accent:hover { background: #d8f1fc; border-color: #9dd8f0; }
+
+    /* Back / Logout — same ghost style as ToolIndex.html nav buttons */
+    .v-header-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+      background: none;
+      border: none;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #17bcfe;
+      cursor: pointer;
+      transition: color 0.15s;
+      white-space: nowrap;
+    }
+    .v-header-link-btn:hover { color: #0891b2; }
+    .v-header-link-btn i { font-size: 0.85em; }
+
+    /* Control groups (Model / Style) */
+    .ctrl-group { display: flex; align-items: center; gap: 6px; }
+    .ctrl-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #666666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .ctrl-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background: #f5f5f5
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23999'/%3E%3C/svg%3E")
+        no-repeat right 8px center;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 5px 24px 5px 9px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: #444;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      min-width: 110px;
+    }
+    .ctrl-select:focus { outline: none; border-color: #17bcfe; }
+
+    /* Execution access (compact pill — same intent as ToolIndex title tag) */
+    .header-access-tag {
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 3px 10px;
+      border: 1px solid transparent;
+      line-height: 1.25;
+      max-width: min(280px, 38vw);
+      text-align: center;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .header-access-tag.execute {
+      background: #ecfeff;
+      color: #0f766e;
+      border-color: #67e8f9;
+    }
+    .header-access-tag.readonly {
+      background: #fff7ed;
+      color: #9a3412;
+      border-color: #fdba74;
+    }
+
+    /* User email */
+    #userEmailSpan {
+      font-size: 11px;
+      color: #aaa;
+      font-style: italic;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    /* ---- Accent Bar ---- */
+    .accent-bar { height: 4px; background: #17bcfe; flex-shrink: 0; }
+
+    /* ====================================================
+       CONTENT AREA
+    ==================================================== */
+    .content-area {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ====================================================
+       SIDEBAR
+    ==================================================== */
+    #leftSidebar {
+      width: 260px;
+      min-width: 260px;
+      background: #ffffff;
+      border-right: 1px solid #eeeeee;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: width 0.3s ease, min-width 0.3s ease;
+      overflow: hidden;
+    }
+    #leftSidebar.sidebar-collapsed {
+      width: 0 !important;
+      min-width: 0 !important;
+      overflow: hidden;
+    }
+
+    .sidebar-hdr {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid #f5f5f5;
+      flex-shrink: 0;
+    }
+    .sidebar-hdr-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #666666;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    /* Chat history scroll area */
+    #chatHistoryContainer {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 8px;
+      min-height: 0;
+    }
+    #chatHistoryContainer::-webkit-scrollbar { width: 3px; }
+    #chatHistoryContainer::-webkit-scrollbar-thumb { background: #ebebeb; border-radius: 2px; }
+
+    #chatHistoryContainer strong {
+      display: block;
+      font-size: 9px;
+      font-weight: 700;
+      color: #c0c0c0;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 10px 8px 3px;
+    }
+
+    .history-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      padding: 7px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 11.5px;
+      color: #535353;
+      font-weight: 500;
+      transition: background 0.15s;
+      margin-bottom: 1px;
+    }
+    .history-item:hover { background: #6fd3fb; color: #222; }
+    .history-item.active {
+      background: #eff9ff;
+      color: #17bcfe;
+      font-weight: 600;
+    }
+    .history-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 18%;
+      height: 64%;
+      width: 3px;
+      background: #17bcfe;
+      border-radius: 0 3px 3px 0;
+    }
+    .history-item-title {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .history-item-options {
+      margin-left: auto;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14px;
+      color: #ccc;
+      opacity: 0;
+      transition: opacity 0.15s;
+      padding: 0 2px;
+      line-height: 1;
+    }
+    .history-item:hover .history-item-options { opacity: 1; color: #888; }
+
+    .history-options-menu {
+      background: white;
+      border: 1px solid #e5e5e5;
+      position: absolute;
+      right: 0;
+      top: 100%;
+      z-index: 200;
+      font-size: 11px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+      min-width: 115px;
+    }
+    .history-options-menu div {
+      padding: 8px 14px;
+      cursor: pointer;
+      color: #444;
+      font-weight: 500;
+      transition: background 0.1s;
+    }
+    .history-options-menu div:hover { background: #f5f5f5; }
+
+    .sidebar-footer {
+      padding: 10px 12px;
+      border-top: 1px solid #f5f5f5;
+      flex-shrink: 0;
+    }
+    #sessionIdBtn {
+      width: 100%;
+      background: #f9fafb;
+      border: 1px solid #f0f0f0;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 10px;
+      color: #717171;
+      text-align: center;
+      cursor: default;
+      font-weight: normal;
+    }
+
+    /* ---- Sidebar Toggle Button ---- */
+    #leftToggleBtn {
+      position: absolute;
+      top: 50%;
+      left: 248px;
+      transform: translateY(-50%);
+      z-index: 20;
+      background: #ffffff;
+      border: 1px solid #e5e5e5;
+      border-left: none;
+      border-radius: 0 8px 8px 0;
+      width: 20px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: left 0.3s ease, background 0.15s;
+      padding: 0;
+    }
+    #leftToggleBtn:hover { background: #f0f9ff; }
+    #leftToggleBtn.left-collapsed { left: 0 !important; }
+    #leftArrowIcon { display: flex; align-items: center; justify-content: center; }
+
+    /* ====================================================
+       CHAT MAIN
+    ==================================================== */
+    .chat-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #f5f6f8;
+      overflow: hidden;
+    }
+
+    /* ====================================================
+       MESSAGES
+    ==================================================== */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: #f5f6f8;
+    }
+    #messages::-webkit-scrollbar { width: 5px; }
+    #messages::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 3px; }
+    #messages::-webkit-scrollbar-track { background: transparent; }
+
+    /* ---- Message Bubbles ---- */
+    .message {
+      max-width: 68%;
+      padding: 10px 15px;
+      border-radius: 14px;
+      line-height: 1.6;
+      word-break: break-word;
+      font-size: 13px;
+      animation: msgIn 0.22s ease-out;
+    }
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(7px); }
+      to   { opacity: 1; transform: translateY(0);   }
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #17bcfe 0%, #09a5e3 100%);
+      color: #ffffff;
+      border-radius: 14px 4px 14px 14px;
+      box-shadow: 0 3px 12px rgba(23, 188, 254, 0.28);
+      text-align: left;
+      font-size: 13.5px;
+      font-weight: 500;
+      min-width: 60px;
+    }
+    .message.agent {
+      align-self: flex-start;
+      background: #ffffff;
+      color: #333333;
+      border-radius: 4px 14px 14px 14px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.07);
+      border: 1px solid #eeeeee;
+      text-align: left;
+    }
+
+    /* Timestamps + tick row — always pinned to bottom-right of bubble */
+    .message-time {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      margin-top: 5px;
+      font-family: 'Roboto', sans-serif;
+      font-weight: 300;
+      opacity: 0.75;
+    }
+    .message.user  .message-time { color: #ffffff; }
+    .message.agent .message-time { color: #aaa; justify-content: flex-start; }
+
+    /* Subtle sender label inside user bubble */
+    .msg-sender-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 0;
+      line-height: 1.2;
+    }
+
+    /* Read receipts */
+    .msg-tick { font-size: 11px; color: rgba(255,255,255,0.85); }
+    .msg-tick.read { color: #ffffff; }
+
+    /* Agent markdown content */
+    .agent-response p            { margin-bottom: 0.5rem; line-height: 1.65; }
+    .agent-response ul,
+    .agent-response ol           { margin: 0.4rem 0 0.4rem 1.4rem; }
+    .agent-response li           { margin-bottom: 0.2rem; }
+    .agent-response h1,
+    .agent-response h2,
+    .agent-response h3           { margin: 0.75rem 0 0.35rem; font-weight: 700; color: #222; }
+    .agent-response code {
+      background: #f0f4f8;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #c2175b;
+    }
+    .agent-response pre {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 12px;
+      overflow-x: auto;
+      margin: 0.5rem 0;
+    }
+    .agent-response pre code {
+      background: none;
+      padding: 0;
+      color: #333;
+      font-size: 12px;
+    }
+    .message.agent pre,
+    .message.agent code {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-x: auto;
+      max-width: 100%;
+      display: block;
+      background-color: #f8f8f8;
+      padding: 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .message.agent button {
+      background-color: #f5f5f5;
+      font-size: 11px;
+      margin-top: 8px;
+      margin-bottom: 4px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 4px 10px;
+      cursor: pointer;
+      display: inline-block;
+      font-family: 'Montserrat', sans-serif;
+      color: #555;
+      transition: background 0.1s;
+    }
+    .message.agent button:hover { background-color: #ebebeb; }
+
+    /* ====================================================
+       ATTACHMENT PREVIEW
+    ==================================================== */
+    .attachment-preview-wrapper {
+      background: #f5f6f8;
+      padding: 0 48px;
+    }
+    #pendingAttachmentsPreview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 4px 0;
+    }
+    .pending-attachment {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 4px 9px;
+      font-size: 11px;
+      color: #555;
+      font-family: 'Roboto', sans-serif;
+    }
+    .pending-attachment img {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      object-fit: cover;
+      border: 1px solid #eee;
+    }
+    .pending-attachment button {
+      background: none;
+      border: none;
+      color: #e05252;
+      cursor: pointer;
+      font-size: 11px;
+      padding: 0;
+      line-height: 1;
+    }
+
+    /* ====================================================
+       INPUT AREA
+    ==================================================== */
+    #inputContainer {
+      padding: 10px 48px 18px;
+      background: #f5f6f8;
+      flex-shrink: 0;
+    }
+    .input-card {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      background: #ffffff;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 14px;
+      padding: 8px 10px;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.05);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-card:focus-within {
+      border-color: #17bcfe;
+      box-shadow: 0 2px 20px rgba(23, 188, 254, 0.12);
+    }
+
+    /* Attach button */
+    #attachmentButton {
+      width: 33px;
+      height: 33px;
+      border-radius: 8px;
+      background: #f0f0f0;
+      border: 1px solid #e0e0e0;
+      color: #17bcfe;
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s;
+      align-self: flex-end;
+      margin-bottom: 1px;
+      line-height: 1;
+    }
+    #attachmentButton:hover { background: #e0f5ff; border-color: #b0dfef; }
+
+    /* Textarea */
+    #user-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      resize: none;
+      font-family: 'Roboto', sans-serif;
+      font-size: 13px;
+      color: #333;
+      background: transparent;
+      min-height: 34px;
+      max-height: 130px;
+      line-height: 1.55;
+      padding: 5px 0;
+    }
+    #user-input::placeholder { color: #c0c0c0; }
+
+    /* Icon buttons */
+    .input-actions {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      align-self: flex-end;
+      margin-bottom: 1px;
+    }
+    #voiceButton,
+    #cameraButton {
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      border: none;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #c0c0c0;
+      font-size: 13px;
+      transition: background 0.15s, color 0.15s;
+    }
+    #voiceButton:hover,
+    #cameraButton:hover { background: #f0f0f0; color: #17bcfe; }
+    #voiceButton:disabled,
+    #cameraButton:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Pulsing red dot while recording */
+    #voiceButton.recording {
+      color: #e53e3e;
+      background: #fff0f0;
+      border-radius: 7px;
+      animation: voicePulse 1s ease-in-out infinite;
+    }
+    @keyframes voicePulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.5; }
+    }
+
+    #sendButton {
+      width: 33px;
+      height: 33px;
+      border-radius: 9px;
+      border: none;
+      background: #17bcfe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: white;
+      font-size: 13px;
+      flex-shrink: 0;
+      transition: background 0.15s, transform 0.1s;
+    }
+    #sendButton:hover { background: #0891b2; transform: scale(1.06); }
+
+    /* ====================================================
+       RESPONSIVE
+    ==================================================== */
+    @media (max-width: 768px) {
+      #leftSidebar { width: 0; min-width: 0; }
+      #messages { padding: 16px; }
+      .attachment-preview-wrapper { padding: 0 16px; }
+      #inputContainer { padding: 8px 16px 14px; }
+      .v-header { padding: 8px 16px; }
+      .ctrl-group { display: none; }
+      .message { max-width: 86%; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ====================================================
+       HEADER
+  ==================================================== -->
+  <header class="v-header">
+    <div class="v-header-left">
+
+      <div class="brand-area">
+        <img class="brand-logo-img" src="image/Logo4.jpeg" alt="Vikaa Logo">
+        <span class="brand-name">Vikaa.AI - Chat</span>
+      </div>
+
+      <div class="v-divider"></div>
+
+      <button class="hdr-btn accent" onclick="startNewChat()">
+        <i class="fas fa-plus" style="font-size:10px;"></i> New Chat
+      </button>
+
+      <div class="v-divider"></div>
+
+      <div class="ctrl-group">
+        <span class="ctrl-label">Model</span>
+        <select name="llm" class="ctrl-select">
+          <option value="gemini">Gemini</option>
+          <option value="gpt (blocked)">&#x1F512;&nbsp;GPT</option>
+          <option value="auto (blocked)">&#x1F512;&nbsp;Auto-Pilot</option>
+        </select>
+      </div>
+
+      <div class="ctrl-group">
+        <span class="ctrl-label">Style</span>
+        <select name="llmStyle" class="ctrl-select">
+          <option value="creative">&#x1F3A8;&nbsp;Creative</option>
+          <option value="balanced" selected>&#x2696;&#xFE0F;&nbsp;Balanced</option>
+          <option value="precise">&#x1F3AF;&nbsp;Precise</option>
+        </select>
+      </div>
+
+    </div>
+
+    <div class="v-header-right">
+      <span id="chatAccessTag" class="header-access-tag" style="display:none;" aria-live="polite"></span>
+      <span id="userEmailSpan">—</span>
+      <script>
+        (function() {
+          try {
+            const raw = localStorage.getItem("userInfo");
+            if (raw) {
+              const info = JSON.parse(raw);
+              if (info.email) document.getElementById("userEmailSpan").textContent = info.email;
+            }
+          } catch(e) {}
+        })();
+      </script>
+      <button type="button" class="v-header-link-btn" onclick="window.location.href='LandingPage.html'">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <button type="button" class="v-header-link-btn" onclick="doLogout()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+  </header>
+
+  <!-- Blue accent line -->
+  <div class="accent-bar"></div>
+
+  <!-- ====================================================
+       CONTENT AREA
+  ==================================================== -->
+  <div class="content-area">
+
+    <!-- LEFT SIDEBAR -->
+    <div id="leftSidebar">
+      <div class="sidebar-hdr">
+        <span class="sidebar-hdr-label">&#x1F4AC;&nbsp; Chat History</span>
+      </div>
+
+      <div id="chatHistoryContainer">
+        <!-- Chat sessions rendered by JS -->
+      </div>
+
+      <div class="sidebar-footer">
+        <button id="sessionIdBtn">Session uptime  —</button>
+        <script>
+          let _stime = sessionStorage.getItem("agent_session_start");
+          if (!_stime) {
+            _stime = Date.now();
+            sessionStorage.setItem("agent_session_start", _stime);
+          }
+          function formatUptime(ms) {
+            const s = Math.floor(ms / 1000);
+            const h = Math.floor(s / 3600).toString().padStart(2,"0");
+            const m = Math.floor((s % 3600) / 60).toString().padStart(2,"0");
+            const sc = (s % 60).toString().padStart(2,"0");
+            return h + ":" + m + ":" + sc;
+          }
+          function updateUptime() {
+            const el = document.getElementById("sessionIdBtn");
+            if (el) el.textContent = "Session uptime  " + formatUptime(Date.now() - _stime);
+          }
+          updateUptime();
+          setInterval(updateUptime, 1000);
+        </script>
+      </div>
+    </div>
+
+    <!-- SIDEBAR TOGGLE -->
+    <button id="leftToggleBtn" aria-label="Toggle sidebar" onclick="toggleSidebar('left')">
+      <span id="leftArrowIcon">
+        <svg width="24" height="24" viewBox="0 0 32 32">
+          <circle cx="16" cy="16" r="15" stroke="#17b3f0" stroke-width="2" fill="none"/>
+          <polyline points="20,10 12,16 20,22" fill="none" stroke="#17b3f0" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+    </button>
+
+    <!-- CHAT MAIN -->
+    <div class="chat-main">
+
+      <!-- Messages -->
+      <div id="messages"></div>
+
+      <!-- Attachment preview strip -->
+      <div class="attachment-preview-wrapper">
+        <div id="pendingAttachmentsPreview"></div>
+      </div>
+
+      <!-- Input bar -->
+      <div id="inputContainer">
+        <div class="input-card">
+          <button id="attachmentButton" title="Attach file">&#xFF0B;</button>
+          <input type="file" id="fileInput" style="display:none" multiple>
+          <textarea id="user-input" placeholder="Message Vikaa.AI…" rows="1"></textarea>
+          <div class="input-actions">
+            <button id="voiceButton"  title="Voice input"><i class="fas fa-microphone"></i></button>
+            <button id="cameraButton" title="Capture image"><i class="fas fa-camera"></i></button>
+            <button id="sendButton"   title="Send message"><i class="fas fa-paper-plane"></i></button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- .chat-main -->
+
+  </div><!-- .content-area -->
+
+</div><!-- .app-shell -->
+
+<script>
+  // Security defaults (per frontend_style.md)
+  document.addEventListener("contextmenu", e => e.preventDefault());
+  document.onkeydown = e => {
+    if (e.ctrlKey && ['u','s'].includes(e.key.toLowerCase())) e.preventDefault();
+  };
+</script>
+
+<script src="config.js"></script>
+<script src="vikaa_ai_agent.js" defer></script>
+<script src="vikaa_ai_settings.js" defer></script>
+</body>
+</html>

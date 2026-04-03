@@ -1,0 +1,166 @@
+{
+  "_comment": "AI Scout company dropdown config. Add/remove entries here — no code changes needed. Just save and refresh browser.",
+  "base_queries": [
+    "Anthropic OpenAI Google DeepMind Gemini AI model release news",
+    "new AI startup company funding model launch announcement"
+  ],
+  "broad_queries": [
+    "Microsoft Copilot Azure AI AWS Bedrock Amazon AI enterprise news",
+    "NVIDIA GPU AI Databricks Snowflake Meta LLaMA xAI Grok news",
+    "LangChain LangGraph MCP Model Context Protocol Cursor AI GitHub Copilot developer tools news"
+  ],
+  "companies": [
+    {
+      "value": "Global Market",
+      "label": "Global Market",
+      "focused": false,
+      "queries": []
+    },
+    {
+      "value": "Microsoft-AI",
+      "label": "Microsoft-AI",
+      "focused": true,
+      "queries": [
+        "Microsoft Copilot Azure AI Foundry AI Agent Service OpenAI partnership news 2025",
+        "Microsoft AI enterprise productivity developer tools Bing AI latest release"
+      ]
+    },
+    {
+      "value": "Databricks-AI",
+      "label": "Databricks-AI",
+      "focused": true,
+      "queries": [
+        "Databricks AI lakehouse MLflow DBRX LLM data intelligence platform 2025",
+        "Databricks open source AI Unity Catalog vector search agent framework news"
+      ]
+    },
+    {
+      "value": "Google-AI",
+      "label": "Google-AI",
+      "focused": true,
+      "queries": [
+        "Google DeepMind Gemini Vertex AI Agent Builder model release news 2025",
+        "Google AI Studio NotebookLM Gemma open source multimodal latest announcement"
+      ]
+    },
+    {
+      "value": "AWS-AI",
+      "label": "AWS-AI",
+      "focused": true,
+      "queries": [
+        "AWS Amazon Bedrock Q Developer Nova AI agent model release enterprise 2025",
+        "Amazon AI SageMaker Rekognition Comprehend Trainium Inferentia news"
+      ]
+    },
+    {
+      "value": "Snowflake",
+      "label": "Snowflake",
+      "focused": true,
+      "queries": [
+        "Snowflake Cortex AI Arctic LLM data cloud intelligence platform 2025",
+        "Snowflake AI features vector search document AI enterprise analytics news"
+      ]
+    },
+    {
+      "value": "Meta-AI",
+      "label": "Meta-AI",
+      "focused": true,
+      "queries": [
+        "Meta Llama AI model release open source multimodal AI research 2025",
+        "Meta AI assistant Llama 4 fine-tuning enterprise adoption news"
+      ]
+    },
+    {
+      "value": "Accenture",
+      "label": "Accenture",
+      "focused": true,
+      "queries": [
+        "Agentic AI in Accenture in part years and its key capabilities",
+        "How Accenture is shaping its workforce to leverage AI",        
+        "What Accenture is doing to Lead AI race in delivery and consulting",
+        "Accenture's AI strategy and its impact on the company"
+      ]
+    },    
+    {
+      "value": "Nvidia-AI",
+      "label": "Nvidia-AI",
+      "focused": true,
+      "queries": [
+        "NVIDIA GPU H100 Blackwell AI accelerator NeMo microservices inference 2025",
+        "NVIDIA AI Enterprise NIM microservices digital twin agentic AI news"
+      ]
+    },
+    {
+      "value": "X-AI",
+      "label": "X-AI (xAI / Grok)",
+      "focused": true,
+      "queries": [
+        "xAI Grok model release Elon Musk AI reasoning multimodal news 2025",
+        "xAI Grok API enterprise features X platform AI integration latest"
+      ]
+    },
+    {
+      "value": "Anthropic",
+      "label": "Anthropic",
+      "focused": true,
+      "queries": [
+        "Anthropic Claude model release MCP Model Context Protocol agent news 2025",
+        "Anthropic Claude API enterprise safety Constitutional AI latest announcement"
+      ]
+    },
+    {
+      "value": "OpenAI",
+      "label": "OpenAI",
+      "focused": true,
+      "queries": [
+        "OpenAI GPT model release o3 reasoning agent API enterprise news 2025",
+        "OpenAI ChatGPT features operator plugin DALL-E Sora latest announcement"
+      ]
+    },
+    {
+      "value": "LangChain",
+      "label": "LangChain",
+      "focused": true,
+      "queries": [
+        "LangChain LangGraph LangSmith MCP adapter agent framework release 2025",
+        "LangChain open source RAG orchestration tool calling multi-agent news"
+      ]
+    },
+    {
+      "value": "MCP",
+      "label": "MCP (Model Context Protocol)",
+      "focused": true,
+      "queries": [
+        "Model Context Protocol MCP server tools adoption standard Anthropic 2025",
+        "MCP integration LangGraph Claude OpenAI Gemini enterprise tool ecosystem news"
+      ]
+    },
+    {
+      "value": "Cursor-AI",
+      "label": "Cursor.AI",
+      "focused": true,
+      "queries": [
+        "Cursor AI IDE code editor agent agentic coding release features 2025",
+        "Cursor AI vs GitHub Copilot developer productivity AI coding tools comparison"
+      ]
+    },
+    {
+      "value": "GitHub",
+      "label": "GitHub",
+      "focused": true,
+      "queries": [
+        "GitHub Copilot AI features enterprise adoption developer productivity 2025",
+        "GitHub Copilot Workspace agent code review pull request AI news"
+      ]
+    },
+    {
+      "value": "New Player",
+      "label": "⭐ New Player",
+      "focused": true,
+      "queries": [
+        "new AI startup company Series A B funding launch 2025 emerging",
+        "AI company new model product launch disruptive entrant challenger OpenAI Google"
+      ]
+    }
+  ]
+}

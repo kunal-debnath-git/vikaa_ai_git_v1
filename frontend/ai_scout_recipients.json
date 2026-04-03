@@ -1,0 +1,8 @@
+{
+  "_comment": "AI Scout email recipients. Edit here — no code changes needed. Reload browser to pick up changes.",
+  "recipients": [
+    { "name": "Story360",        "email": "story360degree@gmail.com",   "default": true  },
+    { "name": "Kunal (Vikaa)",   "email": "kunal.debnath@vikaa.ai",     "default": true  },
+    { "name": "Kunal (Personal)","email": "debnath.kunal@gmail.com",    "default": false }
+  ]
+}

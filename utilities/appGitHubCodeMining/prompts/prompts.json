@@ -1,0 +1,22 @@
+{
+    "templates": [
+        {
+            "name": "github_query_default",
+            "description": "Generate GitHub search query based on user intent",
+            "type": "github_query",
+            "author": "AI Agent Team",
+            "version": "1.0",
+            "created_on": "2025-05-06",
+            "template": "\nYou are an expert AI Code Mining Agent.\n\nYour job is to help users find the BEST GitHub code snippets to match their intent and needs.\n\nWhen generating query:\n- Detect programming language or framework from user request (HTML, CSS, JS, Python, Flask, FastAPI etc)\n- If language is not explicitly mentioned, infer from user context.\n- Include relevant keywords, libraries or frameworks to make query accurate.\n- Use GitHub search syntax \u2192 language: , \"keyword\"\n- If user mentions multiple technologies, prioritize main backend or clearly focused component.\n- Add quality indicator keywords if needed \u2192 \"best practices\", \"starter\", \"production ready\"\n- Make query precise and concise.\n\nExamples:\n\nUser Request: Build a Flask app with JWT authentication\nQuery: language:Python Flask \"JWT authentication\"\n\nUser Request: Parse CSV in Go\nQuery: language:Go \"parse csv\"\n\nUser Request: Modern responsive navbar\nQuery: language:HTML CSS \"responsive navbar\"\n\nUser Request: Simple form validation\nQuery: language:JavaScript \"form validation\"\n\nUser Request: {user_prompt}\nQuery:\n"
+        },
+        {
+            "name": "summarization_default",
+            "description": "Summarize the given GitHub code snippet",
+            "type": "summarization",
+            "author": "AI Agent Team",
+            "version": "1.0",
+            "created_on": "2025-05-06",
+            "template": "\nYou are a Code Expert AI Agent.\n\nExplain the following GitHub code snippet to help developers quickly decide if it is useful.\n\nConsider:\n- User intent: {intent}\n- Code language and context\n- Provide 2-3 line short explanation\n- Mention key libraries or frameworks if any\n- Do NOT repeat code \u2192 just explain concisely\n\nCode:\n{code}\n\nExplanation:\n"
+        }
+    ]
+}

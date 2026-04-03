@@ -1,0 +1,180 @@
+{
+  "_comment": "Tools ordered: LIVE first (most ready → least ready), then COMING SOON (easy → hardest), then PARKED. Each tool has \"group\": \"personalized\" | \"enterprise\" | \"experimental\" (sidebar column in ToolIndex). Unknown/missing group defaults to experimental.",
+  "tools": [
+
+    {
+      "_status": "LIVE — MCP server built, frontend exists, backend partial",
+      "id": "gmail-intelligence",
+      "group": "personalized",
+      "name": "Gmail Intelligence Agent",
+      "icon": "fas fa-envelope-open-text",
+      "emoji": "📬",
+      "page": "Tool_Gmail_Assistant.html",
+      "enabled": true,
+      "default": true
+    },
+
+    {
+      "_status": "LIVE — frontend + pipeline backend exists, AgentExecutor upgrade pending",
+      "id": "web-research",
+      "group": "personalized",
+      "name": "ReAct Research Agent",
+      "icon": "fas fa-search-plus",
+      "emoji": "🔍",
+      "page": "Tool_ReAct_Research_Agent.html",
+      "enabled": true,
+      "default": false
+    },
+
+    {
+      "_status": "LIVE — frontend + pipeline backend exists, planning agent upgrade pending",
+      "id": "ai-scout",
+      "group": "personalized",
+      "name": "AI Scout — Planning Agent",
+      "icon": "fas fa-satellite-dish",
+      "emoji": "🔭",
+      "page": "Tool_AIScout.html",
+      "enabled": true,
+      "default": false
+    },
+
+    {
+      "_status": "LIVE v1 — ReAct agent on main API; GitHub PAT recommended for code search",
+      "id": "github-code-mining",
+      "group": "experimental",
+      "name": "GitHub Code Mining Agent",
+      "icon": "fab fa-github",
+      "emoji": "⛏️",
+      "page": "Tool_GitHubCodeMining.html",
+      "enabled": true,
+      "default": false
+    },
+
+    {
+      "_status": "PARKED — replaced by Document Intelligence concept inside agent tools",
+      "id": "rag-config",
+      "group": "experimental",
+      "name": "RAG Configurator",
+      "icon": "fas fa-database",
+      "emoji": "⚙️",
+      "enabled": true,
+      "default": false
+    },
+
+    {
+      "_status": "EXPERIMENTAL — tool shell only (no page wired yet)",
+      "id": "autonomous-fno-papertrade",
+      "group": "experimental",
+      "name": "Autonomous FnO PaperTrade",
+      "icon": "fas fa-chart-line",
+      "emoji": "📈",
+      "enabled": true,
+      "default": false
+    },
+
+    {
+      "_status": "LIVE — read-only Databricks Unity Catalog; server .env DATABRICKS_*",
+      "id": "unity-catalog",
+      "group": "enterprise",
+      "name": "Databricks Unity Browser",
+      "icon": "fas fa-database",
+      "emoji": "📚",
+      "page": "Tool_UnityCatalog.html",
+      "enabled": true,
+      "default": false
+    },
+
+    {
+      "_status": "LIVE v1 — NL → read-only SQL; DATABRICKS_*; Gemini (primary) + Anthropic fallback",
+      "id": "sql-agent",
+      "group": "enterprise",
+      "name": "Databricks Conversational SQL",
+      "icon": "fas fa-comments",
+      "emoji": "💬",
+      "page": "Tool_CatalogSearch.html",
+      "enabled": true,
+      "default": false
+    },
+
+    {
+      "_status": "LIVE v1 — Databricks-native API + dedicated UI; one-time run + interval schedule registry",
+      "id": "databricks-synth-data",
+      "group": "enterprise",
+      "name": "Synthetic Data Generation (Databricks)",
+      "icon": "fas fa-vials",
+      "emoji": "🧪",
+      "page": "Tool_SyntheticDataGeneration.html",
+      "enabled": true,
+      "default": false
+    },
+
+    {
+      "_status": "COMING SOON — Build Slot 9 | Needs Databricks MCP server",
+      "id": "databricks-agent",
+      "group": "experimental",
+      "name": "Databricks Intelligence Agent",
+      "icon": "fas fa-cubes",
+      "emoji": "🧱",
+      "enabled": false,
+      "default": false
+    },
+
+    {
+      "_status": "COMING SOON — Build Slot 5 | Needs knowledge base curation (your expertise)",
+      "id": "architecture-advisor",
+      "group": "experimental",
+      "name": "Data Architecture Advisor",
+      "icon": "fas fa-project-diagram",
+      "emoji": "🏛️",
+      "enabled": false,
+      "default": false
+    },
+
+    {
+      "_status": "COMING SOON — Build Slot 8 | Needs Google Calendar MCP server",
+      "id": "meeting-intelligence",
+      "group": "experimental",
+      "name": "Meeting Intelligence Agent",
+      "icon": "fas fa-microphone-alt",
+      "emoji": "🎙️",
+      "enabled": false,
+      "default": false
+    },
+
+    {
+      "_status": "COMING SOON — Build Slot 6 | Most complex — 3 agents + orchestrator",
+      "id": "pipeline-designer",
+      "group": "experimental",
+      "name": "Multi-Agent Pipeline Designer",
+      "icon": "fas fa-network-wired",
+      "emoji": "🔗",
+      "enabled": false,
+      "default": false
+    },
+
+    {
+      "_status": "COMING SOON — Build Slot 10 | Build LAST — needs all other agents complete",
+      "id": "orchestrator",
+      "group": "experimental",
+      "name": "Personal AI Orchestrator",
+      "icon": "fas fa-brain",
+      "emoji": "🧩",
+      "enabled": false,
+      "default": false
+    },
+
+    {
+      "_status": "PARKED — not in v2.0 top-10, re-enable if needed later",
+      "id": "linkedin",
+      "group": "experimental",
+      "name": "LinkedIn Assistant",
+      "icon": "fab fa-linkedin",
+      "emoji": "💼",
+      "enabled": true,
+      "default": false
+    }
+
+    
+
+  ]
+}

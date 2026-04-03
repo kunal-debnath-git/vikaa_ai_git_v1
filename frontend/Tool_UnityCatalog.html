@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Databricks Unity Browser — Vikaa.AI</title>
+
+  <script src="config.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      min-height: 100%;
+      font-family: 'Montserrat', sans-serif;
+      background: #f4f6f9;
+      color: #333;
+    }
+    .action-bar {
+      padding: 14px 20px;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .action-bar h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0f2942;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge-v1 {
+      font-size: 0.65rem;
+      font-weight: 700;
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fcd34d;
+      border-radius: 10px;
+      padding: 2px 8px;
+    }
+    .btn {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn-primary { background: #ff5a1f; color: #fff; }
+    .btn-primary:hover { background: #e04d16; }
+    .btn-secondary { background: #0f2942; color: #fff; }
+    .btn-secondary:hover { background: #1e3a5f; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #contentArea { padding: 20px; max-width: 1040px; margin: 0 auto; }
+
+    .purpose-card {
+      background: linear-gradient(135deg, #431407 0%, #7c2d12 100%);
+      color: #fff;
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 20px rgba(67,24,7,0.2);
+    }
+    .purpose-card h4 {
+      margin: 0 0 8px 0;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+    .purpose-card p, .purpose-card li {
+      margin: 0;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      opacity: 0.95;
+      font-family: 'Roboto', sans-serif;
+    }
+    .purpose-card ul { margin: 8px 0 0 18px; padding: 0; }
+
+    .panel {
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+    }
+    .panel label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
+    }
+    .panel input {
+      width: 100%;
+      max-width: 420px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.85rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+    .row2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 120px;
+      gap: 12px;
+      align-items: end;
+    }
+    @media (max-width: 720px) {
+      .row2 { grid-template-columns: 1fr; }
+    }
+
+    .access-banner {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      margin-bottom: 14px;
+    }
+    .access-banner.execute { background: #ecfdf5; color: #047857; border: 1px solid #6ee7b7; }
+    .access-banner.readonly { background: #fffbeb; color: #b45309; border: 1px solid #fcd34d; }
+
+    .result-wrap {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .result-wrap h4 {
+      margin: 0 0 14px 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f2942;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .result-count {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #64748b;
+      background: #f1f5f9;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .catalog-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+    .cat-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .cat-card:hover {
+      border-color: #fdba74;
+      box-shadow: 0 4px 14px rgba(255,90,31,0.08);
+    }
+    .cat-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .cat-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .type-chip {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding: 4px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .type-managed { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; }
+    .type-system { background: #f3e8ff; color: #7c3aed; border: 1px solid #d8b4fe; }
+    .type-default { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+    .cat-meta {
+      font-size: 0.78rem;
+      color: #475569;
+      font-family: 'Roboto', sans-serif;
+      line-height: 1.5;
+    }
+    .cat-meta dt {
+      float: left;
+      clear: left;
+      width: 88px;
+      margin: 0;
+      color: #94a3b8;
+      font-weight: 600;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .cat-meta dd {
+      margin: 0 0 6px 92px;
+      word-break: break-word;
+    }
+    .cat-comment {
+      font-size: 0.76rem;
+      color: #64748b;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #f1f5f9;
+      line-height: 1.45;
+      font-family: 'Roboto', sans-serif;
+      max-height: 4.5em;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+    }
+
+    .tree-catalog {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .tree-catalog-h {
+      background: #0f2942;
+      color: #fff;
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .tree-catalog-h .chip {
+      font-size: 0.65rem;
+      opacity: 0.9;
+      background: rgba(255,255,255,0.15);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .tree-schema {
+      border-top: 1px solid #e2e8f0;
+      background: #fff;
+    }
+    .tree-schema-h {
+      padding: 10px 14px;
+      background: #f8fafc;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tree-tables {
+      margin: 0;
+      padding: 0 14px 12px 14px;
+      list-style: none;
+    }
+    .tree-tables li {
+      font-size: 0.78rem;
+      font-family: ui-monospace, monospace;
+      padding: 6px 10px;
+      margin-top: 6px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tree-tables .tname { font-weight: 600; color: #0f172a; }
+    .tree-tables .ttype {
+      font-size: 0.68rem;
+      color: #64748b;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .result-pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.72rem;
+      line-height: 1.45;
+      overflow: auto;
+      max-height: 45vh;
+      font-family: ui-monospace, monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .meta-line {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin: 6px 0 12px 0;
+      font-family: 'Roboto', sans-serif;
+    }
+    .err {
+      color: #b91c1c;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+    .catalog-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .pill {
+      font-size: 0.75rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+    }
+    .pill:hover { background: #e0f2fe; border-color: #7dd3fc; }
+
+    .nested-schemas {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid #e2e8f0;
+    }
+    .schemas-block > summary {
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #0f2942;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      user-select: none;
+    }
+    .schemas-block > summary::-webkit-details-marker { display: none; }
+    .schemas-block > summary::before {
+      content: '';
+      width: 0; height: 0;
+      border-left: 5px solid #94a3b8;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      transition: transform 0.15s;
+      display: inline-block;
+    }
+    .schemas-block[open] > summary::before { transform: rotate(90deg); }
+
+    .schema-list {
+      margin: 10px 0 0 6px;
+      padding-left: 6px;
+      border-left: 2px solid #e2e8f0;
+    }
+    .schema-node {
+      margin-bottom: 6px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #fafbfc;
+      overflow: hidden;
+    }
+    .schema-node > summary {
+      cursor: pointer;
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #334155;
+      list-style: none;
+      user-select: none;
+    }
+    .schema-node-summary {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 10px;
+    }
+    .schema-node-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .schema-node > summary::-webkit-details-marker { display: none; }
+    .schema-node > summary::before {
+      content: '';
+      width: 0; height: 0;
+      border-left: 4px solid #cbd5e1;
+      border-top: 3px solid transparent;
+      border-bottom: 3px solid transparent;
+      display: inline-block;
+    }
+    .schema-node[open] > summary::before { border-left-color: #ff5a1f; }
+    .schema-hint {
+      margin-left: auto;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .tables-host {
+      padding: 0 10px 10px 10px;
+      font-size: 0.72rem;
+      color: #64748b;
+    }
+    .tables-host .hint-load {
+      font-style: italic;
+      padding: 6px 0;
+    }
+    .tables-host .tables-error {
+      color: #b91c1c;
+      padding: 6px 0;
+    }
+    .tables-host ul.tree-tables {
+      margin-top: 4px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="action-bar">
+    <h3><i class="fas fa-database" style="color:#ff5a1f;"></i> Databricks Unity Browser <span class="badge-v1" title="Browse and list metadata only — no writes">read-only</span></h3>
+    <button type="button" class="btn btn-primary" id="btnCatalogs" disabled><i class="fas fa-list"></i> List catalogs + schemas</button>
+    <button type="button" class="btn btn-secondary" id="btnTree" disabled><i class="fas fa-sitemap"></i> Load tree</button>
+  </div>
+
+  <div id="contentArea">
+    <div id="accessBanner" class="access-banner readonly">Checking access…</div>
+
+    <div class="purpose-card">
+      <h4><i class="fas fa-circle-info"></i> Browse Databricks Unity Catalog</h4>
+      <p style="margin:0;font-size:0.82rem;line-height:1.55;font-family:Roboto,sans-serif;">
+        Use <strong>List catalogs + schemas</strong> to see your catalogs and every schema. Open a schema row to load table names.
+        <strong>Load tree</strong> uses the filters above. Nothing you type here is sent to Databricks as a secret — tokens live only on the API server.
+      </p>
+    </div>
+
+    <div class="panel">
+      <label>Catalog, schema &amp; limits</label>
+      <p class="meta-line" style="margin-top:-4px;">
+        <strong>List catalogs + schemas:</strong> optional <em>Catalog</em> / <em>Schema</em> narrow what is listed (empty = all).
+        <strong>Load tree:</strong> same fields fetch a full table list in one go; <em>Schema</em> requires <em>Catalog</em>.
+        <strong>Max tables</strong> caps table rows (tree load and expanding a schema below).
+      </p>
+      <div class="row2">
+        <div>
+          <label for="filterCatalog">Catalog</label>
+          <input id="filterCatalog" type="text" placeholder="e.g. workspace (optional)" autocomplete="off" />
+        </div>
+        <div>
+          <label for="filterSchema">Schema</label>
+          <input id="filterSchema" type="text" placeholder="e.g. brazil_silver (optional)" autocomplete="off" />
+        </div>
+        <div>
+          <label for="maxTables">Max tables / schema</label>
+          <input id="maxTables" type="number" min="1" max="500" value="25" />
+        </div>
+      </div>
+      <p class="meta-line" id="apiStatus">Resolving API…</p>
+      <div id="catalogPills" class="catalog-pills" style="display:none;"></div>
+    </div>
+
+    <div id="out"></div>
+  </div>
+
+  <script>
+    const UC_HEALTH_PATHS = [
+      '/tools/unity-catalog/health',
+      '/api/tools/unity-catalog/health',
+      '/unity-catalog/health',
+    ];
+
+    function getApiBase() {
+      const b = (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) ? CONFIG.API_BASE_URL : 'http://localhost:10000';
+      return String(b).replace(/\/$/, '');
+    }
+
+    function vikaaTrustLanExecute() {
+      if (typeof vikaaIsTrustedDevFrontend === 'function') return vikaaIsTrustedDevFrontend();
+      const h = (window.location.hostname || '').toLowerCase();
+      return h === 'localhost' || h === '127.0.0.1';
+    }
+
+    function getCandidateApiBases() {
+      const preferred = getApiBase();
+      const host = window.location.hostname || 'localhost';
+      const h = host.toLowerCase();
+      const candidates = [preferred];
+      const isLan = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h);
+      if (h === 'localhost' || h === '127.0.0.1') {
+        candidates.push(`http://${host}:10000`, `http://${host}:8000`);
+        if (h === 'localhost') candidates.push('http://127.0.0.1:10000', 'http://127.0.0.1:8000');
+      }
+      if (isLan) {
+        candidates.push(`http://${host}:10000`, `http://${host}:8000`);
+      }
+      return [...new Set(candidates.map(x => String(x).replace(/\/$/, '')))];
+    }
+
+    async function resolveUnityCatalogBase() {
+      for (const base of getCandidateApiBases()) {
+        for (const h of UC_HEALTH_PATHS) {
+          try {
+            const r = await fetch(base + h, { method: 'GET' });
+            if (r.ok) return base;
+          } catch (_) { /* next */ }
+        }
+      }
+      return getApiBase();
+    }
+
+    async function getAccessMode() {
+      const raw = localStorage.getItem('authData');
+      let token = null;
+      try { token = raw ? JSON.parse(raw)?.accessToken : null; } catch (_) { token = null; }
+      const isLocal = vikaaTrustLanExecute();
+      if (!token) {
+        if (isLocal) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+        return { can_execute: false, mode: 'read-only' };
+      }
+      try {
+        const base = getApiBase();
+        const r = await fetch(`${base}/auth/access-mode`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!r.ok) {
+          if (isLocal) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+          return { can_execute: false, mode: 'read-only' };
+        }
+        return await r.json();
+      } catch (_) {
+        if (isLocal) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+        return { can_execute: false, mode: 'read-only' };
+      }
+    }
+
+    function getAuthHeaders() {
+      const raw = localStorage.getItem('authData');
+      let token = null;
+      try { token = raw ? JSON.parse(raw)?.accessToken : null; } catch (_) { token = null; }
+      const isLocal = vikaaTrustLanExecute();
+      if (token) return { 'Authorization': `Bearer ${token}` };
+      if (isLocal) return {};
+      throw new Error('Please log in (Supabase) to call this API from this host.');
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function escapeAttr(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;');
+    }
+
+    function formatTs(ms) {
+      if (ms == null || ms === '') return '—';
+      const n = Number(ms);
+      if (!Number.isFinite(n)) return escapeHtml(String(ms));
+      const d = new Date(n);
+      if (Number.isNaN(d.getTime())) return '—';
+      return escapeHtml(d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }));
+    }
+
+    function trunc(s, max) {
+      if (s == null) return '';
+      const t = String(s).replace(/\s+/g, ' ').trim();
+      if (t.length <= max) return t;
+      return t.slice(0, max - 1) + '…';
+    }
+
+    function typeChipClass(catalogType) {
+      const t = (catalogType || '').toUpperCase();
+      if (t.includes('MANAGED')) return 'type-chip type-managed';
+      if (t.includes('SYSTEM')) return 'type-chip type-system';
+      return 'type-chip type-default';
+    }
+
+    function safeOwnerDisplay(owner) {
+      const o = String(owner || '').trim();
+      if (!o) return '—';
+      if (o.toLowerCase() === 'system user') return 'System';
+      if (o.includes('@')) return '—';
+      if (o.startsWith('_workspace')) return 'Workspace';
+      if (o.length > 36) return o.slice(0, 10) + '…';
+      return o;
+    }
+
+    function safeSchemaListError() {
+      return 'Unable to list schemas (check permissions or try again).';
+    }
+
+    function renderCatalogExplorer(catalogs, schemaResults) {
+      const list = catalogs || [];
+      const byName = {};
+      (schemaResults || []).forEach((sr) => {
+        byName[sr.catalogName] = sr;
+      });
+
+      let html = '<div class="result-wrap">';
+      html += '<h4><i class="fas fa-layer-group"></i> Catalogs &amp; schemas ';
+      html += '<span class="result-count">' + list.length + ' catalogs</span></h4>';
+      html += '<p class="meta-line" style="margin-top:-8px;">Expand <strong>Schemas</strong>, then click a schema row to load tables — nothing is fetched until you open that row (up to &quot;Max tables / schema&quot; above).</p>';
+      html += '<div class="catalog-grid">';
+
+      list.forEach((c) => {
+        const name = c.name || '—';
+        const ctype = c.catalog_type || '—';
+        const owner = safeOwnerDisplay(c.owner);
+        const iso = c.isolation_mode || '—';
+        const acc = c.accessible_in_current_workspace;
+        const comment = c.comment ? trunc(c.comment, 280) : '';
+        const sr = byName[name] || { ok: false, schemas: [], error: 'No schema fetch result' };
+        const schemas = (sr.schemas || []).slice().sort((a, b) =>
+          String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' })
+        );
+
+        html += '<article class="cat-card">';
+        html += '<div class="cat-card-header">';
+        html += '<h5 class="cat-name">' + escapeHtml(name) + '</h5>';
+        html += '<span class="' + typeChipClass(ctype) + '">' + escapeHtml(ctype.replace(/_/g, ' ')) + '</span>';
+        html += '</div>';
+        html += '<dl class="cat-meta">';
+        html += '<dt>Owner</dt><dd>' + escapeHtml(String(owner)) + '</dd>';
+        html += '<dt>Isolation</dt><dd>' + escapeHtml(iso) + '</dd>';
+        html += '<dt>Accessible</dt><dd>' + (acc === true ? 'Yes' : acc === false ? 'No' : '—') + '</dd>';
+        if (c.updated_at != null || c.created_at != null) {
+          html += '<dt>Updated</dt><dd>' + formatTs(c.updated_at || c.created_at) + '</dd>';
+        }
+        html += '</dl>';
+        if (comment) {
+          html += '<div class="cat-comment" title="' + escapeHtml(comment) + '">' + escapeHtml(comment) + '</div>';
+        }
+
+        html += '<div class="nested-schemas">';
+        if (!sr.ok) {
+          html += '<div class="err" style="font-size:0.78rem;margin:0;">Could not list schemas: ' +
+            escapeHtml(safeSchemaListError()) + '</div>';
+        } else {
+          html += '<details class="schemas-block">';
+          html += '<summary>Schemas <span class="result-count">' + schemas.length + '</span></summary>';
+          html += '<div class="schema-list">';
+          if (!schemas.length) {
+            html += '<p class="meta-line" style="margin:8px 0;">No schemas returned (or empty catalog).</p>';
+          } else {
+            schemas.forEach((sch) => {
+              const sname = sch.name || '—';
+              const full = escapeHtml(name) + '<span style="opacity:0.45">.</span>' + escapeHtml(sname);
+              html += '<details class="schema-node" data-catalog="' + escapeAttr(name) + '" data-schema="' + escapeAttr(sname) + '">';
+              html += '<summary class="schema-node-summary">';
+              html += '<span class="schema-node-title"><i class="fas fa-folder" style="opacity:0.65;width:1em;"></i> ' + full + '</span>';
+              html += '<span class="schema-hint">click to load tables</span>';
+              html += '</summary>';
+              html += '<div class="tables-host" data-loaded="0" data-loading="0"></div>';
+              html += '</details>';
+            });
+          }
+          html += '</div></details>';
+        }
+        html += '</div>';
+
+        html += '</article>';
+      });
+
+      html += '</div>';
+      html += '</div>';
+      return html;
+    }
+
+    function renderTreeView(data) {
+      const catalogs = data.catalogs || [];
+      let html = '<div class="result-wrap">';
+      html += '<h4><i class="fas fa-sitemap"></i> Catalog tree <span class="result-count">' +
+        catalogs.reduce((n, ce) => n + (ce.schemas || []).length, 0) + ' schemas</span></h4>';
+
+      if (!catalogs.length) {
+        html += '<p class="meta-line">No catalogs in this result. Try widening filters.</p>';
+        html += '</div>';
+        return html;
+      }
+
+      catalogs.forEach((centry) => {
+        const cat = centry.catalog || {};
+        const cname = cat.name || '—';
+        const ctype = cat.catalog_type || '';
+        html += '<div class="tree-catalog">';
+        html += '<div class="tree-catalog-h"><i class="fas fa-database"></i> ' + escapeHtml(cname);
+        html += '<span class="chip">' + escapeHtml(ctype.replace(/_/g, ' ') || 'catalog') + '</span></div>';
+
+        const schemas = centry.schemas || [];
+        if (!schemas.length) {
+          html += '<div class="tree-schema"><div class="tree-schema-h" style="color:#94a3b8;">No schemas (or no access).</div></div>';
+        }
+        schemas.forEach((sentry) => {
+          const sch = sentry.schema || {};
+          const sname = sch.name || '—';
+          const tables = sentry.tables || [];
+          html += '<div class="tree-schema">';
+          html += '<div class="tree-schema-h"><i class="fas fa-folder-open"></i> ' +
+            escapeHtml(cname) + '<span style="opacity:0.5">.</span>' + escapeHtml(sname);
+          html += '<span class="result-count" style="margin-left:auto">' + tables.length + ' tables</span></div>';
+          if (!tables.length) {
+            html += '<p class="meta-line" style="margin:0 14px 12px;">No tables listed.</p>';
+          } else {
+            html += '<ul class="tree-tables">';
+            tables.forEach((t) => {
+              const summ = t.summary || {};
+              const tname = summ.name || summ.full_name || '—';
+              const ttype = summ.table_type || '—';
+              const fmt = summ.data_source_format ? ' · ' + summ.data_source_format : '';
+              html += '<li><span class="tname">' + escapeHtml(tname) + '</span>';
+              html += '<span class="ttype">' + escapeHtml(ttype) + escapeHtml(fmt) + '</span></li>';
+            });
+            html += '</ul>';
+          }
+          html += '</div>';
+        });
+        html += '</div>';
+      });
+
+      html += '</div>';
+      return html;
+    }
+
+    (async function init() {
+      const el = document.getElementById('apiStatus');
+      const accessEl = document.getElementById('accessBanner');
+
+      const access = await getAccessMode();
+      window.__ucCanRun = !!access.can_execute;
+      if (window.__ucCanRun) {
+        accessEl.style.display = '';
+        accessEl.className = 'access-banner execute';
+        accessEl.textContent = 'Ready: you can list Databricks Unity Catalog metadata from this session.';
+        document.getElementById('btnCatalogs').disabled = false;
+        document.getElementById('btnTree').disabled = false;
+      } else {
+        accessEl.style.display = 'none';
+        accessEl.textContent = '';
+      }
+
+      try {
+        window.__ucApiBase = await resolveUnityCatalogBase();
+        const hr = await fetch(window.__ucApiBase + '/tools/unity-catalog/health').catch(() =>
+          fetch(window.__ucApiBase + '/unity-catalog/health'));
+        if (hr.ok) {
+          const j = await hr.json();
+          const okcfg = !!(j.databricks_host_configured && j.databricks_token_configured);
+          el.textContent = okcfg
+            ? 'Databricks Unity Catalog is reachable and credentials are configured on the server.'
+            : 'Databricks Unity Catalog responded, but the server may be missing Databricks host or token — contact an admin.';
+        } else {
+          el.textContent = 'Could not confirm connection to the metadata service. Check that the API is running.';
+        }
+      } catch (e) {
+        el.textContent = 'Could not reach the metadata service. Check that the API is running.';
+      }
+    })();
+
+    async function fetchJson(path) {
+      const base = window.__ucApiBase || getApiBase();
+      const url = base + path;
+      const r = await fetch(url, { headers: { ...getAuthHeaders() } });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        const msg = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail || data);
+        throw new Error(msg || r.statusText);
+      }
+      return data;
+    }
+
+    async function fetchWithPathVariants(suffix) {
+      const prefixes = ['/tools/unity-catalog', '/api/tools/unity-catalog', '/unity-catalog'];
+      let lastErr = null;
+      for (const p of prefixes) {
+        try {
+          return await fetchJson(p + suffix);
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error('Request failed');
+    }
+
+    (function bindSchemaLazyLoad() {
+      const root = document.getElementById('contentArea');
+      if (root.dataset.ucSchemaLazy === '1') return;
+      root.dataset.ucSchemaLazy = '1';
+
+      async function loadTablesForSchemaNode(details) {
+        const host = details.querySelector('.tables-host');
+        if (!host) return;
+        if (host.getAttribute('data-loaded') === '1') return;
+        if (host.getAttribute('data-loading') === '1') return;
+        const catalog = details.getAttribute('data-catalog');
+        const schema = details.getAttribute('data-schema');
+        if (!catalog || !schema) return;
+
+        host.setAttribute('data-loading', '1');
+        host.innerHTML = '<div class="hint-load">Loading tables…</div>';
+        const maxT = Math.min(500, Math.max(1, parseInt(document.getElementById('maxTables').value || '25', 10)));
+        try {
+          const q = '?catalog_name=' + encodeURIComponent(catalog) + '&schema_name=' + encodeURIComponent(schema);
+          const data = await fetchWithPathVariants('/tables' + q);
+          const raw = data.tables || [];
+          const tables = raw.slice(0, maxT);
+          let inner = '';
+          if (!tables.length) {
+            inner = '<p class="meta-line" style="margin:0;">No tables in this schema (or no permission).</p>';
+          } else {
+            const more = raw.length > maxT
+              ? ' <span class="schema-hint">showing ' + maxT + ' of ' + raw.length + '</span>'
+              : '';
+            inner = '<div style="margin-bottom:6px;font-size:0.68rem;color:#64748b;">' +
+              tables.length + ' table(s)' + more + '</div>';
+            inner += '<ul class="tree-tables">';
+            tables.forEach((t) => {
+              const tname = t.name || t.full_name || '—';
+              const ttype = t.table_type || '—';
+              const fmt = t.data_source_format ? ' · ' + t.data_source_format : '';
+              inner += '<li><span class="tname">' + escapeHtml(tname) + '</span>';
+              inner += '<span class="ttype">' + escapeHtml(ttype) + escapeHtml(fmt) + '</span></li>';
+            });
+            inner += '</ul>';
+          }
+          host.innerHTML = inner;
+          host.setAttribute('data-loaded', '1');
+        } catch (_) {
+          host.removeAttribute('data-loaded');
+          host.innerHTML = '<div class="tables-error">' + escapeHtml('Could not load tables for this schema.') + '</div>';
+        } finally {
+          host.removeAttribute('data-loading');
+        }
+      }
+
+      root.addEventListener(
+        'toggle',
+        (ev) => {
+          const el = ev.target;
+          if (!(el instanceof HTMLDetailsElement)) return;
+          if (!el.classList.contains('schema-node')) return;
+          if (!el.open) return;
+          if (!ev.isTrusted) return;
+          void loadTablesForSchemaNode(el);
+        },
+        true
+      );
+    })();
+
+    document.getElementById('btnCatalogs').addEventListener('click', async () => {
+      const out = document.getElementById('out');
+      const pills = document.getElementById('catalogPills');
+      if (!window.__ucCanRun) {
+        out.innerHTML = '<div class="err">Not allowed from this browser session.</div>';
+        return;
+      }
+      const filterCat = document.getElementById('filterCatalog').value.trim();
+      const filterSch = document.getElementById('filterSchema').value.trim();
+      out.innerHTML = '<p class="meta-line">Loading catalogs…</p>';
+      try {
+        const data = await fetchWithPathVariants('/catalogs');
+        let catalogs = data.catalogs || [];
+        if (filterCat) {
+          catalogs = catalogs.filter((c) => (c.name || '') === filterCat);
+          if (!catalogs.length) {
+            out.innerHTML = '<div class="err">No catalog named <strong>' + escapeHtml(filterCat) +
+              '</strong>. Clear Catalog or fix the name (names are case-sensitive).</div>';
+            return;
+          }
+        }
+        out.innerHTML = '<p class="meta-line">Loaded ' + catalogs.length + ' catalog(s). Fetching schemas…</p>';
+        const schemaResults = await Promise.all(
+          catalogs.map(async (c) => {
+            const cname = c.name;
+            if (!cname) {
+              return { catalogName: '', ok: false, schemas: [], error: 'Missing catalog name' };
+            }
+            try {
+              const s = await fetchWithPathVariants(
+                '/schemas?catalog_name=' + encodeURIComponent(cname)
+              );
+              let schemas = s.schemas || [];
+              if (filterSch) {
+                schemas = schemas.filter((sch) => (sch.name || '') === filterSch);
+              }
+              return { catalogName: cname, ok: true, schemas: schemas };
+            } catch (err) {
+              return {
+                catalogName: cname,
+                ok: false,
+                schemas: [],
+                error: err.message || String(err),
+              };
+            }
+          })
+        );
+        if (filterSch && schemaResults.every((sr) => sr.ok && !(sr.schemas || []).length)) {
+          out.innerHTML = '<div class="err">No schema named <strong>' + escapeHtml(filterSch) +
+            '</strong> in the catalog(s) shown. Clear Schema or set Catalog to the right catalog (case-sensitive).</div>';
+          return;
+        }
+        if (filterSch && !filterCat) {
+          const withSchema = new Set(
+            schemaResults
+              .filter((sr) => sr.ok && (sr.schemas || []).length > 0)
+              .map((sr) => sr.catalogName)
+          );
+          catalogs = catalogs.filter((c) => withSchema.has(c.name));
+          schemaResults = schemaResults.filter((sr) => withSchema.has(sr.catalogName));
+          if (!catalogs.length) {
+            out.innerHTML = '<div class="err">No catalog contains schema <strong>' + escapeHtml(filterSch) +
+              '</strong>. Check spelling (case-sensitive).</div>';
+            return;
+          }
+        }
+        out.innerHTML = renderCatalogExplorer(catalogs, schemaResults);
+        pills.style.display = 'flex';
+        pills.innerHTML = '';
+        catalogs.forEach((c) => {
+          const name = c.name || '?';
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'pill';
+          b.textContent = name + ' (' + (c.catalog_type || '—') + ')';
+          b.addEventListener('click', () => {
+            document.getElementById('filterCatalog').value = name;
+          });
+          pills.appendChild(b);
+        });
+      } catch (e) {
+        out.innerHTML = '<div class="err">' + escapeHtml(e.message) + '</div>';
+      }
+    });
+
+    document.getElementById('btnTree').addEventListener('click', async () => {
+      const out = document.getElementById('out');
+      if (!window.__ucCanRun) {
+        out.innerHTML = '<div class="err">Not allowed from this browser session.</div>';
+        return;
+      }
+      const catalog = document.getElementById('filterCatalog').value.trim();
+      const schema = document.getElementById('filterSchema').value.trim();
+      if (schema && !catalog) {
+        out.innerHTML = '<div class="err">Load tree: enter a <strong>Catalog</strong> when you filter by <strong>Schema</strong> (API requirement).</div>';
+        return;
+      }
+      const maxT = Math.min(500, Math.max(1, parseInt(document.getElementById('maxTables').value || '25', 10)));
+      const qs = new URLSearchParams();
+      if (catalog) qs.set('catalog', catalog);
+      if (schema) qs.set('schema', schema);
+      qs.set('max_tables', String(maxT));
+      out.innerHTML = '<p class="meta-line">Loading tree…</p>';
+      try {
+        const data = await fetchWithPathVariants('/tree?' + qs.toString());
+        out.innerHTML = renderTreeView(data);
+      } catch (e) {
+        out.innerHTML = '<div class="err">' + escapeHtml(e.message) + '</div>';
+      }
+    });
+  </script>
+</body>
+</html>

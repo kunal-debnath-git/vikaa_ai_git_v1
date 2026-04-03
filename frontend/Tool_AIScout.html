@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Scout — Vikaa.AI</title>
+
+  <script src="config.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      font-family: 'Montserrat', sans-serif;
+      background: #f4f6f9; color: #333;
+      display: flex; flex-direction: column;
+    }
+
+    /* ── Action bar ── */
+    .action-bar {
+      padding: 12px 20px;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .action-bar h3 {
+      margin: 0; font-size: 0.9rem; font-weight: 700; color: #0f2942;
+      flex: 1; display: flex; align-items: center; gap: 8px;
+    }
+    .status-badge {
+      font-size: 0.62rem; font-weight: 700; border-radius: 10px;
+      padding: 2px 8px; letter-spacing: 0.5px;
+    }
+    .badge-ready { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .badge-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+    .select-wrap {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.75rem; color: #6b7280;
+    }
+    .select-wrap select {
+      font-family: 'Montserrat', sans-serif; font-size: 0.75rem; font-weight: 600;
+      color: #0f2942; background: #f0faff; border: 1px solid #bae6fd;
+      border-radius: 8px; padding: 6px 10px; cursor: pointer; outline: none;
+    }
+    .btn {
+      font-family: 'Montserrat', sans-serif; font-size: 0.75rem; font-weight: 700;
+      padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s;
+    }
+    .btn-primary   { background: #0f2942; color: #fff; }
+    .btn-primary:hover { background: #17bcfe; }
+    .btn-secondary { background: #e1f5fe; color: #0277bd; }
+    .btn-secondary:hover { background: #17bcfe; color: #fff; }
+    .btn-ghost { background: #f3f4f6; color: #374151; }
+    .btn-ghost:hover { background: #e5e7eb; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .access-banner {
+      margin: 10px 20px 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: none;
+      border: 1px solid transparent;
+    }
+    .access-banner.readonly { display:block; background:#fff7ed; color:#9a3412; border-color:#fdba74; }
+    .access-banner.execute { display:block; background:#ecfeff; color:#0f766e; border-color:#67e8f9; }
+
+    /* ── Content area ── */
+    #contentArea {
+      flex: 1; overflow-y: auto; padding: 20px; min-height: 0;
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center; padding: 60px 20px; color: #aaa;
+    }
+    .empty-state i { font-size: 3rem; margin-bottom: 16px; display: block; color: #ddd; }
+    .empty-state h4 { margin: 0 0 8px; font-size: 1rem; color: #999; }
+    .empty-state p  { font-size: 0.82rem; line-height: 1.7; max-width: 380px; margin: 0 auto; }
+
+    /* ── Spinner ── */
+    .spinner-wrap { text-align: center; padding: 50px 20px; color: #999; font-size: 0.85rem; }
+    .spinner {
+      width: 38px; height: 38px; border: 3px solid #e5e7eb;
+      border-top-color: #17bcfe; border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 0 auto 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .step-progress { margin-top: 12px; font-size: 0.78rem; color: #aaa; }
+    .step-progress span { color: #17bcfe; font-weight: 700; }
+
+    /* ── Section meta ── */
+    .digest-meta {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 8px;
+    }
+    .digest-title {
+      font-size: 1rem; font-weight: 700; color: #0f2942;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .digest-date { font-size: 0.72rem; color: #aaa; font-style: italic; }
+    .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ── Signal card (hero) ── */
+    .signal-card {
+      background: linear-gradient(135deg, #0f2942 0%, #1a4068 100%);
+      border-radius: 14px; padding: 24px; margin-bottom: 24px;
+      color: #fff; position: relative; overflow: hidden;
+    }
+    .signal-card::after {
+      content: '⚡'; position: absolute; right: 20px; top: 16px;
+      font-size: 2.5rem; opacity: 0.15;
+    }
+    .signal-tag {
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 1.2px;
+      text-transform: uppercase; color: #17bcfe; margin-bottom: 8px;
+    }
+    .signal-headline {
+      font-size: 1.05rem; font-weight: 700; line-height: 1.4;
+      margin-bottom: 14px;
+    }
+    .signal-row { margin-bottom: 8px; font-size: 0.8rem; line-height: 1.6; }
+    .signal-row strong { color: #17bcfe; }
+    .signal-source {
+      margin-top: 14px; font-size: 0.72rem; color: #93c5fd;
+    }
+    .signal-source a { color: #93c5fd; }
+
+    /* ── Section header ── */
+    .section-header {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 1.2px;
+      text-transform: uppercase; color: #6b7280;
+      display: flex; align-items: center; gap: 8px;
+      margin: 24px 0 12px; padding-bottom: 6px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .section-header i { color: #17bcfe; }
+
+    /* ── Player grid ── */
+    .player-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 10px; margin-bottom: 8px;
+    }
+    .player-card {
+      background: #fff; border-radius: 10px; padding: 14px 16px;
+      border-left: 4px solid #17bcfe;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .player-name-row {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+    .player-name {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.8px; color: #17bcfe;
+    }
+    .player-badge {
+      font-size: 0.58rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.6px;
+      background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 6px;
+    }
+    .player-angle {
+      font-size: 0.74rem; color: #0f2942; line-height: 1.5; margin-bottom: 6px;
+      font-family: 'Roboto', sans-serif;
+    }
+    .player-angle strong { color: #17bcfe; font-weight: 700; }
+    .player-headline {
+      font-size: 0.84rem; font-weight: 600; color: #1a202c;
+      margin-bottom: 5px; line-height: 1.4;
+    }
+    .player-detail {
+      font-size: 0.78rem; color: #555; line-height: 1.55;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    /* ── Entrants / Radar rows ── */
+    .list-card {
+      background: #fff; border-radius: 10px; padding: 12px 16px;
+      margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .flag-badge {
+      font-size: 0.6rem; font-weight: 700; border-radius: 6px;
+      padding: 3px 7px; white-space: nowrap; flex-shrink: 0; margin-top: 1px;
+    }
+    .flag-Opportunity { background: #d1fae5; color: #065f46; }
+    .flag-Threat      { background: #fee2e2; color: #991b1b; }
+    .flag-Watch       { background: #fef3c7; color: #92400e; }
+    .list-card-title  { font-size: 0.84rem; font-weight: 600; color: #1a202c; }
+    .list-card-detail { font-size: 0.78rem; color: #555; font-family: 'Roboto', sans-serif; margin-top: 2px; }
+    .radar-how { font-size: 0.75rem; color: #0277bd; margin-top: 3px; line-height: 1.55; white-space: pre-wrap; }
+    .radar-who { font-size: 0.72rem; color: #aaa; margin-top: 2px; font-style: italic; }
+    .mono-why {
+      font-size: 0.76rem; color: #374151; margin-top: 4px; line-height: 1.55;
+      font-family: 'Roboto', sans-serif;
+    }
+    .mono-why strong { color: #0f2942; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 4px; }
+    .mono-caveat {
+      font-size: 0.72rem; color: #92400e; margin-top: 8px; padding-top: 8px;
+      border-top: 1px dashed #fcd34d; line-height: 1.5;
+      font-family: 'Roboto', sans-serif;
+    }
+    .mono-caveat strong { color: #b45309; margin-right: 4px; }
+
+    /* ── Agent idea card (hero green) ── */
+    .agent-card {
+      background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+      border-radius: 14px; padding: 24px; margin-bottom: 8px; color: #fff;
+      position: relative; overflow: hidden;
+    }
+    .agent-card::after {
+      content: '💡'; position: absolute; right: 20px; top: 16px;
+      font-size: 2.5rem; opacity: 0.2;
+    }
+    .agent-tag {
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 1.2px;
+      text-transform: uppercase; color: #6ee7b7; margin-bottom: 8px;
+    }
+    .agent-title { font-size: 1rem; font-weight: 700; margin-bottom: 12px; line-height: 1.4; }
+    .agent-row { font-size: 0.8rem; line-height: 1.6; margin-bottom: 8px; }
+    .agent-row strong { color: #6ee7b7; }
+    .agent-stack {
+      display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0;
+    }
+    .stack-tag {
+      background: rgba(255,255,255,0.15); border-radius: 6px;
+      padding: 3px 10px; font-size: 0.7rem; font-weight: 600;
+    }
+    .agent-meta {
+      display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap;
+    }
+    .agent-meta-item {
+      background: rgba(255,255,255,0.1); border-radius: 8px;
+      padding: 6px 12px; font-size: 0.72rem; line-height: 1.4;
+    }
+    .agent-meta-item strong { display: block; color: #6ee7b7; margin-bottom: 2px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── LinkedIn draft ── */
+    .linkedin-card {
+      background: #fff; border-radius: 10px; padding: 18px;
+      border-left: 4px solid #0077b5; margin-bottom: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .linkedin-text {
+      font-size: 0.82rem; line-height: 1.7; color: #333;
+      font-family: 'Roboto', sans-serif; white-space: pre-wrap;
+    }
+    .copy-btn {
+      margin-top: 10px; font-size: 0.72rem; font-weight: 700;
+      padding: 5px 12px; border-radius: 6px; border: 1px solid #0077b5;
+      background: none; color: #0077b5; cursor: pointer;
+    }
+    .copy-btn:hover { background: #0077b5; color: #fff; }
+
+    /* ── Tech edge card ── */
+    .edge-card {
+      background: #fffbeb; border-radius: 10px; padding: 16px;
+      border-left: 4px solid #f59e0b;
+      font-size: 0.82rem; color: #444; line-height: 1.7;
+      font-family: 'Roboto', sans-serif;
+    }
+    .edge-bullets {
+      margin: 0; padding-left: 1.15rem;
+      font-size: 0.82rem; color: #444; line-height: 1.65;
+      font-family: 'Roboto', sans-serif;
+    }
+    .edge-bullets li { margin-bottom: 8px; }
+
+    /* ── Sources ── */
+    .source-list { list-style: none; padding: 0; margin: 0; }
+    .source-list li {
+      font-size: 0.75rem; padding: 5px 0;
+      border-bottom: 1px solid #f3f4f6; display: flex; gap: 8px;
+    }
+    .source-list li::before { content: '→'; color: #17bcfe; flex-shrink: 0; }
+    .source-list a { color: #0277bd; text-decoration: none; }
+    .source-list a:hover { text-decoration: underline; }
+
+    /* ── Print styles ── */
+    @media print {
+      .action-bar, .action-buttons, .no-print { display: none !important; }
+      #contentArea { padding: 0; }
+      .signal-card, .agent-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Action bar -->
+  <div class="action-bar">
+    <h3>
+      <i class="fas fa-satellite-dish" style="color:#17bcfe;"></i>
+      AI Scout
+      <span id="statusBadge" class="status-badge badge-ready">● READY</span>
+    </h3>
+
+    <div class="select-wrap">
+      <i class="fas fa-calendar-week" style="color:#17bcfe;"></i>
+      <select id="periodSelect">
+        <option value="weekly">Weekly (7 days)</option>
+        <option value="monthly">Monthly (30 days)</option>
+      </select>
+    </div>
+
+    <div class="select-wrap">
+      <i class="fas fa-building" style="color:#17bcfe;"></i>
+      <select id="companySelect">
+        <option value="Any Enterprise">Any Enterprise</option>
+      </select>
+    </div>
+
+    <button class="btn btn-primary no-print" id="btnGenerate" onclick="generateDigest()">
+      <i class="fas fa-satellite-dish"></i> Generate Digest
+    </button>
+
+    <button class="btn btn-ghost no-print" id="btnHistory" onclick="toggleHistory()" style="display:none" title="Recent digests">
+      <i class="fas fa-history"></i> History
+    </button>
+  </div>
+  <div id="accessBanner" class="access-banner"></div>
+
+  <!-- Email recipients panel -->
+  <div id="emailPanel" style="display:none; background:#f0faff; border-bottom:1px solid #bae6fd; padding:10px 20px;">
+    <div style="font-size:0.8rem; font-weight:700; color:#0f2942; margin-bottom:8px;">
+      <i class="fas fa-paper-plane" style="color:#17bcfe;"></i> Select recipients &amp; send
+    </div>
+    <div id="recipientList" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px;"></div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-primary" style="font-size:0.72rem; padding:5px 14px;" onclick="sendEmailToSelected()">
+        <i class="fas fa-paper-plane"></i> Send to Selected
+      </button>
+      <button class="btn btn-ghost" style="font-size:0.72rem; padding:5px 12px;" onclick="toggleEmailPanel()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- History panel -->
+  <div id="historyPanel" style="display:none; background:#fff8f0; border-bottom:1px solid #fed7aa; padding:10px 20px;">
+    <div style="font-size:0.8rem; font-weight:700; color:#0f2942; margin-bottom:8px;">
+      <i class="fas fa-history" style="color:#f97316;"></i> Recent Digests
+    </div>
+    <div id="historyList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+  </div>
+
+  <!-- Main content -->
+  <div id="contentArea">
+    <div class="empty-state">
+      <i class="fas fa-satellite-dish"></i>
+      <h4>Your AI Industry Intelligence Hub</h4>
+      <p>
+        Select a period and your company context, then click <strong>Generate Digest</strong>.<br><br>
+        AI Scout scans the latest moves from <strong>Microsoft, Google, Anthropic, OpenAI, AWS, NVIDIA, Databricks, Meta, xAI</strong> and more — then gives you a practitioner-focused briefing with a concrete agent idea you can build.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const BASE_URL = (typeof CONFIG !== 'undefined') ? CONFIG.API_BASE_URL : 'https://app-wtiw.onrender.com';
+    const LS_LAST    = 'ai_scout_last_digest';
+    const LS_HISTORY = 'ai_scout_history';
+    const MAX_HISTORY = 5;
+
+    let _lastDigest    = null;
+    let _recipients    = [];
+    let _stepTimer     = null;
+
+    function getAuthHeaderOrThrow() {
+      const raw = localStorage.getItem('authData');
+      const token = raw ? JSON.parse(raw)?.accessToken : null;
+      if (!token) {
+        if (isLocalDevHost()) return {};   // backend bypasses auth on local dev
+        throw new Error('Please login first.');
+      }
+      return { 'Authorization': `Bearer ${token}` };
+    }
+
+    function isLocalDevHost() {
+      if (typeof vikaaIsTrustedDevFrontend === 'function') return vikaaIsTrustedDevFrontend();
+      const h = (window.location.hostname || '').toLowerCase();
+      return h === 'localhost' || h === '127.0.0.1';
+    }
+
+    async function getAccessMode() {
+      try {
+        const h = getAuthHeaderOrThrow();
+        const r = await fetch(`${BASE_URL}/auth/access-mode`, { headers: h });
+        if (!r.ok) {
+          if (isLocalDevHost()) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+          return { can_execute: false, mode: 'read-only' };
+        }
+        return await r.json();
+      } catch (_) {
+        if (isLocalDevHost()) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+        return { can_execute: false, mode: 'read-only' };
+      }
+    }
+
+    // ── XSS protection helpers ─────────────────────────────────────────────────
+    function esc(s) {
+      if (s == null) return '';
+      const d = document.createElement('div');
+      d.textContent = String(s);
+      return d.innerHTML;
+    }
+    function safeUrl(u) {
+      if (!u || typeof u !== 'string') return '#';
+      const s = u.trim();
+      return (s.startsWith('http://') || s.startsWith('https://')) ? s : '#';
+    }
+    function safeFlag(f) {
+      return ['Opportunity', 'Threat', 'Watch'].includes(f) ? f : 'Watch';
+    }
+
+    // ── Init: status + company dropdown + recipients + restore last digest ─────
+    (async function init() {
+      const access = await getAccessMode();
+      window.__canExecute = !!access.can_execute;
+      const banner = document.getElementById('accessBanner');
+      const genBtn = document.getElementById('btnGenerate');
+      if (banner) {
+        banner.style.display = 'none';
+        banner.textContent = '';
+      }
+      if (window.__canExecute) {
+        genBtn.disabled = false;
+      } else {
+        genBtn.disabled = true;
+      }
+
+      // Status
+      try {
+        const r = await fetch(`${BASE_URL}/tools/ai-scout/status`);
+        if (r.ok) {
+          const s = await r.json();
+          if (!s.ready) {
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = '⚠ CONFIG NEEDED';
+            badge.className = 'status-badge badge-error';
+          }
+        }
+      } catch(_) {}
+
+      // Company dropdown
+      try {
+        const r = await fetch(`${BASE_URL}/tools/ai-scout/companies`);
+        if (r.ok) {
+          const data = await r.json();
+          const sel = document.getElementById('companySelect');
+          sel.innerHTML = '';
+          data.companies.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.value;
+            opt.textContent = c.focused ? `⚡ ${c.label}` : c.label;
+            sel.appendChild(opt);
+          });
+        }
+      } catch(_) {}
+
+      // Recipients
+      try {
+        const r = await fetch(`${BASE_URL}/tools/ai-scout/recipients`);
+        if (r.ok) {
+          const data = await r.json();
+          _recipients = data.recipients || [];
+        }
+      } catch(_) {}
+
+      // Restore last digest from localStorage
+      try {
+        const saved = localStorage.getItem(LS_LAST);
+        if (saved) {
+          _lastDigest = JSON.parse(saved);
+          renderDigest(_lastDigest);
+          refreshHistoryBtn();
+        }
+      } catch(_) {}
+    })();
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+    function setLoading(company) {
+      const label = company && company !== 'Any Enterprise' && company !== 'Global Market'
+        ? `${company}` : 'AI landscape';
+      const steps = [
+        `🔍 Searching latest ${label} news…`,
+        `📰 Gathering &amp; ranking articles…`,
+        `🧠 Analysing with Gemini 2.5 Pro…`,
+        `✍️ Building your digest…`,
+      ];
+      let idx = 0;
+      clearInterval(_stepTimer);
+      const render = () => {
+        document.getElementById('contentArea').innerHTML = `
+          <div class="spinner-wrap">
+            <div class="spinner"></div>
+            <div id="stepMsg">${steps[idx]}</div>
+            <div class="step-progress">Step ${idx+1} of ${steps.length} &nbsp;·&nbsp; <span>20–50 seconds</span> total</div>
+          </div>`;
+      };
+      render();
+      _stepTimer = setInterval(() => {
+        if (idx < steps.length - 1) { idx++; render(); }
+      }, 11000);
+    }
+
+    function clearStepTimer() { clearInterval(_stepTimer); _stepTimer = null; }
+
+    function setButtons(disabled) {
+      document.getElementById('btnGenerate').disabled = disabled;
+    }
+
+    function copyText(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => btn.textContent = '📋 Copy', 2000);
+      });
+    }
+
+    // ── History helpers ────────────────────────────────────────────────────────
+    function saveToHistory(digest) {
+      try {
+        let hist = JSON.parse(localStorage.getItem(LS_HISTORY) || '[]');
+        hist.unshift({ ...digest, saved_at: new Date().toISOString() });
+        hist = hist.slice(0, MAX_HISTORY);
+        localStorage.setItem(LS_HISTORY, JSON.stringify(hist));
+      } catch(_) {}
+    }
+
+    function refreshHistoryBtn() {
+      try {
+        const hist = JSON.parse(localStorage.getItem(LS_HISTORY) || '[]');
+        document.getElementById('btnHistory').style.display = hist.length ? '' : 'none';
+      } catch(_) {}
+    }
+
+    function toggleHistory() {
+      const panel = document.getElementById('historyPanel');
+      const list  = document.getElementById('historyList');
+      if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
+      try {
+        const hist = JSON.parse(localStorage.getItem(LS_HISTORY) || '[]');
+        list.innerHTML = hist.map((d, i) => `
+          <button onclick="loadHistory(${i})" style="
+            background:#fff; border:1px solid #fed7aa; border-radius:8px;
+            padding:6px 12px; font-size:0.72rem; cursor:pointer; color:#0f2942; font-weight:600;">
+            ${d.period === 'weekly' ? '📅' : '🗓️'}
+            ${esc(d.company_context || 'General')} · ${esc(d.generated_at)}
+          </button>`).join('');
+      } catch(_) { list.innerHTML = '<span style="font-size:0.8rem;color:#999;">No history yet</span>'; }
+      panel.style.display = '';
+    }
+
+    function loadHistory(idx) {
+      try {
+        const hist = JSON.parse(localStorage.getItem(LS_HISTORY) || '[]');
+        if (hist[idx]) { _lastDigest = hist[idx]; renderDigest(_lastDigest); }
+        document.getElementById('historyPanel').style.display = 'none';
+      } catch(_) {}
+    }
+
+    // ── Email panel ────────────────────────────────────────────────────────────
+    function toggleEmailPanel() {
+      const panel = document.getElementById('emailPanel');
+      if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
+      // Build checkbox list from loaded recipients
+      const list = document.getElementById('recipientList');
+      if (_recipients.length === 0) {
+        list.innerHTML = '<span style="font-size:0.8rem;color:#999;">No recipients configured in ai_scout_recipients.json</span>';
+      } else {
+        list.innerHTML = _recipients.map((r, i) => `
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;font-weight:600;color:#0f2942;cursor:pointer;">
+            <input type="checkbox" id="rcpt_${i}" value="${r.email}" ${r.default ? 'checked' : ''}
+              style="accent-color:#17bcfe; width:14px; height:14px;">
+            ${r.name} <span style="color:#6b7280;font-weight:400;">&lt;${r.email}&gt;</span>
+          </label>`).join('');
+      }
+      panel.style.display = '';
+    }
+
+    async function sendEmailToSelected() {
+      if (!window.__canExecute) { alert('Cannot Run/Execute. Contact ADMIN for Permission'); return; }
+      if (!_lastDigest) return;
+      const checked = [...document.querySelectorAll('#recipientList input[type=checkbox]:checked')]
+        .map(cb => cb.value);
+      if (checked.length === 0) { alert('Please select at least one recipient.'); return; }
+
+      const btn = document.querySelector('#emailPanel .btn-primary');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+
+      try {
+        const r = await fetch(`${BASE_URL}/tools/ai-scout/send-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaderOrThrow() },
+          body: JSON.stringify({ digest: _lastDigest, to_emails: checked }),
+        });
+        const res = await r.json();
+        const sentCount = (res.sent || []).length;
+        const failCount = (res.failed || []).length;
+        btn.innerHTML = `<i class="fas fa-check"></i> Sent to ${sentCount}${failCount ? ` (${failCount} failed)` : ''}`;
+        setTimeout(() => {
+          btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send to Selected';
+          btn.disabled = false;
+          document.getElementById('emailPanel').style.display = 'none';
+        }, 3000);
+      } catch(e) {
+        btn.innerHTML = '<i class="fas fa-times"></i> Failed';
+        btn.disabled = false;
+      }
+    }
+
+    // ── Generate ───────────────────────────────────────────────────────────────
+    async function generateDigest(forceRefresh = false) {
+      if (!window.__canExecute) {
+        document.getElementById('contentArea').innerHTML =
+          `<div class="empty-state"><i class="fas fa-lock" style="color:#d97706;"></i>
+           <h4>Read-only mode</h4><p>Cannot Run/Execute. Contact ADMIN for Permission</p></div>`;
+        return;
+      }
+      const period  = document.getElementById('periodSelect').value;
+      const company = document.getElementById('companySelect').value;
+      setLoading(company);
+      setButtons(true);
+      document.getElementById('emailPanel').style.display = 'none';
+      document.getElementById('historyPanel').style.display = 'none';
+
+      try {
+        const r = await fetch(`${BASE_URL}/tools/ai-scout/digest`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaderOrThrow() },
+          body: JSON.stringify({ period, company_context: company, force_refresh: forceRefresh }),
+        });
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          throw new Error(err.detail || 'Request failed');
+        }
+        let data = await r.json();
+
+        // Async job: poll until done
+        if (data.job_id && data.status === 'pending') {
+          data = await _pollDigest(data.job_id);
+        }
+
+        data.company_context = company;
+        _lastDigest = data;
+        localStorage.setItem(LS_LAST, JSON.stringify(data));
+        saveToHistory(data);
+        refreshHistoryBtn();
+        renderDigest(data);
+      } catch (e) {
+        document.getElementById('contentArea').innerHTML =
+          `<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:#dc2626;"></i>
+           <h4>Error</h4><p>${e.message}</p></div>`;
+      } finally {
+        clearStepTimer();
+        setButtons(false);
+      }
+    }
+
+    async function _pollDigest(jobId) {
+      const MAX_POLLS = 60;   // 60 × 3s = 3 min max wait
+      for (let i = 0; i < MAX_POLLS; i++) {
+        await new Promise(r => setTimeout(r, 3000));
+        const r = await fetch(`${BASE_URL}/tools/ai-scout/digest/status/${jobId}`, {
+          headers: { ...getAuthHeaderOrThrow() },
+        });
+        if (!r.ok) throw new Error('Status check failed');
+        const job = await r.json();
+        if (job.status === 'done')  return job.result;
+        if (job.status === 'error') throw new Error(job.error || 'Digest generation failed');
+      }
+      throw new Error('Digest timed out — please try again');
+    }
+
+    // ── Send email (opens panel) ───────────────────────────────────────────────
+    function sendEmail() {
+      if (!_lastDigest) return;
+      toggleEmailPanel();
+    }
+
+    // ── Download MD ────────────────────────────────────────────────────────────
+    function downloadMD() {
+      if (!_lastDigest || !_lastDigest.markdown) return;
+      const blob = new Blob([_lastDigest.markdown], { type: 'text/markdown' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `AI_Scout_${_lastDigest.period}_${_lastDigest.generated_at.replace(/[^a-zA-Z0-9]/g, '_')}.md`;
+      a.click();
+    }
+
+    // ── Share ──────────────────────────────────────────────────────────────────
+    function shareLinkedIn() {
+      const url = encodeURIComponent(window.location.href);
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+    }
+
+    function shareTwitter() {
+      if (!_lastDigest) return;
+      const text = encodeURIComponent(`🔭 AI Scout ${_lastDigest.period} digest: ${_lastDigest.signal_of_week.headline} — via Vikaa.AI`);
+      window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+    }
+
+    // ── Render ─────────────────────────────────────────────────────────────────
+    function renderDigest(d) {
+      const periodLabel = d.period === 'weekly' ? 'Weekly' : 'Monthly';
+
+      let html = `
+        <div class="digest-meta">
+          <div>
+            <div class="digest-title">
+              <i class="fas fa-satellite-dish" style="color:#17bcfe;"></i>
+              AI Scout — ${periodLabel} Digest
+            </div>
+            <div class="digest-date">${esc(d.generated_at)}</div>
+            <div class="digest-date" style="margin-top:2px;opacity:0.65;font-size:0.78rem;">
+              <i class="fas fa-microchip"></i> ${esc(d.model_used || 'AI')}
+            </div>
+          </div>
+          <div class="action-buttons no-print">
+            <button class="btn btn-ghost" id="btnEmail" onclick="sendEmail()">
+              <i class="fas fa-envelope"></i> Email
+            </button>
+            <button class="btn btn-ghost" onclick="downloadMD()">
+              <i class="fas fa-download"></i> .MD
+            </button>
+            <button class="btn btn-ghost" onclick="window.print()">
+              <i class="fas fa-file-pdf"></i> PDF
+            </button>
+            <button class="btn btn-ghost" onclick="shareLinkedIn()">
+              <i class="fab fa-linkedin"></i>
+            </button>
+            <button class="btn btn-ghost" onclick="shareTwitter()">
+              <i class="fab fa-x-twitter"></i>
+            </button>
+          </div>
+        </div>`;
+
+      // ── Signal of the Week ──
+      html += `
+        <div class="signal-card">
+          <div class="signal-tag">⚡ Signal of the Week</div>
+          <div class="signal-headline">${esc(d.signal_of_week.headline)}</div>
+          <div class="signal-row"><strong>What:</strong> ${esc(d.signal_of_week.what)}</div>
+          <div class="signal-row"><strong>Why it matters:</strong> ${esc(d.signal_of_week.why_it_matters)}</div>
+          <div class="signal-row"><strong>Your move:</strong> ${esc(d.signal_of_week.your_move)}</div>
+          ${d.signal_of_week.source_url ? `<div class="signal-source"><i class="fas fa-link"></i> <a href="${safeUrl(d.signal_of_week.source_url)}" target="_blank">Source</a></div>` : ''}
+        </div>`;
+
+      // ── Player Moves ──
+      if (d.player_moves && d.player_moves.length) {
+        html += `<div class="section-header"><i class="fas fa-chess-knight"></i> Player Moves</div>
+          <div class="player-grid">
+            ${d.player_moves.map(p => `
+              <div class="player-card">
+                <div class="player-name-row">
+                  <span class="player-name">${esc(p.player)}</span>
+                  ${p.materiality ? `<span class="player-badge">${esc(p.materiality)}</span>` : ''}
+                </div>
+                <div class="player-headline">${esc(p.headline)}</div>
+                ${p.angle_for_focus ? `<div class="player-angle"><strong>So what for focus</strong> ${esc(p.angle_for_focus)}</div>` : ''}
+                <div class="player-detail">${esc(p.detail)}</div>
+                ${p.source_url ? `<div style="margin-top:6px;font-size:0.68rem;"><a href="${safeUrl(p.source_url)}" target="_blank" style="color:#17bcfe;">↗ Source</a></div>` : ''}
+              </div>`).join('')}
+          </div>`;
+      }
+
+      // ── New Entrants ──
+      if (d.new_entrants && d.new_entrants.length) {
+        html += `<div class="section-header"><i class="fas fa-star"></i> New Entrants Watch</div>
+          ${d.new_entrants.map(e => `
+            <div class="list-card">
+              <span class="flag-badge flag-${safeFlag(e.flag)}">${esc(e.flag)}</span>
+              <div>
+                <div class="list-card-title">${esc(e.name)}</div>
+                <div class="list-card-detail">${esc(e.what_they_do)}</div>
+              </div>
+            </div>`).join('')}`;
+      }
+
+      // ── Monetization Radar ──
+      if (d.monetization_radar && d.monetization_radar.length) {
+        html += `<div class="section-header"><i class="fas fa-coins"></i> Monetization Radar</div>
+          ${d.monetization_radar.map(m => `
+            <div class="list-card">
+              <i class="fas fa-circle-dollar-to-slot" style="color:#17bcfe;flex-shrink:0;margin-top:2px;"></i>
+              <div>
+                <div class="list-card-title">${esc(m.opportunity)}</div>
+                ${m.why_now ? `<div class="mono-why"><strong>Why now</strong> ${esc(m.why_now)}</div>` : ''}
+                <div class="radar-how">${esc(m.how_to_act)}</div>
+                <div class="radar-who">Best for: ${esc(m.who_benefits)}</div>
+                ${m.caveat ? `<div class="mono-caveat"><strong>Caveat</strong> ${esc(m.caveat)}</div>` : ''}
+              </div>
+            </div>`).join('')}`;
+      }
+
+      // ── Agent Idea ──
+      if (d.agent_idea && d.agent_idea.title) {
+        html += `
+          <div class="section-header"><i class="fas fa-robot"></i> Agent Idea of the Week</div>
+          <div class="agent-card">
+            <div class="agent-tag">💡 Build This — ${esc(d.agent_idea.build_time)}</div>
+            <div class="agent-title">${esc(d.agent_idea.title)}</div>
+            <div class="agent-row">${esc(d.agent_idea.what_it_does)}</div>
+            <div class="agent-stack">
+              ${(d.agent_idea.tech_stack || []).map(t => `<span class="stack-tag">${esc(t)}</span>`).join('')}
+            </div>
+            <div class="agent-meta">
+              <div class="agent-meta-item">
+                <strong>Why leadership cares</strong>
+                ${esc(d.agent_idea.why_leadership_cares)}
+              </div>
+              <div class="agent-meta-item">
+                <strong>Best for</strong>
+                ${esc(d.agent_idea.best_for)}
+              </div>
+            </div>
+          </div>`;
+      }
+
+      // ── LinkedIn Draft ──
+      if (d.linkedin_draft) {
+        html += `
+          <div class="section-header"><i class="fab fa-linkedin"></i> LinkedIn Draft</div>
+          <div class="linkedin-card">
+            <div class="linkedin-text">${esc(d.linkedin_draft)}</div>
+            <button class="copy-btn" onclick="copyText(${JSON.stringify(d.linkedin_draft)}, this)">
+              📋 Copy
+            </button>
+          </div>`;
+      }
+
+      // ── Technologist's Edge ──
+      if (d.technologist_edge_bullets && d.technologist_edge_bullets.length) {
+        html += `
+          <div class="section-header"><i class="fas fa-bolt"></i> Technologist's Edge</div>
+          <div class="edge-card">
+            <ul class="edge-bullets">
+              ${d.technologist_edge_bullets.map(b => `<li>${esc(b)}</li>`).join('')}
+            </ul>
+          </div>`;
+      } else if (d.technologist_edge) {
+        html += `
+          <div class="section-header"><i class="fas fa-bolt"></i> Technologist's Edge</div>
+          <div class="edge-card">${esc(d.technologist_edge)}</div>`;
+      }
+
+      // ── Sources ──
+      if (d.sources && d.sources.length) {
+        html += `
+          <div class="section-header"><i class="fas fa-link"></i> Sources</div>
+          <ul class="source-list">
+            ${d.sources.slice(0, 8).map(s => `
+              <li><a href="${safeUrl(s.url)}" target="_blank">${esc(s.title || s.url)}</a></li>
+            `).join('')}
+          </ul>`;
+      }
+
+      document.getElementById('contentArea').innerHTML = html;
+    }
+  </script>
+</body>
+</html>

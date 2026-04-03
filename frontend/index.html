@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  
+  <!-- Include LoginPage.js -->
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="LoginPage.js?v=<%= Date.now() %>" defer></script>   
+  <!-- <script src="index.js" defer></script> -->
+  <script src="index.js?v=<%= Date.now() %>" defer></script> <!-- Node/Express -->
+
+  <!-- ✅ Production Obfuscated JS / NOT Applied NOW
+  <script src="index.obf.js" defer></script> -->
+  
+  <!-- ✅ SEO Essentials -->
+  <title>Vikaa.AI - Smart AI Utilities</title>
+  <meta name="description" content="Hobby / learning workspace for AI chat and tools (FastAPI). Not intended for production or regulated workloads—free and low-cost services only.">
+  <meta name="keywords" content="AI tools, artificial intelligence, FastAPI, GPT, vikaa.ai, ai solutions, agentic ai, agaentic rag, ai agent">
+  <meta name="author" content="vikaa.ai team">
+
+  <!-- ✅ Add meta tag to disable cache (not recommended long-term) -->
+  <meta http-equiv="Cache-Control" content="no-store" />
+
+  <!-- ✅ Optional: Open Graph for social sharing -->
+  <meta property="og:title" content="Vikaa.AI - Smart AI Utilities & Tools">
+  <meta property="og:description" content="Explore AI-powered tools built with FastAPI. Your intelligent assistant is just a click away.">
+  <meta property="og:image" content="image\Logo4.jpeg"> <!-- Change if needed -->
+  <meta property="og:url" content="https://vikaa.ai">  
+
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Source+Sans+Pro:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="image\Logo4.jpeg">
+
+  <style>
+    body {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        color: #333;
+        background-color: #eaeaea;
+        margin: 0;
+        padding: 0;
+    }
+    h1, h2, h3, h4, h5 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        margin-top: 0;
+    }
+    p, a, li, span, input, button {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 400;
+    }
+    header {
+      background-color: #ffffff;
+      padding: 10px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #ddd;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      font-weight: 700;
+      color: #575757;
+      font-size: 1.1rem;
+    }
+    .logo img {
+      height: 32px;
+      margin-right: 10px;
+      border-radius: 4px;
+      object-fit: contain;
+    }
+    nav a {
+      margin-left: 20px;
+      font-weight: 600;
+      text-decoration: none;
+      color: #17bcfe;
+      font-size: 0.9rem;
+    }
+    nav a:hover { color: #0891b2; }
+    .horizontal-border {
+      background-color: #17bcfe;
+      /* border-bottom: 1px solid #ffffff; */
+      padding: 2px 2px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }    
+    .hero {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+      gap: 40px;
+    }
+    .hero img {
+      width: 450px;
+      max-width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .hero-text {
+      font-weight: bold;
+      max-width: 600px;
+    }
+    .hero-text h1 {
+      font-size: 1.8rem;
+      font-weight: 500;
+      margin-bottom: 30px;
+    }
+    .hero-text p {
+      font-size: 0.9rem;
+      /* font-size: 1rem; */
+      font-weight: 500;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 768px) {
+      .hero {
+        flex-direction: column;
+        padding: 40px 20px;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      nav {
+        margin-top: 10px;
+      }
+      table {
+        width: 100%;
+        overflow-x: auto;
+        word-break: break-word;
+      }
+    }
+    .login-button {
+      display: block;
+      width: 50%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+      background-color: #0070f3;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .login-button.google {
+      background-color: #db4437;
+    }
+    .login-button.github {
+      background-color: #333;
+    }
+    .login-button:hover {
+      opacity: 0.9;
+    }
+
+    .site-disclaimer {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 500;
+      line-height: 1.55;
+      color: #5c4033;
+      background: #fff8f0;
+      border: 1px solid #fdba74;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-top: 18px;
+      margin-bottom: 0;
+      max-width: 600px;
+    }
+    .site-disclaimer strong { font-weight: 700; color: #7c2d12; }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <img src="image/Logo4.jpeg" alt="Vikaa Logo">
+      <span style="font-size: 1.1rem; font-weight: 700; color: #575757; letter-spacing: -0.3px; white-space: nowrap;">Vikaa.AI</span>
+    </div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="AboutUs.html">About Us</a>
+      <a href="#" onclick="openLogin();">Login</a>
+    </nav>
+  </header>
+  
+  <section class="horizontal-border">
+  </section>
+  <section class="hero">
+    <img src="image/Index.JPG" alt="AI Agent"/>
+    <div class="hero-text">
+      <h3 style="font-size: 1.0rem;">Vikaa.AI — agent workspace</h3>
+      <div style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; font-weight: 400;">
+        <p>
+          Think of <strong>Vikaa.AI</strong> as a tinkering bench: multimodal chat, then a grab-bag of tools—research, Gmail intel, planning, Databricks, synthetic data, GitHub mining—all hanging off one FastAPI + Supabase backbone.
+        </p>
+        <p>
+          <strong>Agent</strong> = riff and brainstorm; <strong>Tools</strong> = “I actually need a screen for this job.” Same engine underneath, fewer browser tabs playing whack-a-mole.
+        </p>
+        <p>
+          <strong>Run / execute</strong> can stay locked to a short guest list so nobody presses the shiny button by accident—handy for a hobby lab, not a bank vault.
+        </p>
+        <p>
+          Still bolting on connectors.<br>
+          <br>Peek under the hood:
+            <br><i>🛠️ <a href="#" onclick="openInternals();" style="color:#17bcfe; text-decoration: none;"><b>Internals</b></a></i>
+        </p>
+      </div>
+      <p class="site-disclaimer" role="note">
+        <strong>Disclaimer:</strong> This site is a <strong>hobby / learning</strong> project—not a production-grade or mission-critical platform. It is built to experiment with <strong>free and low-cost</strong> cloud and API services; there are no enterprise SLAs, compliance guarantees, or dedicated support. Do not rely on it for regulated, high-stakes, or commercial production work.
+      </p>
+    </div>
+  </section>
+</body>
+</html>

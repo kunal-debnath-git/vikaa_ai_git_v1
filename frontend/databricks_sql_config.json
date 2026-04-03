@@ -1,0 +1,10 @@
+{
+  "_comment": "SQL warehouses for Data Catalog & SQL UI. Use warehouse UUID from Databricks → SQL Warehouses → copy ID.",
+  "defaultWarehouseId": "f0ec353cb2780a8c",
+  "warehouses": [
+    {
+      "id": "f0ec353cb2780a8c",
+      "name": "Serverless Starter Warehouse"
+    }
+  ]
+}

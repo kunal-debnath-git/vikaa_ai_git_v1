@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ReAct Research Agent — Vikaa.AI</title>
+
+  <script src="config.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@300;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0; padding: 0;
+      height: 100%;
+      min-height: 0;
+      font-family: 'Montserrat', sans-serif;
+      background: #f9fafb;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Results feed ── */
+    #activityFeed {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .status-card {
+      background: #fff;
+      padding: 14px 18px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border-left: 4px solid #17bcfe;
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+    }
+    .access-banner {
+      margin: 0 0 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: none;
+      border: 1px solid transparent;
+    }
+    .access-banner.readonly { display:block; background:#fff7ed; color:#9a3412; border-color:#fdba74; }
+    .access-banner.execute { display:block; background:#ecfeff; color:#0f766e; border-color:#67e8f9; }
+
+    /* ── Communication hub ── */
+    .communication-hub {
+      padding: 14px 20px;
+      background: #fff;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+      min-height: 0;
+    }
+    /* Top bar: context + depth on one row (depth right-aligned when space allows) */
+    .hub-top-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .hub-top-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1 1 200px;
+      min-width: 0;
+    }
+    .context-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.74rem;
+      color: #4b5563;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+    .context-summary {
+      font-size: 0.72rem;
+      color: #9ca3af;
+      font-style: italic;
+      flex: 1 1 120px;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .mini-btn {
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      color: #6b7280;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 0.7rem;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mini-btn:hover {
+      background: #f3f4f6;
+      color: #374151;
+      border-color: #9ca3af;
+    }
+    .history-anchor {
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .history-btn .history-count {
+      margin-left: 4px;
+      font-size: 0.62rem;
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 1px 6px;
+      border-radius: 8px;
+      font-weight: 700;
+      min-width: 1.1em;
+      text-align: center;
+    }
+    .history-btn .history-count:empty {
+      display: none;
+    }
+    /* Full-width drawer in document flow (no overlap with Refine / input) */
+    .history-drawer {
+      width: 100%;
+      flex-shrink: 0;
+      margin-top: 2px;
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      overflow: hidden;
+    }
+    .history-drawer-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      background: rgba(255, 255, 255, 0.65);
+      flex-shrink: 0;
+    }
+    .history-drawer-title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .history-drawer-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #334155;
+      text-transform: uppercase;
+      letter-spacing: 0.55px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .history-drawer-title i {
+      color: #17bcfe;
+      font-size: 0.85rem;
+      text-transform: none;
+    }
+    .history-drawer-hint {
+      font-size: 0.7rem;
+      color: #64748b;
+      font-weight: 500;
+      line-height: 1.45;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .history-close {
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: #9ca3af;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .history-close:hover {
+      color: #374151;
+      background: #f3f4f6;
+    }
+    .history-list {
+      overflow-y: auto;
+      padding: 8px 10px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: min(260px, 36vh);
+    }
+    .history-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: 1px solid #f0f0f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #fafafa;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .history-item:hover {
+      background: #eef9ff;
+      border-color: #9dd8f0;
+    }
+    .history-item-meta {
+      font-size: 0.65rem;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+    .history-item-q {
+      font-size: 0.78rem;
+      color: #333;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+    .history-empty {
+      padding: 16px;
+      font-size: 0.8rem;
+      color: #9ca3af;
+      text-align: center;
+      font-style: italic;
+    }
+    .angle-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+    /* Refine + Mode on one line (wraps on narrow viewports) */
+    .refine-mode-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      width: 100%;
+    }
+    .chip-group {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+    .chip-group + .chip-group {
+      padding-left: 12px;
+      border-left: 1px solid #e8ecf0;
+      margin-left: 2px;
+    }
+    .angle-label {
+      font-size: 0.68rem;
+      color: #9ca3af;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+    }
+    .angle-chip {
+      border: 1px solid #c7e9f8;
+      background: #f0faff;
+      color: #0277bd;
+      border-radius: 16px;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .angle-chip:hover {
+      background: #17bcfe;
+      color: #fff;
+      border-color: #17bcfe;
+    }
+    .mode-chip {
+      border: 1px solid #cfd8dc;
+      background: #fff;
+      color: #37474f;
+      border-radius: 16px;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mode-chip:hover {
+      background: #eceff1;
+      border-color: #90a4ae;
+    }
+    .mode-chip.active {
+      background: #0f2942;
+      color: #fff;
+      border-color: #0f2942;
+    }
+
+    .recent-searches-row {
+      display: none;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      width: 100%;
+      padding: 4px 0 0;
+    }
+    .recent-label {
+      font-size: 0.68rem;
+      color: #9ca3af;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      flex-shrink: 0;
+    }
+    .recent-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+    }
+    .recent-chip {
+      border: 1px solid #e0e0e0;
+      background: #fafafa;
+      color: #555;
+      border-radius: 14px;
+      padding: 3px 10px;
+      font-size: 0.7rem;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .recent-chip:hover {
+      background: #eef9ff;
+      border-color: #9dd8f0;
+      color: #0277bd;
+    }
+
+    /* ── Depth Slider ── */
+    .hub-top-depth {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1 1 220px;
+      min-width: 180px;
+      max-width: 360px;
+      margin-left: auto;
+    }
+    .depth-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .depth-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: 1;
+      height: 4px;
+      border-radius: 4px;
+      background: linear-gradient(to right, #17bcfe 0%, #17bcfe var(--pct, 50%), #ddd var(--pct, 50%));
+      outline: none;
+      cursor: pointer;
+    }
+    .depth-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: #17bcfe;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      cursor: pointer;
+    }
+    .depth-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 10px;
+      min-width: 66px;
+      text-align: center;
+      transition: background 0.2s, color 0.2s;
+    }
+    .depth-badge.quick    { background: #e8f5e9; color: #2e7d32; }
+    .depth-badge.standard { background: #e1f5fe; color: #0277bd; }
+    .depth-badge.deep     { background: #ede7f6; color: #5e35b1; }
+
+    /* ── Prompt bar ── */
+    .prompt-container {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      background: #f3f4f6;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+    }
+    .prompt-container textarea {
+      flex: 1;
+      border: none;
+      background: transparent;
+      resize: none;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.88rem;
+      padding: 4px;
+      max-height: 120px;
+      outline: none;
+    }
+    .send-btn {
+      background: #17bcfe;
+      color: #fff;
+      border: none;
+      width: 38px; height: 38px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .send-btn:hover { background: #0891b2; }
+
+    /* ── News Article Card ── */
+    .news-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+      overflow: hidden;
+      margin-bottom: 18px;
+      font-family: 'Roboto', sans-serif;
+    }
+    .news-headline-bar {
+      background: linear-gradient(135deg, #0f2942 0%, #17bcfe 100%);
+      padding: 20px 24px 16px;
+    }
+    .news-category {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 6px;
+    }
+    .news-headline {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.35;
+    }
+    .news-tldr {
+      background: #f0faff;
+      border-left: 4px solid #17bcfe;
+      padding: 12px 18px;
+      font-size: 0.9rem;
+      color: #1a3c5e;
+      font-style: italic;
+      font-weight: 500;
+      line-height: 1.6;
+    }
+    .news-body { padding: 16px 24px; }
+    .news-body p {
+      font-size: 0.87rem;
+      color: #444;
+      line-height: 1.8;
+      margin: 0 0 12px;
+    }
+    .news-section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #17bcfe;
+      margin: 16px 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .news-section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e5e7eb;
+    }
+    .takeaway-list { list-style: none; padding: 0; margin: 0 0 4px; }
+    .takeaway-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 0.84rem;
+      color: #333;
+      padding: 5px 0;
+      line-height: 1.5;
+      border-bottom: 1px dashed #f0f0f0;
+    }
+    .takeaway-list li::before {
+      content: '▸';
+      color: #17bcfe;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .followup-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 4px 0 12px;
+    }
+    .followup-chip {
+      background: #f0faff;
+      border: 1px solid #b3e5fc;
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 0.77rem;
+      color: #0277bd;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+    }
+    .followup-chip:hover { background: #17bcfe; color: #fff; border-color: #17bcfe; }
+    .news-sources {
+      background: #fafafa;
+      border-top: 1px solid #f0f0f0;
+      padding: 14px 24px;
+    }
+    .source-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.8rem;
+    }
+    .source-item:last-child { border-bottom: none; }
+    .source-num {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #17bcfe;
+      background: #e1f5fe;
+      border-radius: 4px;
+      padding: 1px 6px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .source-info a {
+      color: #0277bd;
+      text-decoration: none;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .source-info a:hover { text-decoration: underline; }
+    .source-domain { color: #aaa; font-size: 0.72rem; }
+    .news-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 24px;
+      background: #f9fafb;
+      border-top: 1px solid #eee;
+    }
+    .news-timestamp { font-size: 0.72rem; color: #aaa; font-style: italic; }
+    .copy-btn {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #17bcfe;
+      background: none;
+      border: 1px solid #b3e5fc;
+      border-radius: 6px;
+      padding: 4px 12px;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover { background: #17bcfe; color: #fff; border-color: #17bcfe; }
+    .share-btn {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #17bcfe;
+      background: none;
+      border: 1px solid #b3e5fc;
+      border-radius: 6px;
+      padding: 4px 12px;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      transition: all 0.15s;
+    }
+    .share-btn:hover { background: #0f2942; color: #fff; border-color: #0f2942; }
+
+    /* ── ReAct trace + quality analysis ── */
+    .react-trace {
+      background: #f8fbff;
+      border: 1px solid #dceeff;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+    }
+    .react-trace-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.9px;
+      text-transform: uppercase;
+      color: #5b8daf;
+      margin-bottom: 8px;
+    }
+    .react-step {
+      display: grid;
+      grid-template-columns: 68px 1fr;
+      gap: 8px;
+      align-items: start;
+      padding: 6px 0;
+      border-bottom: 1px dashed #e5eef7;
+    }
+    .react-step:last-child { border-bottom: none; }
+    .react-step-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #0f2942;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .react-step-text {
+      font-size: 0.79rem;
+      color: #4b5563;
+      line-height: 1.5;
+    }
+    .quality-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 12px;
+      padding: 1px 7px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-left: 6px;
+      border: 1px solid transparent;
+      vertical-align: middle;
+    }
+    .quality-chip.high { background: #e7f8ec; color: #1f8b4c; border-color: #bce8ca; }
+    .quality-chip.medium { background: #eef6ff; color: #1769aa; border-color: #c8e0ff; }
+    .quality-chip.low { background: #fff2f2; color: #b93b3b; border-color: #ffd0d0; }
+    .source-meta {
+      font-size: 0.69rem;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+    .confidence-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 10px;
+      padding: 2px 8px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-left: 8px;
+    }
+    .confidence-badge.high { background: rgba(52, 211, 153, 0.22); color: #d7ffee; }
+    .confidence-badge.medium { background: rgba(251, 191, 36, 0.22); color: #fff3d1; }
+    .confidence-badge.low { background: rgba(248, 113, 113, 0.22); color: #ffe3e3; }
+
+    /* ── Share overlay ── */
+    #shareOverlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+    #shareOverlay.open { display: flex; }
+    #shareBox {
+      background: #fff;
+      border-radius: 14px;
+      width: min(640px, 92vw);
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 28px 32px;
+      position: relative;
+      font-family: 'Roboto', sans-serif;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    #shareBox h1 { font-family:'Montserrat',sans-serif; font-size:1.3rem; color:#0f2942; margin:0 0 8px; }
+    #shareBox .share-tldr { font-style:italic; color:#555; font-size:0.92rem; border-left:3px solid #17bcfe; padding-left:12px; margin-bottom:16px; }
+    #shareBox p { font-size:0.87rem; line-height:1.8; color:#444; margin:0 0 12px; }
+    #shareBox ul { padding-left:18px; margin:0 0 16px; }
+    #shareBox ul li { font-size:0.84rem; line-height:1.7; color:#333; }
+    #shareBox .share-sources { font-size:0.78rem; color:#888; border-top:1px solid #eee; padding-top:12px; margin-top:8px; }
+    #shareBox .share-sources a { color:#0277bd; text-decoration:none; }
+    #shareCloseBtn { position:absolute; top:14px; right:18px; background:none; border:none; font-size:1.3rem; cursor:pointer; color:#aaa; }
+    #shareCloseBtn:hover { color:#333; }
+    #shareActions { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+    .share-meta { font-size:0.72rem; color:#bbb; margin-top:16px; }
+
+    .shr-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 8px; border: none;
+      font-family: 'Montserrat', sans-serif; font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; text-decoration: none; color: #fff; transition: opacity 0.15s;
+    }
+    .shr-btn:hover { opacity: 0.85; }
+    .shr-whatsapp { background: #25d366; }
+    .shr-linkedin { background: #0a66c2; }
+    .shr-twitter  { background: #000; }
+    .shr-email    { background: #555; }
+    .shr-print    { background: #17bcfe; }
+
+    @media (max-width: 720px) {
+      .hub-top-depth {
+        margin-left: 0;
+        flex: 1 1 100%;
+        max-width: none;
+      }
+      .chip-group + .chip-group {
+        padding-left: 0;
+        border-left: none;
+        margin-left: 0;
+        width: 100%;
+      }
+    }
+
+    @media print {
+      body > *:not(#shareOverlay) { display: none !important; }
+      #shareOverlay { display: flex !important; position: static; background: none; }
+      #shareBox { box-shadow: none; max-height: none; }
+      #shareCloseBtn { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="activityFeed">
+    <div id="accessBanner" class="access-banner"></div>
+    <div class="status-card">
+      Enter a topic or question below to start researching.
+    </div>
+  </div>
+
+  <div class="communication-hub">
+    <div class="hub-top-row">
+      <div class="hub-top-left">
+        <label class="context-toggle">
+          <input type="checkbox" id="useContextToggle" checked>
+          Build on previous research
+        </label>
+        <button class="mini-btn" id="clearContextBtn" type="button">Clear Context</button>
+        <div class="history-anchor">
+          <button class="mini-btn history-btn" type="button" id="historyToggleBtn" aria-expanded="false" aria-controls="historyDrawer">
+            <i class="fas fa-history" style="font-size:0.65rem;opacity:0.85;"></i> History <span id="historyCountBadge" class="history-count" aria-hidden="true"></span>
+          </button>
+        </div>
+        <span class="context-summary" id="contextSummary">No prior research in this session.</span>
+      </div>
+      <div class="hub-top-depth">
+        <span class="depth-label">Depth</span>
+        <input type="range" id="depthSlider" class="depth-slider" min="1" max="3" value="2" step="1">
+        <span class="depth-badge standard" id="depthBadge">Standard</span>
+      </div>
+    </div>
+    <div class="refine-mode-row">
+      <div class="chip-group">
+        <span class="angle-label">Refine by</span>
+        <button class="angle-chip" type="button" data-angle="market opportunities">Market</button>
+        <button class="angle-chip" type="button" data-angle="execution risks">Risks</button>
+        <button class="angle-chip" type="button" data-angle="competitor landscape">Competitors</button>
+        <button class="angle-chip" type="button" data-angle="timeline and future outlook">Timeline</button>
+      </div>
+      <div class="chip-group">
+        <span class="angle-label">Mode</span>
+        <button class="mode-chip" type="button" data-mode="assumption_audit" title="Surface hidden assumptions with evidence tags">Assumptions</button>
+        <button class="mode-chip" type="button" data-mode="compare_options" title="Compare competing views or options in a table">Compare</button>
+        <button class="mode-chip" type="button" data-mode="unknowns_gaps" title="What cannot be concluded; what to verify next">Gaps</button>
+        <button class="mode-chip" type="button" data-mode="executive_brief" title="Five-bullet executive summary">Brief</button>
+        <button class="mode-chip" type="button" data-mode="devils_advocate" title="Strongest counter-argument with citations">Devil's advocate</button>
+      </div>
+    </div>
+    <div class="history-drawer" id="historyDrawer" role="region" aria-label="Past searches" hidden>
+      <div class="history-drawer-head">
+        <div class="history-drawer-title-block">
+          <span class="history-drawer-title"><i class="fas fa-clock-rotate-left"></i> Past searches</span>
+          <span class="history-drawer-hint">Loads your saved question into the box <strong>below</strong>. Edit it, add a Mode, then send — nothing overlaps these controls.</span>
+        </div>
+        <button type="button" class="history-close" id="historyCloseBtn" aria-label="Close history">✕</button>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+    <div class="recent-searches-row" id="recentSearchesRow">
+      <span class="recent-label">Recent</span>
+      <div class="recent-chips" id="recentChips"></div>
+    </div>
+    <div class="prompt-container">
+      <textarea id="toolPrompt" rows="1" placeholder="Enter a research topic or question…"></textarea>
+      <button class="send-btn" onclick="executePrompt()">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Share overlay -->
+  <div id="shareOverlay" onclick="if(event.target===this) closeShare()">
+    <div id="shareBox">
+      <button id="shareCloseBtn" onclick="closeShare()">✕</button>
+      <div id="shareContent"></div>
+      <div id="shareActions"></div>
+      <div class="share-meta" id="shareMeta"></div>
+    </div>
+  </div>
+
+  <script>
+    /** localStorage: survives refresh & browser restart until user clears context or site data */
+    const RESEARCH_HISTORY_KEY = 'vikaa_react_research_history_v1';
+    /** Max completed searches kept (memory + sessionStorage) for reuse / context */
+    const MAX_RESEARCH_HISTORY = 20;
+
+    const researchMemory = {
+      history: [],
+      lastTopic: '',
+    };
+
+    let activeRefineMode = null;
+    let _lockPromptDerivedClear = false;
+
+    const DECISION_MODE_PROMPTS = {
+      assumption_audit: (base) =>
+        `Regarding "${base}": list implicit assumptions behind the mainstream narrative. For each assumption, mark it as supported, weak, contradicted, or unstated using only cited evidence from sources. End with clear evidence gaps.`,
+      compare_options: (base) =>
+        `Regarding "${base}": if sources present competing views, products, or approaches, synthesise them into a comparison table (options vs criteria). Every cell must cite sources. Close with neutral decision criteria only, no new speculation.`,
+      unknowns_gaps: (base) =>
+        `Regarding "${base}": emphasise what cannot be concluded from available public evidence. List open questions and what would need to be verified next. Still summarise what IS well supported, with citations.`,
+      executive_brief: (base) =>
+        `Regarding "${base}": produce an executive brief as exactly five bullets — (1) Bottom line (2) Evidence strength (3) Key risks (4) Recommended next step (5) Source landscape. Use inline [n] citations where possible.`,
+      devils_advocate: (base) =>
+        `Regarding "${base}": argue the strongest counter-narrative to the prevailing view in the sources. Steel-man it with citations, then note what would weaken that counter-view using the same evidence base.`,
+    };
+
+    function topicBaseForPrompt() {
+      const t = document.getElementById('toolPrompt').value.trim();
+      return t || researchMemory.lastTopic || 'the current topic';
+    }
+
+    function setModeChipActive(modeOrNull) {
+      document.querySelectorAll('.mode-chip').forEach(b => {
+        b.classList.toggle('active', modeOrNull && b.dataset.mode === modeOrNull);
+      });
+    }
+
+    function escapeHtml(v) {
+      return String(v || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function safeUrl(url) {
+      try {
+        const u = new URL(String(url || ''));
+        return (u.protocol === 'http:' || u.protocol === 'https:') ? url : '#';
+      } catch (_) { return '#'; }
+    }
+
+    function getDomain(url) {
+      try { return new URL(url).hostname.replace('www.', ''); } catch (_) { return ''; }
+    }
+
+    function classifyDomain(domain) {
+      if (!domain) return 'unknown';
+      if (domain.endsWith('.gov')) return 'government';
+      if (domain.endsWith('.edu')) return 'academic';
+      if (domain.endsWith('.org')) return 'organization';
+      if (domain.includes('wikipedia')) return 'reference';
+      return 'publisher';
+    }
+
+    function scoreSource(source) {
+      let score = 50;
+      const domain = getDomain(source.url || '');
+      const domainType = classifyDomain(domain);
+
+      if ((source.url || '').startsWith('https://')) score += 6;
+      if (domainType === 'government' || domainType === 'academic') score += 20;
+      else if (domainType === 'organization' || domainType === 'reference') score += 10;
+      else if (domainType === 'publisher') score += 6;
+
+      const titleLen = (source.title || '').trim().length;
+      if (titleLen >= 24) score += 6;
+
+      const snippetLen = (source.snippet || source.summary || '').trim().length;
+      if (snippetLen >= 80) score += 6;
+
+      score = Math.min(95, Math.max(30, score));
+      const band = score >= 78 ? 'high' : score >= 62 ? 'medium' : 'low';
+      return { score, band, domain, domainType };
+    }
+
+    function inferConfidence(sourceStats, takeawaysCount) {
+      if (!sourceStats.length) return { band: 'low', label: 'Low confidence' };
+      const avg = sourceStats.reduce((s, x) => s + x.score, 0) / sourceStats.length;
+      if (avg >= 75 && sourceStats.length >= 6 && takeawaysCount >= 3) return { band: 'high', label: 'High confidence' };
+      if (avg >= 62 && sourceStats.length >= 3) return { band: 'medium', label: 'Moderate confidence' };
+      return { band: 'low', label: 'Low confidence' };
+    }
+
+    function buildReActTrace(data, phase, query) {
+      const sourcesCount = (data.sources || []).length;
+      const tCount = (data.key_takeaways || []).length;
+      const steps = [
+        { label: 'Think', text: `Framed the goal as: ${escapeHtml(query)}.` },
+        { label: 'Act', text: `Searched and collected evidence from ${sourcesCount || 'initial'} source(s).` },
+        { label: 'Observe', text: phase === 1
+            ? 'Extracted early signals and prepared draft synthesis.'
+            : `Synthesized findings into ${tCount || 'multiple'} key takeaways with citations.` },
+        { label: 'Reflect', text: phase === 1
+            ? 'Refinement in progress (deep analysis pending).'
+            : 'Validated consistency across sources and generated follow-up prompts.' },
+      ];
+      return `
+        <div class="react-trace">
+          <div class="react-trace-title">ReAct Trace (Reason + Act)</div>
+          ${steps.map(step => `
+            <div class="react-step">
+              <div class="react-step-label">${step.label}</div>
+              <div class="react-step-text">${step.text}</div>
+            </div>
+          `).join('')}
+        </div>`;
+    }
+
+    function getContextSummaryText() {
+      if (!researchMemory.history.length) return 'No prior research in this session.';
+      const latest = researchMemory.history[researchMemory.history.length - 1];
+      const takeaways = (latest.key_takeaways || []).slice(0, 2).join(' | ');
+      const topic = latest.headline || latest.query || 'last report';
+      return `Using memory from ${researchMemory.history.length} run(s). Latest: ${topic}${takeaways ? ` — ${takeaways}` : ''}`;
+    }
+
+    function updateContextSummary() {
+      const el = document.getElementById('contextSummary');
+      if (el) el.textContent = getContextSummaryText();
+    }
+
+    function getContextPayload() {
+      const use = document.getElementById('useContextToggle');
+      if (!use || !use.checked || !researchMemory.history.length) return null;
+      const recent = researchMemory.history.slice(-2);
+      return recent.map(r => ({
+        query: r.query,
+        headline: r.headline,
+        key_takeaways: (r.key_takeaways || []).slice(0, 3),
+      }));
+    }
+
+    function loadResearchHistoryFromStorage() {
+      try {
+        let raw = localStorage.getItem(RESEARCH_HISTORY_KEY);
+        if (!raw) {
+          raw = sessionStorage.getItem(RESEARCH_HISTORY_KEY);
+          if (raw) {
+            localStorage.setItem(RESEARCH_HISTORY_KEY, raw);
+            sessionStorage.removeItem(RESEARCH_HISTORY_KEY);
+          }
+        }
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          researchMemory.history = parsed
+            .filter(e => e && typeof e.query === 'string')
+            .slice(-MAX_RESEARCH_HISTORY);
+        }
+      } catch (_) {}
+    }
+
+    function persistResearchHistory() {
+      try {
+        localStorage.setItem(RESEARCH_HISTORY_KEY, JSON.stringify(researchMemory.history));
+      } catch (_) {}
+    }
+
+    function getOrderedHistoryRuns() {
+      return researchMemory.history
+        .slice(-MAX_RESEARCH_HISTORY)
+        .reverse()
+        .filter(e => (e.query || '').trim());
+    }
+
+    function restoreQueryFromHistory(q) {
+      const textarea = document.getElementById('toolPrompt');
+      if (!textarea) return;
+      _lockPromptDerivedClear = true;
+      textarea.value = q;
+      researchMemory.lastTopic = q;
+      activeRefineMode = null;
+      setModeChipActive(null);
+      textarea.focus();
+      textarea.dispatchEvent(new Event('input'));
+      requestAnimationFrame(() => { _lockPromptDerivedClear = false; });
+      closeHistoryPanel();
+    }
+
+    function closeHistoryPanel() {
+      const drawer = document.getElementById('historyDrawer');
+      const btn = document.getElementById('historyToggleBtn');
+      if (drawer) drawer.hidden = true;
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+
+    function openHistoryPanel() {
+      const drawer = document.getElementById('historyDrawer');
+      const btn = document.getElementById('historyToggleBtn');
+      renderHistoryPanelContent();
+      if (drawer) {
+        drawer.hidden = false;
+        drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+    }
+
+    function toggleHistoryPanel() {
+      const drawer = document.getElementById('historyDrawer');
+      if (!drawer) return;
+      if (drawer.hidden) openHistoryPanel();
+      else closeHistoryPanel();
+    }
+
+    function updateHistoryBadge() {
+      const el = document.getElementById('historyCountBadge');
+      if (!el) return;
+      const n = researchMemory.history.length;
+      el.textContent = n > 0 ? String(n) : '';
+    }
+
+    function renderHistoryPanelContent() {
+      const list = document.getElementById('historyList');
+      if (!list) return;
+      const ordered = getOrderedHistoryRuns();
+      if (!ordered.length) {
+        list.innerHTML = '<div class="history-empty">No saved searches yet. Run one full research (wait for the report to finish). Up to 20 are kept in this browser.</div>';
+        return;
+      }
+      list.innerHTML = '';
+      ordered.forEach((entry) => {
+        const q = (entry.query || '').trim();
+        if (!q) return;
+        const when = entry.savedAt
+          ? new Date(entry.savedAt).toLocaleString(undefined, {
+              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+            })
+          : '';
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'history-item';
+        const meta = document.createElement('div');
+        meta.className = 'history-item-meta';
+        meta.textContent = when ? when : 'Past search';
+        const qEl = document.createElement('div');
+        qEl.className = 'history-item-q';
+        qEl.textContent = q;
+        row.appendChild(meta);
+        row.appendChild(qEl);
+        row.addEventListener('click', () => restoreQueryFromHistory(q));
+        list.appendChild(row);
+      });
+    }
+
+    function renderRecentChips() {
+      const row = document.getElementById('recentSearchesRow');
+      const wrap = document.getElementById('recentChips');
+      if (!row || !wrap) return;
+
+      const ordered = getOrderedHistoryRuns();
+      if (!ordered.length) {
+        row.style.display = 'none';
+        wrap.innerHTML = '';
+        return;
+      }
+
+      row.style.display = 'flex';
+      wrap.innerHTML = '';
+      ordered.forEach((entry) => {
+        const q = (entry.query || '').trim();
+        if (!q) return;
+        const label = q.length > 40 ? q.slice(0, 37) + '…' : q;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'recent-chip';
+        btn.textContent = label;
+        const when = entry.savedAt
+          ? new Date(entry.savedAt).toLocaleString(undefined, {
+              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+            })
+          : '';
+        const titleExtra = (when ? when + '\n' : '') + q + (entry.headline ? '\n— ' + entry.headline : '');
+        btn.title = 'Restore in input → edit & send\n' + titleExtra;
+        btn.addEventListener('click', () => restoreQueryFromHistory(q));
+        wrap.appendChild(btn);
+      });
+    }
+
+    function refreshHistoryUI() {
+      renderRecentChips();
+      updateHistoryBadge();
+      const drawer = document.getElementById('historyDrawer');
+      if (drawer && !drawer.hidden) renderHistoryPanelContent();
+    }
+
+    // ── Depth slider ──────────────────────────────────────────────────────────
+    const DEPTH_CONFIG = {
+      1: { label: 'Quick',    cls: 'quick',    max_results: 3,  pct: '0%'   },
+      2: { label: 'Standard', cls: 'standard', max_results: 6,  pct: '50%'  },
+      3: { label: 'Deep',     cls: 'deep',     max_results: 10, pct: '100%' },
+    };
+    const depthSlider = document.getElementById('depthSlider');
+    const depthBadge  = document.getElementById('depthBadge');
+
+    function updateDepthUI() {
+      const cfg = DEPTH_CONFIG[depthSlider.value];
+      depthBadge.textContent = cfg.label;
+      depthBadge.className   = `depth-badge ${cfg.cls}`;
+      depthSlider.style.setProperty('--pct', cfg.pct);
+    }
+    depthSlider.addEventListener('input', updateDepthUI);
+    updateDepthUI();
+
+    function getDepthMaxResults() { return DEPTH_CONFIG[depthSlider.value].max_results; }
+
+    // ── Prompt input ──────────────────────────────────────────────────────────
+    const tx = document.getElementById('toolPrompt');
+    const accessBanner = document.getElementById('accessBanner');
+    const sendBtn = document.querySelector('.send-btn');
+
+    function isLocalDevHost() {
+      if (typeof vikaaIsTrustedDevFrontend === 'function') return vikaaIsTrustedDevFrontend();
+      const h = (window.location.hostname || '').toLowerCase();
+      return h === 'localhost' || h === '127.0.0.1';
+    }
+
+    async function getAccessMode() {
+      const raw = localStorage.getItem('authData');
+      let token = null;
+      try { token = raw ? JSON.parse(raw)?.accessToken : null; } catch (_) { token = null; }
+      if (!token) {
+        if (isLocalDevHost()) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+        return { can_execute: false, mode: 'read-only' };
+      }
+      try {
+        const baseUrl = (typeof CONFIG !== 'undefined') ? CONFIG.API_BASE_URL : 'https://app-wtiw.onrender.com';
+        const r = await fetch(`${baseUrl}/auth/access-mode`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!r.ok) {
+          if (isLocalDevHost()) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+          return { can_execute: false, mode: 'read-only' };
+        }
+        return await r.json();
+      } catch (_) {
+        if (isLocalDevHost()) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+        return { can_execute: false, mode: 'read-only' };
+      }
+    }
+
+    (async function applyAccessModeUI() {
+      const access = await getAccessMode();
+      window.__canExecute = !!access.can_execute;
+      if (accessBanner) {
+        accessBanner.style.display = 'none';
+        accessBanner.textContent = '';
+      }
+      if (window.__canExecute) {
+        tx.disabled = false;
+        sendBtn.disabled = false;
+      } else {
+        tx.disabled = true;
+        sendBtn.disabled = true;
+      }
+    })();
+    document.querySelectorAll('.angle-chip').forEach(btn => {
+      btn.addEventListener('click', function() {
+        activeRefineMode = null;
+        setModeChipActive(null);
+        const angle = this.dataset.angle;
+        const base = tx.value.trim() || researchMemory.lastTopic || 'the current topic';
+        _lockPromptDerivedClear = true;
+        tx.value = `Based on previous findings, analyze ${base} from ${angle}. Include cited evidence and clear trade-offs.`;
+        tx.focus();
+        tx.dispatchEvent(new Event('input'));
+        requestAnimationFrame(() => { _lockPromptDerivedClear = false; });
+      });
+    });
+    document.querySelectorAll('.mode-chip').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const mode = this.dataset.mode;
+        if (this.classList.contains('active')) {
+          activeRefineMode = null;
+          setModeChipActive(null);
+          _lockPromptDerivedClear = true;
+          tx.value = '';
+          tx.focus();
+          tx.dispatchEvent(new Event('input'));
+          requestAnimationFrame(() => { _lockPromptDerivedClear = false; });
+          return;
+        }
+        const base = topicBaseForPrompt();
+        const fn = DECISION_MODE_PROMPTS[mode];
+        if (!fn) return;
+        activeRefineMode = mode;
+        setModeChipActive(mode);
+        _lockPromptDerivedClear = true;
+        tx.value = fn(base);
+        tx.focus();
+        tx.dispatchEvent(new Event('input'));
+        requestAnimationFrame(() => { _lockPromptDerivedClear = false; });
+      });
+    });
+    document.getElementById('clearContextBtn').addEventListener('click', function() {
+      researchMemory.history = [];
+      researchMemory.lastTopic = '';
+      activeRefineMode = null;
+      setModeChipActive(null);
+      try { localStorage.removeItem(RESEARCH_HISTORY_KEY); } catch (_) {}
+      updateContextSummary();
+      refreshHistoryUI();
+      addStatusCard('🧹 Research memory cleared for this session.');
+    });
+    document.getElementById('historyToggleBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleHistoryPanel();
+    });
+    document.getElementById('historyCloseBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeHistoryPanel();
+    });
+    loadResearchHistoryFromStorage();
+    updateContextSummary();
+    refreshHistoryUI();
+
+    tx.addEventListener('input', function() {
+      if (!_lockPromptDerivedClear) {
+        activeRefineMode = null;
+        setModeChipActive(null);
+      }
+      this.style.height = 'auto';
+      this.style.height = this.scrollHeight + 'px';
+    });
+    tx.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); executePrompt(); }
+    });
+
+    async function executePrompt() {
+      if (!window.__canExecute) {
+        addStatusCard('🚫 Cannot Run/Execute. Contact ADMIN for Permission');
+        return;
+      }
+      const query = tx.value.trim();
+      if (!query) return;
+      const refineForRun = activeRefineMode;
+      _lockPromptDerivedClear = true;
+      tx.value = '';
+      tx.style.height = 'auto';
+      tx.dispatchEvent(new Event('input'));
+      requestAnimationFrame(() => { _lockPromptDerivedClear = false; });
+      await runWebResearch(query, refineForRun);
+    }
+
+    // ── Helpers: follow-up chip ───────────────────────────────────────────────
+    function fillPrompt(btn) { tx.value = btn.dataset.q; tx.focus(); }
+
+    function getAuthHeaderOrThrow() {
+      const raw = localStorage.getItem('authData');
+      const token = raw ? JSON.parse(raw)?.accessToken : null;
+      if (!token) throw new Error('Please login first.');
+      return { 'Authorization': `Bearer ${token}` };
+    }
+
+    // ── Build news card ───────────────────────────────────────────────────────
+    function buildNewsCard(d, phase) {
+      const now        = new Date().toLocaleString();
+      const headline   = d.headline || d.query || '🔍 Research Report';
+      const tldr       = d.tldr || d.quick_answer || '';
+      const bodyHtml   = (d.body || []).map(p => `<p>${escapeHtml(p)}</p>`).join('');
+      const sourceStats = (d.sources || []).map(scoreSource);
+      const confidence = inferConfidence(sourceStats, (d.key_takeaways || []).length);
+      const reactTraceHtml = buildReActTrace(d, phase, d.query || headline);
+
+      const takeawaysHtml = (d.key_takeaways || []).length
+        ? `<div class="news-section-title"><i class="fas fa-bolt"></i> Key Takeaways</div>
+           <ul class="takeaway-list">${d.key_takeaways.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`
+        : '';
+
+      const followupHtml = (d.follow_up_questions || []).length
+        ? `<div class="news-section-title"><i class="fas fa-comments"></i> Explore Further</div>
+           <div class="followup-chips">${
+             d.follow_up_questions.map(q =>
+               `<button class="followup-chip" onclick="fillPrompt(this)" data-q="${escapeHtml(q)}">${escapeHtml(q)}</button>`
+             ).join('')
+           }</div>`
+        : '';
+
+      const sourcesHtml = (d.sources || []).map((s, i) => {
+        const stats = sourceStats[i] || { band: 'low', score: 50, domain: '' };
+        return `<div class="source-item">
+          <span class="source-num">${i + 1}</span>
+          <div class="source-info">
+            <a href="${safeUrl(s.url)}" target="_blank" rel="noopener">${escapeHtml(s.title)}</a>
+            <span class="source-domain">${escapeHtml(stats.domain)}</span>
+            <div class="source-meta">
+              ${escapeHtml(stats.domainType)} · score ${stats.score}
+              <span class="quality-chip ${stats.band}">${stats.band.toUpperCase()} QUALITY</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+
+      const loadingBadge = phase === 1
+        ? `<span style="font-size:0.68rem;background:rgba(255,255,255,0.2);color:#fff;padding:2px 8px;border-radius:8px;margin-left:8px;">⏳ Analysing…</span>`
+        : '';
+
+      const card = document.createElement('div');
+      card.className = 'news-card';
+      card.innerHTML = `
+        <div class="news-headline-bar">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+            <div>
+              <div class="news-category">🔍 Research Report &nbsp;·&nbsp; Vikaa.AI ${loadingBadge}</div>
+              <div class="news-headline">
+                ${escapeHtml(headline)}
+                <span class="confidence-badge ${confidence.band}">${confidence.label}</span>
+              </div>
+            </div>
+            <button class="share-btn" style="flex-shrink:0;margin-top:4px;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.4);color:#fff;">⬆ Share</button>
+          </div>
+        </div>
+        ${tldr ? `<div class="news-tldr">${escapeHtml(tldr)}</div>` : ''}
+        <div class="news-body">
+          ${reactTraceHtml}
+          ${phase === 1
+            ? `<p style="color:#bbb;font-style:italic;font-size:0.82rem;">⏳ Writing analysis…</p>`
+            : bodyHtml + takeawaysHtml + followupHtml}
+        </div>
+        ${(d.sources || []).length ? `
+          <div class="news-sources">
+            <div class="news-section-title"><i class="fas fa-link"></i> Sources</div>
+            ${sourcesHtml}
+          </div>` : ''}
+        <div class="news-toolbar">
+          <span class="news-timestamp">Generated ${now}</span>
+          <button class="copy-btn">Copy Summary</button>
+        </div>`;
+      return card;
+    }
+
+    function bindCardButtons(card, d) {
+      const plainText = [
+        d.headline || '', '', d.tldr || '',
+        '', ...(d.body || []),
+        '', 'Key Takeaways:', ...(d.key_takeaways || []).map(t => `• ${t}`),
+        '', 'Sources:', ...(d.sources || []).map((s, i) => `[${i+1}] ${s.title} — ${s.url}`),
+      ].join('\n');
+
+      card.querySelector('.copy-btn').addEventListener('click', function() {
+        navigator.clipboard.writeText(plainText).then(() => {
+          this.textContent = '✓ Copied';
+          setTimeout(() => this.textContent = 'Copy Summary', 1500);
+        });
+      });
+      card.querySelector('.share-btn').addEventListener('click', () => openShare(d));
+    }
+
+    // ── Two-phase fetch ───────────────────────────────────────────────────────
+    async function runWebResearch(query, refine_mode) {
+      const feed    = document.getElementById('activityFeed');
+      const baseUrl = (typeof CONFIG !== 'undefined') ? CONFIG.API_BASE_URL : 'https://app-wtiw.onrender.com';
+      const payload = {
+        query,
+        max_results: getDepthMaxResults(),
+        depth_level: parseInt(depthSlider.value),
+      };
+      if (refine_mode) payload.refine_mode = refine_mode;
+      const priorContext = getContextPayload();
+      if (priorContext) payload.research_context = priorContext;
+      researchMemory.lastTopic = query;
+
+      // Phase 1 — sources fast
+      const thinking = document.createElement('div');
+      thinking.className = 'status-card';
+      thinking.style.cssText = 'font-size:0.85rem;color:#999;font-style:italic;';
+      thinking.innerHTML = `⏳ Searching for <strong style="color:#444">${escapeHtml(query)}</strong>…`;
+      feed.appendChild(thinking);
+      thinking.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+      let card = null;
+      try {
+        const r1 = await fetch(`${baseUrl}/tools/web-research/quick`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaderOrThrow() },
+          body: JSON.stringify(payload),
+        });
+        if (r1.ok) {
+          const p1 = await r1.json();
+          p1.query = query;
+          card = buildNewsCard(p1, 1);
+          feed.appendChild(card);
+          bindCardButtons(card, p1);
+          card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          const err = await r1.json().catch(() => ({}));
+          const msg = typeof err.detail === 'string' ? err.detail : (err.detail ? JSON.stringify(err.detail) : r1.statusText);
+          addStatusCard(`<span style="color:#e53e3e">⚠️ Quick search failed:</span> ${escapeHtml(msg || 'Unknown error')}`);
+        }
+      } catch (_) {
+        addStatusCard('<span style="color:#e53e3e">⚠️ Quick search failed.</span> Check your connection.');
+      } finally {
+        if (thinking.parentNode) thinking.remove();
+      }
+
+      // Phase 2 — full analysis (async job + poll)
+      const analysing = document.createElement('div');
+      analysing.className = 'status-card';
+      analysing.style.cssText = 'font-size:0.83rem;color:#999;font-style:italic;';
+      analysing.innerHTML = '🧠 Writing analysis…';
+      feed.appendChild(analysing);
+
+      try {
+        // Launch the job — returns immediately with {job_id, status: "pending"}
+        const r2 = await fetch(`${baseUrl}/tools/web-research`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaderOrThrow() },
+          body: JSON.stringify(payload),
+        });
+
+        if (!r2.ok) {
+          analysing.remove();
+          const err = await r2.json().catch(() => ({}));
+          const detail = err.detail;
+          const msg = typeof detail === 'string' ? detail : (detail ? JSON.stringify(detail) : 'Failed.');
+          addStatusCard(`<span style="color:#e53e3e">⚠️ Analysis error:</span> ${escapeHtml(msg)}`);
+          return;
+        }
+
+        const { job_id } = await r2.json();
+
+        // Poll every 2s, up to 45 attempts (~90s — enough for Deep mode + Render cold start)
+        const MAX_POLLS = 45;
+        let d = null;
+        for (let attempt = 0; attempt < MAX_POLLS; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          let statusData;
+          try {
+            const rs = await fetch(`${baseUrl}/tools/web-research/status/${job_id}`, {
+              headers: getAuthHeaderOrThrow(),
+            });
+            if (!rs.ok) {
+              analysing.remove();
+              addStatusCard(`<span style="color:#e53e3e">⚠️ Analysis error:</span> Could not check job status.`);
+              return;
+            }
+            statusData = await rs.json();
+          } catch (_) {
+            analysing.remove();
+            addStatusCard(`<span style="color:#e53e3e">⚠️ Could not reach the server.</span> Check your connection.`);
+            return;
+          }
+
+          if (statusData.status === 'done') {
+            d = statusData.result;
+            break;
+          }
+          if (statusData.status === 'error') {
+            analysing.remove();
+            addStatusCard(`<span style="color:#e53e3e">⚠️ Analysis error:</span> ${escapeHtml(statusData.error || 'Unknown error')}`);
+            return;
+          }
+          // still pending — update status card to show elapsed time
+          const elapsed = ((attempt + 1) * 2);
+          analysing.innerHTML = `🧠 Writing analysis… <span style="color:#bbb;font-size:0.78rem;">(${elapsed}s)</span>`;
+        }
+
+        analysing.remove();
+
+        if (!d) {
+          addStatusCard(`<span style="color:#e53e3e">⚠️ Analysis timed out.</span> The report took too long — please try again or use a lower depth level.`);
+          return;
+        }
+
+        d.query = d.query || query;
+        const fullCard = buildNewsCard(d, 2);
+        if (card && card.parentNode) card.parentNode.replaceChild(fullCard, card);
+        else feed.appendChild(fullCard);
+        bindCardButtons(fullCard, d);
+        fullCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        researchMemory.history.push({
+          query,
+          headline: d.headline || query,
+          key_takeaways: d.key_takeaways || [],
+          savedAt: Date.now(),
+        });
+        if (researchMemory.history.length > MAX_RESEARCH_HISTORY) researchMemory.history.shift();
+        persistResearchHistory();
+        updateContextSummary();
+        refreshHistoryUI();
+
+      } catch (err) {
+        analysing.remove();
+        addStatusCard(`<span style="color:#e53e3e">⚠️ Could not reach the server.</span> Check your connection.`);
+        console.error('Web research error:', err);
+      }
+    }
+
+    function addStatusCard(html) {
+      const feed = document.getElementById('activityFeed');
+      const el = document.createElement('div');
+      el.className = 'status-card';
+      el.innerHTML = html;
+      feed.appendChild(el);
+      el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    // ── Share overlay ─────────────────────────────────────────────────────────
+    function openShare(data) {
+      const headline = data.headline || data.query || 'Research Report';
+      const tldr     = data.tldr || data.quick_answer || '';
+
+      document.getElementById('shareContent').innerHTML = `
+        <h1>${escapeHtml(headline)}</h1>
+        ${tldr ? `<div class="share-tldr">${escapeHtml(tldr)}</div>` : ''}
+        ${(data.body || []).map(p => `<p>${escapeHtml(p)}</p>`).join('')}
+        ${(data.key_takeaways || []).length
+          ? `<p style="font-weight:700;margin:16px 0 6px;">Key Takeaways</p>
+             <ul>${data.key_takeaways.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>` : ''}
+        ${(data.sources || []).length
+          ? `<div class="share-sources">${data.sources.map((s,i) =>
+              `[${i+1}] <a href="${safeUrl(s.url)}" target="_blank">${escapeHtml(s.title)}</a>`
+            ).join('<br>')}</div>` : ''}`;
+
+      document.getElementById('shareMeta').textContent =
+        `Research Report · Generated by Vikaa.AI · ${new Date().toLocaleString()}`;
+
+      const shareText  = encodeURIComponent(`${headline}\n\n${tldr}\n\nResearched by Vikaa.AI`);
+      const shareTitle = encodeURIComponent(headline);
+
+      const actions = document.getElementById('shareActions');
+      actions.innerHTML = '';
+      [
+        { cls:'shr-whatsapp', icon:'fab fa-whatsapp',  label:'WhatsApp',   href:`https://api.whatsapp.com/send?text=${shareText}` },
+        { cls:'shr-linkedin', icon:'fab fa-linkedin',  label:'LinkedIn',   href:`https://www.linkedin.com/shareArticle?mini=true&title=${shareTitle}&summary=${encodeURIComponent(tldr)}` },
+        { cls:'shr-twitter',  icon:'fab fa-x-twitter', label:'X / Twitter',href:`https://twitter.com/intent/tweet?text=${shareText}` },
+        { cls:'shr-email',    icon:'fas fa-envelope',  label:'Email',      href:`mailto:?subject=${shareTitle}&body=${encodeURIComponent(headline+'\n\n'+tldr+'\n\nResearched by Vikaa.AI')}` },
+        { cls:'shr-print',    icon:'fas fa-print',     label:'Print / PDF',href: null },
+      ].forEach(b => {
+        const el = document.createElement(b.href ? 'a' : 'button');
+        el.className = `shr-btn ${b.cls}`;
+        el.innerHTML = `<i class="${b.icon}"></i> ${b.label}`;
+        if (b.href) { el.href = b.href; el.target = '_blank'; el.rel = 'noopener'; }
+        else { el.onclick = () => window.print(); }
+        actions.appendChild(el);
+      });
+
+      document.getElementById('shareOverlay').classList.add('open');
+    }
+
+    function closeShare() {
+      document.getElementById('shareOverlay').classList.remove('open');
+    }
+  </script>
+</body>
+</html>

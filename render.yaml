@@ -1,0 +1,55 @@
+services:
+  - type: web
+    name: vikaa-ai-platform
+    env: python
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: chmod +x build.sh && ./build.sh
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+
+      # ── LLM APIs ──────────────────────────────────────────────────────────────
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+
+      # ── Search ────────────────────────────────────────────────────────────────
+      - key: TAVILY_API_KEY
+        sync: false
+
+      # ── Supabase (Auth + DB) ──────────────────────────────────────────────────
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+
+      # ── Email (SMTP via Hostinger) ────────────────────────────────────────────
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+
+      # ── Gmail OAuth ───────────────────────────────────────────────────────────
+      # NOTE: Gmail OAuth tokens require local browser flow (generate_token.py)
+      # For Render, pre-generate token.json locally and set as env var or use
+      # a service account. credentials.json is not committed — set path here.
+      - key: GMAIL_OAUTH_CREDENTIALS_PATH
+        sync: false
+
+      # ── Python / App ──────────────────────────────────────────────────────────
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"

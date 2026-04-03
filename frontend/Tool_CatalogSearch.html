@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Databricks Conversational SQL — Vikaa.AI</title>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      min-height: 100%;
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(180deg, #eef2f7 0%, #f4f6f9 32%, #f8fafc 100%);
+      color: #333;
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+    .action-bar {
+      padding: 14px 20px;
+      background: linear-gradient(135deg, #ffffff 0%, #f0f6ff 42%, #fafdff 100%);
+      border-bottom: 1px solid #c7d8f0;
+      box-shadow: 0 2px 10px rgba(15, 41, 66, 0.07);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .action-bar h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0f2942;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge-v1 {
+      font-size: 0.65rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #e0edff 0%, #dbeafe 100%);
+      color: #1e3a8a;
+      border: 1px solid #93c5fd;
+      border-radius: 10px;
+      padding: 2px 8px;
+    }
+    .btn {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #ff6b2c 0%, #ff5a1f 50%, #e84612 100%);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(255, 90, 31, 0.35);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #ff7a3d 0%, #ff5a1f 100%);
+      box-shadow: 0 4px 12px rgba(255, 90, 31, 0.4);
+    }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    #contentArea {
+      padding: 20px;
+      max-width: 920px;
+      margin: 0 auto;
+      width: 100%;
+      min-width: 0;
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+
+    .purpose-card {
+      background: linear-gradient(135deg, #0a2540 0%, #134e7a 38%, #1a5f8a 100%);
+      color: #fff;
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 6px 24px rgba(10, 37, 64, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .purpose-card h4 { margin: 0 0 8px 0; font-size: 0.9rem; font-weight: 700; }
+    .purpose-card p {
+      margin: 0;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      opacity: 0.95;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    .panel {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #dce3ee;
+      border-left: 4px solid #2563eb;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 14px rgba(15, 41, 66, 0.06);
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+    .panel-current {
+      border-left-color: #0d9488;
+    }
+    .panel-history {
+      border-left-color: #4f46e5;
+    }
+    .panel-section-title {
+      margin: 0 0 10px 0;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #0f2942;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-section-title i {
+      color: #64748b;
+      font-size: 0.85em;
+    }
+    .history-retention-note {
+      font-size: 0.74rem;
+      color: #64748b;
+      margin: 0 0 10px 0;
+      line-height: 1.45;
+      font-family: 'Roboto', sans-serif;
+      max-width: 100%;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }
+    .field-block { margin-bottom: 14px; }
+    .field-block:last-child { margin-bottom: 0; }
+    .field-hint {
+      font-size: 0.72rem;
+      color: #64748b;
+      margin: 6px 0 0 0;
+      line-height: 1.45;
+      font-family: 'Roboto', sans-serif;
+      font-weight: 400;
+    }
+    .panel label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
+    }
+    .panel input, .panel textarea, .panel select {
+      width: 100%;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.85rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+    .panel textarea { min-height: 88px; resize: vertical; font-family: 'Roboto', sans-serif; line-height: 1.5; }
+    .row2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .panel .row2 { margin-bottom: 12px; }
+    .row2 .field-block { margin-bottom: 0; }
+    .history-hint {
+      display: none;
+      font-size: 0.72rem;
+      color: #64748b;
+      margin: 10px 0 6px 0;
+      line-height: 1.45;
+      font-family: 'Roboto', sans-serif;
+      font-style: italic;
+      max-width: 100%;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }
+    .history-hint.visible { display: block; }
+    .query-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      margin-bottom: 12px;
+    }
+    .query-row .query-grow { flex: 1; min-width: 0; }
+    .query-row .query-grow textarea { margin-bottom: 0; width: 100%; }
+    .query-row .btn { flex-shrink: 0; margin-bottom: 0; }
+
+    .meta-line { font-size: 0.72rem; color: #64748b; margin: 0 0 10px 0; font-family: 'Roboto', sans-serif; }
+
+    #accessBanner {
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .access-banner.execute { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .access-banner.readonly { background: #fffbeb; color: #b45309; border: 1px solid #fcd34d; }
+
+    .answer-box {
+      font-family: 'Roboto', sans-serif;
+      font-size: 0.9rem;
+      line-height: 1.55;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      min-height: 120px;
+    }
+    .answer-box.markdown-body :first-child { margin-top: 0; }
+    .answer-box.markdown-body h1 { font-size: 1.05rem; margin: 0.6em 0 0.35em; }
+    .answer-box.markdown-body h2 { font-size: 0.98rem; margin: 0.6em 0 0.35em; }
+    .answer-box.markdown-body ul { margin: 0.4em 0; padding-left: 1.2em; }
+    .answer-box.markdown-body code { background: #e2e8f0; padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
+    .answer-box.thinking { color: #64748b; }
+    .answer-box-empty { color: #64748b; }
+    .answer-box.loading-active {
+      border-color: #7dd3fc;
+      background: linear-gradient(165deg, #f0f9ff 0%, #f8fafc 55%, #fff 100%);
+      box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.12);
+    }
+    .loading-state {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .loading-state .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #cbd5e1;
+      border-top-color: #ff5a1f;
+      border-radius: 50%;
+      animation: cs-spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes cs-spin { to { transform: rotate(360deg); } }
+    .loading-state strong {
+      display: block;
+      font-size: 0.95rem;
+      color: #0f2942;
+      margin-bottom: 6px;
+    }
+    .loading-sub {
+      margin: 0;
+      font-size: 0.8rem;
+      color: #475569;
+      line-height: 1.45;
+    }
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 6px;
+    }
+    .btn-secondary {
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      color: #0f2942; border: 1px solid #c2cfde;
+      font-size: 0.72rem; padding: 6px 12px;
+    }
+    .btn-secondary:hover:not(:disabled) { background: #e2e8f0; border-color: #94a3b8; }
+    .scope-warn {
+      background: #fffbeb; border: 1px solid #fcd34d; color: #92400e;
+      border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 0.78rem;
+      font-family: 'Roboto', sans-serif;
+    }
+    .history-panel {
+      display: none;
+      margin-top: 12px;
+      max-height: 260px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+      font-size: 0.75rem;
+      font-family: 'Roboto', sans-serif;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .history-panel.open { display: block; }
+    .history-item {
+      border-bottom: 1px solid #f1f5f9;
+      padding: 8px 0;
+      cursor: pointer;
+      max-width: 100%;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }
+    .history-item:last-child { border-bottom: none; }
+    .history-item:hover { background: #f8fafc; }
+    .share-wrap { position: relative; display: inline-block; }
+    .share-popover {
+      display: none; position: absolute; right: 0; top: calc(100% + 6px); z-index: 50;
+      min-width: 220px; max-width: min(92vw, 280px);
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+      box-shadow: 0 10px 40px rgba(15, 41, 66, 0.12);
+      padding: 6px; font-family: 'Roboto', sans-serif;
+    }
+    .share-popover.open { display: block; }
+    .share-opt {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      text-align: left; border: none; background: transparent;
+      padding: 10px 12px; border-radius: 8px; font-size: 0.8rem; color: #0f2942;
+      cursor: pointer; font-family: inherit;
+    }
+    .share-opt:hover { background: #f1f5f9; }
+    .share-opt i { width: 1.1em; text-align: center; color: #64748b; }
+    .share-divider { height: 1px; background: #e2e8f0; margin: 4px 6px; }
+    .answer-meta {
+      font-size: 0.72rem;
+      color: #808080;
+      margin-top: 10px;
+      font-family: 'Roboto', sans-serif;
+      line-height: 1.45;
+    }
+    .answer-meta-when {
+      font-weight: 600;
+      margin-bottom: 4px;
+      letter-spacing: 0.02em;
+    }
+    .answer-meta-tech {
+      font-weight: 400;
+      opacity: 0.95;
+    }
+    .err-panel {
+      display: none;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid #fecaca;
+      background: #fef2f2;
+      font-family: 'Roboto', sans-serif;
+    }
+    .err-panel-summary {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #991b1b;
+      line-height: 1.5;
+    }
+    .err-detail-toggle {
+      margin-top: 10px;
+      padding: 0;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #1d4ed8;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      font-family: 'Roboto', sans-serif;
+    }
+    .err-detail-toggle:hover { color: #1e3a8a; }
+    .err-detail-toggle:focus-visible {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+    .err-detail {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      font-size: 0.7rem;
+      line-height: 1.45;
+      color: #334155;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      max-height: 220px;
+      overflow: auto;
+      font-family: ui-monospace, monospace;
+    }
+    .err { color: #b91c1c; font-size: 0.82rem; margin-top: 8px; }
+    .sql-box {
+      font-family: ui-monospace, monospace;
+      font-size: 0.78rem;
+      background: #1e293b;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      overflow-x: auto;
+      margin-top: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    #currentResultPanel .toolbar .btn-secondary {
+      font-size: 0.68rem;
+      padding: 5px 10px;
+      font-weight: 600;
+      color: #475569;
+      background: #f8fafc;
+      border-color: #e2e8f0;
+      box-shadow: none;
+    }
+    #currentResultPanel .toolbar .btn-secondary:hover:not(:disabled) {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      color: #334155;
+    }
+
+    .btn:focus-visible,
+    .err-detail-toggle:focus-visible,
+    .panel input:focus-visible,
+    .panel select:focus-visible,
+    .panel textarea:focus-visible {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
+    }
+    .btn-primary:focus-visible { outline-color: #ea580c; }
+
+    @media (max-width: 560px) {
+      .row2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="action-bar">
+    <h3><i class="fas fa-comments" style="color:#ff5a1f;"></i> Databricks Conversational SQL <span class="badge-v1">Unity Catalog · SQL</span></h3>
+    <button type="button" class="btn btn-secondary" id="btnHistory"><i class="fas fa-clock-rotate-left"></i> History</button>
+  </div>
+
+  <div id="contentArea">
+    <div id="accessBanner" class="access-banner readonly">Checking access…</div>
+
+    <div class="purpose-card">
+      <h4><i class="fas fa-circle-info"></i> Natural language → read-only Spark SQL on Databricks</h4>
+      <p>
+        First choose the <strong>SQL warehouse</strong> that will run the query. Then pick <strong>catalog</strong> and
+        <strong>schema</strong> from Unity Catalog (same APIs as the UC browser). Warehouses are listed from
+        <code style="background:rgba(255,255,255,.15);padding:1px 6px;border-radius:4px;">databricks_sql_config.json</code>
+        (UUID per warehouse).         The server needs <code style="background:rgba(255,255,255,.15);padding:1px 6px;border-radius:4px;">DATABRICKS_*</code> and an LLM key:
+        <code style="background:rgba(255,255,255,.15);padding:1px 6px;border-radius:4px;">GEMINI_API_KEY</code> or
+        <code style="background:rgba(255,255,255,.15);padding:1px 6px;border-radius:4px;">GOOGLE_API_KEY</code>
+        (primary), with <code style="background:rgba(255,255,255,.15);padding:1px 6px;border-radius:4px;">ANTHROPIC_API_KEY</code> as optional fallback.
+        <strong>Ask</strong> stays disabled until warehouse, catalog, schema scope, and your question are set.
+      </p>
+    </div>
+
+    <div class="panel">
+      <div class="row2">
+        <div class="field-block">
+          <label for="warehouseSelect">SQL warehouse</label>
+          <select id="warehouseSelect">
+            <option value="">— Loading config… —</option>
+          </select>
+          <p class="field-hint">Where generated SQL runs (Databricks SQL warehouse).</p>
+        </div>
+        <div class="field-block">
+          <label for="maxTables">UC metadata depth (max tables per schema)</label>
+          <input id="maxTables" type="number" min="1" max="200" value="50" title="Table metadata sent to the model per schema" />
+          <p class="field-hint">UC table/column context per schema for the model — not a row limit. Increase if SQL ignores the right tables.</p>
+        </div>
+      </div>
+      <div class="row2">
+        <div>
+          <label for="catalogSelect">Catalog (from Unity Catalog)</label>
+          <select id="catalogSelect">
+            <option value="">— Loading catalogs… —</option>
+          </select>
+        </div>
+        <div>
+          <label for="schemaSelect">Schema</label>
+          <select id="schemaSelect" disabled>
+            <option value="">— Select a catalog first —</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="question">Your question</label>
+      <div class="query-row">
+        <div class="query-grow">
+          <textarea id="question" placeholder="e.g. How much sales in the last 10 years?"></textarea>
+        </div>
+        <button type="button" class="btn btn-primary" id="btnAsk" disabled><i class="fas fa-wand-magic-sparkles"></i> Ask</button>
+      </div>
+      <p class="meta-line" id="apiStatus">Resolving API…</p>
+    </div>
+
+    <div class="panel panel-current" id="currentResultPanel">
+      <h4 class="panel-section-title"><i class="fas fa-arrow-pointer"></i> Current</h4>
+      <p class="meta-line" style="margin-top:-4px;margin-bottom:10px;">Latest answer and SQL from your last <strong>Ask</strong>.</p>
+      <div id="scopeWarn" class="scope-warn" style="display:none;"></div>
+      <label>Summary</label>
+      <div class="toolbar">
+        <button type="button" class="btn btn-secondary" id="btnCopySummary"><i class="fas fa-copy"></i> Copy summary</button>
+        <button type="button" class="btn btn-secondary" id="btnCopySql"><i class="fas fa-code"></i> Copy SQL</button>
+        <button type="button" class="btn btn-secondary" id="btnCopyCsv"><i class="fas fa-table"></i> Copy data (CSV)</button>
+        <div class="share-wrap" id="shareWrap">
+          <button type="button" class="btn btn-secondary" id="btnShareMenu" aria-haspopup="true" aria-expanded="false">
+            <i class="fas fa-share-from-square"></i> Social share
+          </button>
+          <div id="sharePopover" class="share-popover" role="menu">
+            <button type="button" class="share-opt" id="shareNative" role="menuitem">
+              <i class="fas fa-arrow-up-right-from-square"></i> Share / Send…
+            </button>
+            <button type="button" class="share-opt" id="shareEmail" role="menuitem">
+              <i class="fas fa-envelope"></i> Email
+            </button>
+            <button type="button" class="share-opt" id="shareWhatsApp" role="menuitem">
+              <i class="fab fa-whatsapp"></i> WhatsApp
+            </button>
+            <button type="button" class="share-opt" id="shareLinkedIn" role="menuitem">
+              <i class="fab fa-linkedin-in"></i> LinkedIn
+            </button>
+            <button type="button" class="share-opt" id="shareX" role="menuitem">
+              <i class="fab fa-x-twitter"></i> X (Twitter)
+            </button>
+            <div class="share-divider" aria-hidden="true"></div>
+            <button type="button" class="share-opt" id="shareCopyMd" role="menuitem">
+              <i class="fas fa-copy"></i> Copy markdown
+            </button>
+          </div>
+        </div>
+      </div>
+      <p class="meta-line" id="copyStatus" style="min-height:1.2em;font-weight:600;" aria-live="polite"></p>
+      <div id="answer" class="answer-box answer-box-empty">No run yet — enter a question above and choose <strong>Ask</strong>.</div>
+      <label style="margin-top:14px;">SQL executed</label>
+      <pre id="sqlBox" class="sql-box" style="display:none;"> </pre>
+      <div id="answerMeta" class="answer-meta"></div>
+      <div id="errPanel" class="err-panel" role="alert" aria-live="assertive">
+        <div id="errSummary" class="err-panel-summary"></div>
+        <button type="button" id="btnErrToggle" class="err-detail-toggle" style="display:none">Show technical details</button>
+        <pre id="errDetail" class="err-detail"></pre>
+      </div>
+    </div>
+
+    <div class="panel panel-history" id="historyBlockPanel">
+      <h4 class="panel-section-title"><i class="fas fa-clock-rotate-left"></i> History</h4>
+      <p class="history-retention-note">
+        We only keep questions from roughly the last <strong>7 days</strong> — older entries are cleared automatically.
+        Use the <strong>History</strong> button in the header to show or hide the list below.
+      </p>
+      <p id="historyHint" class="history-hint" role="note"></p>
+      <div id="historyPanel" class="history-panel"></div>
+    </div>
+  </div>
+
+  <script>
+    const HEALTH_PATHS_PRIMARY = ['/tools/databricks-query/health', '/api/tools/databricks-query/health', '/databricks-query/health'];
+    const HEALTH_PATHS_FALLBACK = ['/tools/catalog-search/health', '/api/tools/catalog-search/health', '/catalog-search/health'];
+    const ASK_PREFIXES = ['/tools/databricks-query', '/api/tools/databricks-query', '/databricks-query'];
+    const UC_PREFIXES = ['/tools/unity-catalog', '/api/tools/unity-catalog', '/unity-catalog'];
+    const SCHEMA_ALL_VALUE = '__ALL__';
+    const SESSION_KEY = 'vikaa_dq_session_v1';
+    const HISTORY_KEY = 'vikaa_dq_history_v2';
+    const HISTORY_MAX = 16;
+    const HISTORY_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+
+    function pruneHistoryByAge(items) {
+      if (!Array.isArray(items)) return [];
+      const cutoff = Date.now() - HISTORY_RETENTION_MS;
+      return items.filter((item) => (item.ts || 0) >= cutoff);
+    }
+
+    let __healthWarehouseOk = false;
+    let __sqlConfigDefaults = { warehouses: [], defaultWarehouseId: '' };
+    let lastResult = null;
+
+    function getOrCreateSessionId() {
+      let s = localStorage.getItem(SESSION_KEY);
+      if (!s) {
+        s = (crypto.randomUUID && crypto.randomUUID()) ||
+          's' + Date.now() + '-' + Math.random().toString(36).slice(2);
+        localStorage.setItem(SESSION_KEY, s);
+      }
+      return s;
+    }
+
+    function formatFetchFailure(e) {
+      const m = (e && e.message) ? String(e.message) : String(e);
+      if (/failed to fetch|networkerror|load failed/i.test(m)) {
+        return 'Cannot reach the API — is uvicorn running and is CONFIG.API_BASE_URL correct?';
+      }
+      return m;
+    }
+
+    function formatApiDetail(data, fallbackStatus) {
+      const d = data && data.detail;
+      if (typeof d === 'string') return d;
+      if (d && typeof d === 'object') {
+        const parts = [];
+        if (d.message) parts.push(String(d.message));
+        if (d.category) parts.push('[' + d.category + ']');
+        if (d.sql) parts.push('\nSQL: ' + d.sql);
+        if (parts.length) return parts.filter(Boolean).join(' ');
+        try { return JSON.stringify(d); } catch (_) { return fallbackStatus || 'Error'; }
+      }
+      return fallbackStatus || 'Request failed';
+    }
+
+    function warehouseErrorHint(category) {
+      const m = {
+        auth: 'Refresh or replace the Databricks PAT in DATABRICKS_TOKEN on the server.',
+        permission: 'You may need SELECT on these tables or access to this warehouse — ask your admin.',
+        warehouse_not_found: 'Use the warehouse UUID from Databricks (not the display name) in JSON or env.',
+        warehouse_state: 'In Databricks → SQL Warehouses: start or resume the warehouse, then try again.',
+        invalid_request: 'Check the warehouse UUID and that the SQL is valid for this workspace.',
+        canceled: 'The run was stopped — try a narrower filter or add LIMIT.',
+        timeout: 'Narrow the query or raise DATABRICKS_QUERY_STATEMENT_TIMEOUT_S on the server.',
+        network: 'Verify DATABRICKS_HOST and network/VPN.',
+        object_not_found: 'Confirm catalog.schema.table names and Unity Catalog access.',
+      };
+      return (category && m[category]) ? m[category] : '';
+    }
+
+    function buildTechnicalDetail(apiDetail) {
+      if (apiDetail == null || apiDetail === '') return '';
+      if (typeof apiDetail === 'string') return apiDetail;
+      if (Array.isArray(apiDetail)) {
+        try { return JSON.stringify(apiDetail, null, 2); } catch (_) { return String(apiDetail); }
+      }
+      const o = apiDetail;
+      const chunks = [];
+      if (o.message) chunks.push(String(o.message));
+      if (o.warehouse_error_detail) chunks.push(String(o.warehouse_error_detail));
+      if (o.sql) chunks.push('SQL:\n' + String(o.sql));
+      if (o.statement_id != null) chunks.push('statement_id: ' + String(o.statement_id));
+      if (o.elapsed_ms != null) chunks.push('elapsed_ms: ' + String(o.elapsed_ms));
+      if (o.category) chunks.push('category: ' + String(o.category));
+      if (chunks.length) return chunks.join('\n\n');
+      try { return JSON.stringify(o, null, 2); } catch (_) { return String(o); }
+    }
+
+    function clearErrorPanel() {
+      const panel = document.getElementById('errPanel');
+      if (!panel) return;
+      panel.style.display = 'none';
+      document.getElementById('errSummary').textContent = '';
+      const det = document.getElementById('errDetail');
+      det.textContent = '';
+      det.style.display = 'none';
+      const btn = document.getElementById('btnErrToggle');
+      btn.style.display = 'none';
+      btn.onclick = null;
+    }
+
+    function showErrorPanel(summary, apiDetail) {
+      const panel = document.getElementById('errPanel');
+      const sumEl = document.getElementById('errSummary');
+      const detEl = document.getElementById('errDetail');
+      const btn = document.getElementById('btnErrToggle');
+      let line = (summary || 'Something went wrong.').trim();
+      if (apiDetail && typeof apiDetail === 'object' && apiDetail.category) {
+        const h = warehouseErrorHint(apiDetail.category);
+        if (h) line += ' — ' + h;
+      }
+      sumEl.textContent = line;
+      const tech = buildTechnicalDetail(apiDetail).trim();
+      const showTech = tech.length > 0 && tech !== line;
+      detEl.textContent = tech;
+      detEl.style.display = 'none';
+      btn.style.display = showTech ? 'inline' : 'none';
+      btn.textContent = 'Show technical details';
+      btn.onclick = function () {
+        const open = detEl.style.display === 'block';
+        detEl.style.display = open ? 'none' : 'block';
+        btn.textContent = open ? 'Show technical details' : 'Hide technical details';
+      };
+      panel.style.display = 'block';
+    }
+
+    function setAnswerEmptyState() {
+      const el = document.getElementById('answer');
+      el.classList.remove('markdown-body');
+      el.classList.add('answer-box-empty');
+      el.innerHTML = 'No run yet — enter a question above and choose <strong>Ask</strong>.';
+    }
+
+    function rowsToCsv(columns, rows) {
+      const esc = (v) => {
+        const s = v == null ? '' : String(v);
+        if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+        return s;
+      };
+      const head = (columns || []).map(esc).join(',');
+      const body = (rows || []).map((r) => (r || []).map(esc).join(',')).join('\n');
+      return head + (body ? '\n' + body : '');
+    }
+
+    function renderSummaryMarkdown(text) {
+      const el = document.getElementById('answer');
+      el.classList.remove('answer-box-empty');
+      const raw = (text == null || text === '') ? '—' : String(text);
+      try {
+        if (typeof marked !== 'undefined' && marked.parse) {
+          el.classList.add('markdown-body');
+          el.innerHTML = marked.parse(raw, { breaks: true });
+          return;
+        }
+      } catch (e) {
+        console.warn('markdown render', e);
+      }
+      el.classList.remove('markdown-body');
+      el.textContent = raw;
+    }
+
+    function getApiBase() {
+      const b = (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) ? CONFIG.API_BASE_URL : 'http://localhost:10000';
+      return String(b).replace(/\/$/, '');
+    }
+
+    function vikaaTrustLanExecute() {
+      if (typeof vikaaIsTrustedDevFrontend === 'function') return vikaaIsTrustedDevFrontend();
+      const h = (window.location.hostname || '').toLowerCase();
+      return h === 'localhost' || h === '127.0.0.1';
+    }
+
+    function getCandidateApiBases() {
+      const preferred = getApiBase();
+      const host = window.location.hostname || 'localhost';
+      const h = host.toLowerCase();
+      const candidates = [preferred];
+      const isLan = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h);
+      if (h === 'localhost' || h === '127.0.0.1') {
+        candidates.push(`http://${host}:10000`, `http://${host}:8000`);
+        if (h === 'localhost') candidates.push('http://127.0.0.1:10000', 'http://127.0.0.1:8000');
+      }
+      if (isLan) {
+        candidates.push(`http://${host}:10000`, `http://${host}:8000`);
+      }
+      return [...new Set(candidates.map(x => String(x).replace(/\/$/, '')))];
+    }
+
+    async function resolveApiBase() {
+      for (const base of getCandidateApiBases()) {
+        for (const h of HEALTH_PATHS_PRIMARY) {
+          try {
+            const r = await fetch(base + h, { method: 'GET' });
+            if (r.ok) return base;
+          } catch (_) { /* next */ }
+        }
+        for (const h of HEALTH_PATHS_FALLBACK) {
+          try {
+            const r = await fetch(base + h, { method: 'GET' });
+            if (r.ok) return base;
+          } catch (_) { /* next */ }
+        }
+      }
+      return getApiBase();
+    }
+
+    async function getAccessMode() {
+      const raw = localStorage.getItem('authData');
+      let token = null;
+      try { token = raw ? JSON.parse(raw)?.accessToken : null; } catch (_) { token = null; }
+      const isLocal = vikaaTrustLanExecute();
+      if (!token) {
+        if (isLocal) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+        return { can_execute: false, mode: 'read-only' };
+      }
+      try {
+        const base = getApiBase();
+        const r = await fetch(`${base}/auth/access-mode`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!r.ok) {
+          if (isLocal) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+          return { can_execute: false, mode: 'read-only' };
+        }
+        return await r.json();
+      } catch (_) {
+        if (isLocal) return { can_execute: true, mode: 'execute', acl_status: 'local-dev' };
+        return { can_execute: false, mode: 'read-only' };
+      }
+    }
+
+    function getAuthHeaders() {
+      const raw = localStorage.getItem('authData');
+      let token = null;
+      try { token = raw ? JSON.parse(raw)?.accessToken : null; } catch (_) { token = null; }
+      const isLocal = vikaaTrustLanExecute();
+      if (token) return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+      if (isLocal) return { 'Content-Type': 'application/json' };
+      throw new Error('Please log in (Supabase) to call this API from this host.');
+    }
+
+    async function fetchUc(base, pathSuffix) {
+      let lastErr = null;
+      for (const p of UC_PREFIXES) {
+        try {
+          const r = await fetch(base + p + pathSuffix, { headers: { ...getAuthHeaders() } });
+          const data = await r.json().catch(() => ({}));
+          if (r.ok) return data;
+          const msg = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail || data);
+          lastErr = new Error(msg || r.statusText);
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error('Unity Catalog request failed');
+    }
+
+    async function loadSqlConfig() {
+      const sel = document.getElementById('warehouseSelect');
+      sel.innerHTML = '';
+      try {
+        const r = await fetch('databricks_sql_config.json', { cache: 'no-store' });
+        if (!r.ok) throw new Error('databricks_sql_config.json not found');
+        const j = await r.json();
+        __sqlConfigDefaults.warehouses = Array.isArray(j.warehouses) ? j.warehouses : [];
+        __sqlConfigDefaults.defaultWarehouseId = (j.defaultWarehouseId || '').trim();
+        if (!__sqlConfigDefaults.warehouses.length && __sqlConfigDefaults.defaultWarehouseId) {
+          __sqlConfigDefaults.warehouses = [{ id: __sqlConfigDefaults.defaultWarehouseId, name: 'Default (JSON)' }];
+        }
+        if (!__sqlConfigDefaults.warehouses.length) {
+          sel.innerHTML = '<option value="">— Add warehouses to databricks_sql_config.json —</option>';
+          return;
+        }
+        __sqlConfigDefaults.warehouses.forEach((w) => {
+          const id = (w.id || '').trim();
+          const name = (w.name || id || '?').trim();
+          if (!id) return;
+          const opt = document.createElement('option');
+          opt.value = id;
+          opt.textContent = name + ' (' + id + ')';
+          sel.appendChild(opt);
+        });
+        const def = __sqlConfigDefaults.defaultWarehouseId;
+        if (def) {
+          sel.value = def;
+          if (sel.value !== def) sel.selectedIndex = 0;
+        } else {
+          sel.selectedIndex = 0;
+        }
+      } catch (e) {
+        sel.innerHTML = '<option value="">— Config load failed —</option>';
+        console.warn(e);
+      }
+    }
+
+    async function loadCatalogs(base) {
+      const sel = document.getElementById('catalogSelect');
+      sel.innerHTML = '<option value="">— Choose catalog —</option>';
+      try {
+        const data = await fetchUc(base, '/catalogs');
+        const cats = (data.catalogs || []).slice().sort((a, b) =>
+          String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' })
+        );
+        cats.forEach((c) => {
+          const name = c.name;
+          if (!name) return;
+          const opt = document.createElement('option');
+          opt.value = name;
+          opt.textContent = name + (c.catalog_type ? ' · ' + String(c.catalog_type).replace(/_/g, ' ') : '');
+          sel.appendChild(opt);
+        });
+        if (cats.length === 0) {
+          sel.innerHTML = '<option value="">— No catalogs (check PAT) —</option>';
+        }
+      } catch (e) {
+        sel.innerHTML = '<option value="">— Could not load catalogs —</option>';
+        console.warn(e);
+      }
+    }
+
+    async function loadSchemasForCatalog(base, catalogName) {
+      const sel = document.getElementById('schemaSelect');
+      sel.innerHTML = '';
+      sel.disabled = true;
+      if (!catalogName) {
+        sel.innerHTML = '<option value="">— Select a catalog first —</option>';
+        refreshAskEnabled();
+        return;
+      }
+      sel.innerHTML = '<option value="">— Loading schemas… —</option>';
+      try {
+        const data = await fetchUc(base, '/schemas?catalog_name=' + encodeURIComponent(catalogName));
+        const schemas = (data.schemas || []).slice().sort((a, b) =>
+          String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' })
+        );
+        sel.innerHTML = '';
+        const allOpt = document.createElement('option');
+        allOpt.value = SCHEMA_ALL_VALUE;
+        allOpt.textContent = 'All schemas in this catalog';
+        sel.appendChild(allOpt);
+        schemas.forEach((s) => {
+          const name = s.name;
+          if (!name) return;
+          const opt = document.createElement('option');
+          opt.value = name;
+          opt.textContent = name;
+          sel.appendChild(opt);
+        });
+        sel.disabled = false;
+        sel.value = SCHEMA_ALL_VALUE;
+      } catch (e) {
+        sel.innerHTML = '<option value="">— Could not load schemas —</option>';
+        sel.disabled = true;
+        console.warn(e);
+      }
+      refreshAskEnabled();
+    }
+
+    function refreshAskEnabled() {
+      const btn = document.getElementById('btnAsk');
+      const cat = document.getElementById('catalogSelect').value.trim();
+      const sch = document.getElementById('schemaSelect').value;
+      const wh = document.getElementById('warehouseSelect').value.trim();
+      const q = document.getElementById('question').value.trim();
+      const schemaOk = !!sch && !document.getElementById('schemaSelect').disabled;
+      const ok = !!window.__csCanRun && !!cat && schemaOk && !!wh && q.length >= 2;
+      btn.disabled = !ok;
+    }
+
+    async function postAsk(base, payload) {
+      let lastErr = null;
+      for (const p of ASK_PREFIXES) {
+        try {
+          const r = await fetch(base + p + '/ask', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (r.ok) return data;
+          lastErr = new Error(formatApiDetail(data, r.statusText));
+          lastErr.apiDetail = data.detail;
+        } catch (e) {
+          lastErr = new Error(formatFetchFailure(e));
+        }
+      }
+      throw lastErr || new Error('Request failed');
+    }
+
+    function saveToHistory(entry) {
+      try {
+        let h = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+        if (!Array.isArray(h)) h = [];
+        h = pruneHistoryByAge(h);
+        h.unshift(entry);
+        h = pruneHistoryByAge(h);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(0, HISTORY_MAX)));
+      } catch (_) { /* ignore */ }
+    }
+
+    function renderHistoryList() {
+      const panel = document.getElementById('historyPanel');
+      let h = [];
+      try { h = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch (_) { h = []; }
+      const pruned = pruneHistoryByAge(h);
+      if (pruned.length !== h.length) {
+        try {
+          localStorage.setItem(HISTORY_KEY, JSON.stringify(pruned.slice(0, HISTORY_MAX)));
+        } catch (_) { /* ignore */ }
+      }
+      h = pruned;
+      if (!h.length) {
+        panel.innerHTML = '<p class="meta-line" style="margin:0">No questions in the last 7 days yet — run <strong>Ask</strong> to build history.</p>';
+        return;
+      }
+      panel.innerHTML = h.map((item, i) => {
+        const t = new Date(item.ts).toLocaleString();
+        const q = escapeHtml((item.q || '').slice(0, 96));
+        return '<div class="history-item" data-idx="' + i + '"><strong>' + escapeHtml(t) + '</strong> — ' + q + '</div>';
+      }).join('');
+      panel.querySelectorAll('.history-item').forEach((node) => {
+        node.addEventListener('click', () => {
+          const idx = parseInt(node.getAttribute('data-idx'), 10);
+          const item = h[idx];
+          if (!item) return;
+          renderSummaryMarkdown(item.summaryMd || '—');
+          if (item.sql) {
+            const sqlBox = document.getElementById('sqlBox');
+            sqlBox.style.display = 'block';
+            sqlBox.textContent = item.sql;
+          }
+          lastResult = {
+            summary: item.summaryMd,
+            sql: item.sql,
+            columns: item.columns || [],
+            rows: item.rows || [],
+          };
+        });
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function formatWarehouseDuration(ms) {
+      if (ms == null || ms === '') return '';
+      const n = Number(ms);
+      if (!Number.isFinite(n)) return '';
+      if (n < 1000) return String(Math.round(n)) + ' ms';
+      const sec = n / 1000;
+      return (sec >= 10 ? sec.toFixed(1) : sec.toFixed(2)) + ' s';
+    }
+
+    /** Grey execution line + technical meta for Conversational SQL (uses API completed_at_utc). */
+    function buildAnswerMetaHtml(data) {
+      const esc = (x) => escapeHtml(x == null ? '' : String(x));
+      const whenBits = [];
+      const iso = data.completed_at_utc;
+      if (iso) {
+        try {
+          const d = new Date(iso);
+          const human = d.toLocaleString('en-GB', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
+          }) + ' UTC';
+          whenBits.push('Executed ' + human);
+        } catch (_) {
+          whenBits.push('Executed ' + esc(iso));
+        }
+      } else {
+        whenBits.push('Completed ' + new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }));
+      }
+      const dur = formatWarehouseDuration(data.elapsed_ms);
+      if (dur) whenBits.push('warehouse ' + dur);
+
+      const bits = [];
+      if (data.catalog) bits.push('catalog: ' + esc(data.catalog));
+      if (data.tables_matched_filters != null) bits.push('tables in scope: ' + esc(data.tables_matched_filters));
+      if (data.tables_in_model_context != null) bits.push('tables in model context: ' + esc(data.tables_in_model_context));
+      if (data.row_count_returned != null) bits.push('rows returned: ' + esc(data.row_count_returned));
+      if (data.result_truncated) bits.push('truncated');
+      if (data.statement_id) bits.push('stmt: ' + esc(String(data.statement_id).slice(0, 12)) + '…');
+      if (data.workspace_sql_console_base) bits.push('console: ' + esc(data.workspace_sql_console_base));
+      if (data.llm_sql_label) bits.push('SQL gen: ' + esc(data.llm_sql_label));
+      if (data.llm_summary_label) bits.push('summary: ' + esc(data.llm_summary_label));
+
+      return (
+        '<div class="answer-meta-when">' + esc(whenBits.join(' · ')) + '</div>' +
+        (bits.length ? '<div class="answer-meta-tech">' + bits.join(' · ') + '</div>' : '')
+      );
+    }
+
+    /** Try async Clipboard API, then execCommand (file:// / some browsers), then prompt. */
+    async function copyTextRobust(label, text, opts) {
+      opts = opts || {};
+      const auditStamp = opts.auditNote
+        ? ('Noted locally at ' + new Date().toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'medium' }) + '.')
+        : '';
+      const s = String(text == null ? '' : text);
+      const statusEl = document.getElementById('copyStatus');
+
+      const show = (msg, isErr) => {
+        let out = msg;
+        if (auditStamp && !isErr) out += ' ' + auditStamp;
+        if (statusEl) {
+          statusEl.textContent = out;
+          statusEl.style.color = isErr ? '#b91c1c' : '#047857';
+        } else if (isErr) {
+          window.alert(msg);
+        }
+      };
+
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        try {
+          await navigator.clipboard.writeText(s);
+          show(label + ' copied to clipboard.', false);
+          return;
+        } catch (e) {
+          console.warn('Clipboard API failed, trying fallback', e);
+        }
+      }
+
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = s;
+        ta.setAttribute('readonly', '');
+        ta.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ta.setSelectionRange(0, s.length);
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ok) {
+          show(label + ' copied.', false);
+          return;
+        }
+      } catch (e2) {
+        console.warn('execCommand copy failed', e2);
+      }
+
+      show('Use the dialog: select all, then Ctrl+C.', false);
+      window.prompt(label + ' — copy:', s);
+    }
+
+    (async function init() {
+      const accessEl = document.getElementById('accessBanner');
+      const statusEl = document.getElementById('apiStatus');
+      const access = await getAccessMode();
+      window.__csCanRun = !!access.can_execute;
+
+      if (window.__csCanRun) {
+        accessEl.style.display = '';
+        accessEl.className = 'access-banner execute';
+        accessEl.textContent = 'Choose catalog, schema, warehouse, then Ask.';
+      } else {
+        accessEl.style.display = 'none';
+        accessEl.textContent = '';
+      }
+
+      await loadSqlConfig();
+
+      try {
+        window.__csApiBase = await resolveApiBase();
+        let hr = await fetch(window.__csApiBase + HEALTH_PATHS_PRIMARY[0]).catch(() => null);
+        let j = null;
+        if (hr && hr.ok) {
+          j = await hr.json();
+        } else {
+          hr = await fetch(window.__csApiBase + HEALTH_PATHS_PRIMARY[2]).catch(() => null);
+          if (hr && hr.ok) j = await hr.json();
+        }
+        if (j && j.service === 'databricks-query') {
+          const db = !!(j.databricks_host_configured && j.databricks_token_configured);
+          const whEnv = !!j.sql_warehouse_configured;
+          __healthWarehouseOk = whEnv;
+          const llm = !!(j.llm_configured ?? (j.gemini_configured || j.anthropic_configured));
+          const whSel = document.getElementById('warehouseSelect').value.trim();
+          const whLine = whEnv
+            ? 'Server .env has DATABRICKS_SQL_WAREHOUSE_ID.'
+            : (whSel ? 'Using warehouse UUID from databricks_sql_config.json (or override in Ask payload).' : 'Pick a warehouse in the dropdown (from JSON).');
+          let line = [db && llm ? 'API OK.' : 'Check DATABRICKS_* and LLM keys (Gemini / Anthropic).', whLine].join(' ');
+          if (!db) line = 'Missing Databricks host/token on server.';
+          else if (!llm) line = 'No LLM key on server — set GEMINI_API_KEY (or GOOGLE_API_KEY) and/or ANTHROPIC_API_KEY.';
+          const rc = j.runtime_config || {};
+          if (rc.enforce_fqn === false) line += ' FQN check off.';
+          if (rc.preflight_explain) line += ' EXPLAIN preflight on.';
+          statusEl.textContent = line;
+        } else {
+          statusEl.textContent = 'Could not confirm databricks-query health.';
+        }
+      } catch (_) {
+        statusEl.textContent = 'Could not reach the API.';
+      }
+
+      if (window.__csApiBase) {
+        await loadCatalogs(window.__csApiBase);
+      }
+
+      document.getElementById('catalogSelect').addEventListener('change', () => {
+        const c = document.getElementById('catalogSelect').value.trim();
+        loadSchemasForCatalog(window.__csApiBase || getApiBase(), c);
+        refreshAskEnabled();
+      });
+      document.getElementById('schemaSelect').addEventListener('change', refreshAskEnabled);
+      document.getElementById('warehouseSelect').addEventListener('change', refreshAskEnabled);
+      document.getElementById('question').addEventListener('input', refreshAskEnabled);
+
+      refreshAskEnabled();
+    })();
+
+    document.getElementById('btnHistory').addEventListener('click', () => {
+      const panel = document.getElementById('historyPanel');
+      const hint = document.getElementById('historyHint');
+      const open = panel.classList.toggle('open');
+      if (open) {
+        hint.textContent = 'Tap an entry to load that summary and SQL into Current.';
+        hint.classList.add('visible');
+        renderHistoryList();
+      } else {
+        hint.classList.remove('visible');
+        hint.textContent = '';
+      }
+    });
+
+    document.getElementById('btnCopySummary').addEventListener('click', () => {
+      const raw = (lastResult && lastResult.summary) ? lastResult.summary
+        : document.getElementById('answer').innerText;
+      if (!String(raw || '').trim()) {
+        document.getElementById('copyStatus').textContent = 'Nothing to copy yet — run Ask first.';
+        document.getElementById('copyStatus').style.color = '#b45309';
+        return;
+      }
+      copyTextRobust('Summary', raw);
+    });
+    document.getElementById('btnCopySql').addEventListener('click', () => {
+      const t = (lastResult && lastResult.sql) ? lastResult.sql : (document.getElementById('sqlBox').textContent || '');
+      if (!String(t || '').trim()) {
+        document.getElementById('copyStatus').textContent = 'No SQL to copy — run Ask first.';
+        document.getElementById('copyStatus').style.color = '#b45309';
+        return;
+      }
+      copyTextRobust('SQL', t.trim(), { auditNote: true });
+    });
+    document.getElementById('btnCopyCsv').addEventListener('click', () => {
+      if (!lastResult || !lastResult.columns || !lastResult.columns.length) {
+        document.getElementById('copyStatus').textContent = 'No tabular data — API did not return columns for the last Ask.';
+        document.getElementById('copyStatus').style.color = '#b45309';
+        return;
+      }
+      copyTextRobust('CSV', rowsToCsv(lastResult.columns, lastResult.rows), { auditNote: true });
+    });
+
+    function buildShareBundle() {
+      const q = document.getElementById('question').value.trim();
+      const sum = (lastResult && lastResult.summary) ? lastResult.summary : document.getElementById('answer').innerText;
+      const sqlBody = (lastResult && lastResult.sql) ? lastResult.sql : (document.getElementById('sqlBox').textContent || '').trim();
+      if (!String(sum || '').trim() && !sqlBody) return null;
+      const md = '# Vikaa — Databricks Conversational SQL\n\n**Question:** ' + q + '\n\n## Summary\n\n' +
+        (sum || '') + '\n\n```sql\n' + sqlBody + '\n```\n';
+      const plain = 'Question: ' + q + '\n\n' + (sum || '') + '\n\nSQL:\n' + sqlBody;
+      const subject = 'Vikaa — Databricks SQL' + (q ? ': ' + q.slice(0, 72) : '');
+      const pageUrl = String(window.location.href || '').split('#')[0];
+      return { q, sum, sqlBody, md, plain, subject, pageUrl };
+    }
+
+    function setCopyStatus(msg, color) {
+      const el = document.getElementById('copyStatus');
+      el.textContent = msg;
+      el.style.color = color || '#047857';
+    }
+
+    function closeSharePopover() {
+      const p = document.getElementById('sharePopover');
+      const b = document.getElementById('btnShareMenu');
+      p.classList.remove('open');
+      if (b) b.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleSharePopover() {
+      const p = document.getElementById('sharePopover');
+      const b = document.getElementById('btnShareMenu');
+      const open = !p.classList.contains('open');
+      p.classList.toggle('open', open);
+      b.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    document.getElementById('btnShareMenu').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const bundle = buildShareBundle();
+      if (!bundle) {
+        setCopyStatus('Nothing to share — run Ask first.', '#b45309');
+        closeSharePopover();
+        return;
+      }
+      toggleSharePopover();
+    });
+
+    document.addEventListener('click', () => closeSharePopover());
+    document.getElementById('shareWrap').addEventListener('click', (e) => e.stopPropagation());
+
+    document.getElementById('shareCopyMd').addEventListener('click', () => {
+      const bundle = buildShareBundle();
+      if (!bundle) return;
+      copyTextRobust('Markdown', bundle.md);
+      closeSharePopover();
+    });
+
+    document.getElementById('shareEmail').addEventListener('click', () => {
+      const bundle = buildShareBundle();
+      if (!bundle) return;
+      const body = bundle.plain.slice(0, 6500);
+      const href = 'mailto:?subject=' + encodeURIComponent(bundle.subject) +
+        '&body=' + encodeURIComponent(body);
+      window.location.href = href;
+      closeSharePopover();
+      setCopyStatus('Opening your email app…', '#0f2942');
+    });
+
+    document.getElementById('shareWhatsApp').addEventListener('click', () => {
+      const bundle = buildShareBundle();
+      if (!bundle) return;
+      const text = bundle.plain.slice(0, 3800);
+      window.open(
+        'https://wa.me/?text=' + encodeURIComponent(text),
+        '_blank',
+        'noopener,noreferrer'
+      );
+      closeSharePopover();
+      setCopyStatus('WhatsApp opened in a new tab.', '#047857');
+    });
+
+    document.getElementById('shareLinkedIn').addEventListener('click', () => {
+      const bundle = buildShareBundle();
+      if (!bundle) return;
+      const url = encodeURIComponent(bundle.pageUrl || 'https://vikaa.ai');
+      window.open(
+        'https://www.linkedin.com/sharing/share-offsite/?url=' + url,
+        '_blank',
+        'noopener,noreferrer'
+      );
+      closeSharePopover();
+      setCopyStatus('LinkedIn opened (shares page URL). Use Copy markdown for full text.', '#0f2942');
+    });
+
+    document.getElementById('shareX').addEventListener('click', () => {
+      const bundle = buildShareBundle();
+      if (!bundle) return;
+      const line = (bundle.q ? bundle.q + ' — ' : '') + (bundle.sum || '').replace(/\s+/g, ' ').trim();
+      const text = line.slice(0, 220);
+      const url = bundle.pageUrl ? '&url=' + encodeURIComponent(bundle.pageUrl) : '';
+      window.open(
+        'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + url,
+        '_blank',
+        'noopener,noreferrer'
+      );
+      closeSharePopover();
+      setCopyStatus('X opened in a new tab.', '#047857');
+    });
+
+    document.getElementById('shareNative').addEventListener('click', async () => {
+      const bundle = buildShareBundle();
+      if (!bundle) return;
+      closeSharePopover();
+      if (!navigator.share) {
+        setCopyStatus('System share not available in this browser — use Email or Copy markdown.', '#b45309');
+        return;
+      }
+      try {
+        await navigator.share({
+          title: bundle.subject,
+          text: bundle.plain.slice(0, 12000),
+          url: bundle.pageUrl,
+        });
+        setCopyStatus('Shared via device.', '#047857');
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+        console.warn(err);
+        setCopyStatus('Share cancelled or failed — try Email or Copy markdown.', '#b45309');
+      }
+    });
+
+    (function initShareNativeVisibility() {
+      const row = document.getElementById('shareNative');
+      if (!row) return;
+      if (!navigator.share) {
+        row.style.display = 'none';
+      }
+    })();
+
+    document.addEventListener('keydown', (ev) => {
+      const meta = ev.metaKey || ev.ctrlKey;
+      if (meta && ev.key === 'Enter') {
+        const ta = document.getElementById('question');
+        if (document.activeElement === ta || (ta && ta.contains(document.activeElement))) {
+          const btn = document.getElementById('btnAsk');
+          if (btn && !btn.disabled) {
+            ev.preventDefault();
+            btn.click();
+          }
+        }
+      }
+      if (ev.key === 'Escape') {
+        closeSharePopover();
+        const hp = document.getElementById('historyPanel');
+        const hh = document.getElementById('historyHint');
+        if (hp && hp.classList.contains('open')) {
+          hp.classList.remove('open');
+          if (hh) {
+            hh.classList.remove('visible');
+            hh.textContent = '';
+          }
+        }
+      }
+    });
+
+    document.getElementById('btnAsk').addEventListener('click', async () => {
+      const answerEl = document.getElementById('answer');
+      const metaEl = document.getElementById('answerMeta');
+      const sqlBox = document.getElementById('sqlBox');
+      const scopeEl = document.getElementById('scopeWarn');
+      const btnAsk = document.getElementById('btnAsk');
+      const ASK_BTN_HTML = '<i class="fas fa-wand-magic-sparkles"></i> Ask';
+
+      clearErrorPanel();
+      sqlBox.style.display = 'none';
+      scopeEl.style.display = 'none';
+      scopeEl.textContent = '';
+      lastResult = null;
+
+      if (!window.__csCanRun) {
+        showErrorPanel('Execution disabled for this session.', null);
+        return;
+      }
+
+      const q = document.getElementById('question').value.trim();
+      if (q.length < 2) {
+        showErrorPanel('Enter a question (at least a few characters).', null);
+        return;
+      }
+
+      const catalog = document.getElementById('catalogSelect').value.trim();
+      if (!catalog) {
+        showErrorPanel('Select a catalog.', null);
+        return;
+      }
+      const schemaVal = document.getElementById('schemaSelect').value;
+      const warehouseId = document.getElementById('warehouseSelect').value.trim();
+      if (!warehouseId) {
+        showErrorPanel('Select a SQL warehouse (configure databricks_sql_config.json).', null);
+        return;
+      }
+
+      const max_tables = Math.min(200, Math.max(1, parseInt(document.getElementById('maxTables').value || '50', 10)));
+
+      const payload = {
+        query: q,
+        catalog,
+        max_tables_per_schema: max_tables,
+        warehouse_id: warehouseId,
+        session_id: getOrCreateSessionId(),
+      };
+      if (schemaVal && schemaVal !== SCHEMA_ALL_VALUE) {
+        payload.schemas = [schemaVal];
+      }
+
+      answerEl.classList.remove('markdown-body', 'thinking', 'answer-box-empty');
+      answerEl.classList.add('loading-active');
+      answerEl.setAttribute('aria-busy', 'true');
+      answerEl.innerHTML =
+        '<div class="loading-state" role="status">' +
+        '<span class="spinner" aria-hidden="true"></span>' +
+        '<div><strong>Working on your question…</strong>' +
+        '<p class="loading-sub">Generating SQL and executing it on the warehouse. This often takes 15–60 seconds — please wait.</p></div>' +
+        '</div>';
+      metaEl.textContent = '';
+      btnAsk.disabled = true;
+      btnAsk.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running…';
+
+      try {
+        const base = window.__csApiBase || getApiBase();
+        const data = await postAsk(base, payload);
+        if (data.session_id) localStorage.setItem(SESSION_KEY, data.session_id);
+
+        if (data.scope_warnings && data.scope_warnings.length) {
+          scopeEl.style.display = 'block';
+          scopeEl.textContent = data.scope_warnings.join(' ');
+        }
+
+        answerEl.removeAttribute('aria-busy');
+        answerEl.classList.remove('loading-active');
+        renderSummaryMarkdown(data.summary || '(no summary)');
+        if (data.sql) {
+          sqlBox.style.display = 'block';
+          sqlBox.textContent = data.sql;
+        }
+        lastResult = {
+          summary: data.summary || '',
+          sql: data.sql || '',
+          columns: data.columns || [],
+          rows: data.rows || [],
+          completed_at_utc: data.completed_at_utc || null,
+        };
+        saveToHistory({
+          ts: Date.now(),
+          completed_at_utc: data.completed_at_utc || null,
+          q,
+          summaryMd: data.summary || '',
+          sql: data.sql || '',
+          columns: data.columns || [],
+          rows: (data.rows || []).slice(0, 80),
+        });
+
+        metaEl.innerHTML = buildAnswerMetaHtml(data);
+      } catch (e) {
+        answerEl.removeAttribute('aria-busy');
+        answerEl.classList.remove('loading-active', 'thinking', 'markdown-body');
+        setAnswerEmptyState();
+        showErrorPanel(e.message || String(e), e.apiDetail);
+      } finally {
+        btnAsk.innerHTML = ASK_BTN_HTML;
+        refreshAskEnabled();
+      }
+    });
+  </script>
+</body>
+</html>

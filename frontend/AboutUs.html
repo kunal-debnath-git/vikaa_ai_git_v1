@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <!-- Include LoginPage.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="LoginPage.js"></script>   
+  <!-- <script src="AboutUs.js" defer></script> -->
+  <script src="config.js"></script>
+  <script src="AboutUs.js?v=<%= Date.now() %>" defer></script> <!-- Node/Express -->
+
+  <!-- ✅ Obfuscated JS for production / NOT Applied NOW-->
+  <!-- <script src="AboutUs.obf.js" defer></script> --> 
+
+  <!-- ✅ SEO Essentials -->
+  <title>Vikaa.AI - About Us</title>
+  <meta name="description" content="Explore AI-powered tools and services at Vikaa.ai. Built with FastAPI, our platform offers intelligent solutions for everyday users.">
+  <meta name="keywords" content="AI tools, artificial intelligence, FastAPI, GPT, vikaa.ai, ai solutions, agentic ai, agaentic rag, ai agent">
+  <meta name="author" content="vikaa.ai team">
+
+  <!-- ✅ Add meta tag to disable cache (not recommended long-term) -->
+  <meta http-equiv="Cache-Control" content="no-store" />
+
+  <!-- ✅ Optional: Open Graph for social sharing -->
+  <meta property="og:title" content="Vikaa.AI - Smart AI Utilities & Tools">
+  <meta property="og:description" content="Explore AI-powered tools built with FastAPI. Your intelligent assistant is just a click away.">
+  <meta property="og:image" content="image\Logo4.jpeg"> <!-- Change if needed -->
+  <meta property="og:url" content="https://vikaa.ai">  
+
+  <!-- ✅ Optional: Favicon -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Source+Sans+Pro:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;700&display=swap" rel="stylesheet">
+
+
+
+  <!-- Hi, I’m Vikaa 👋
+  Here to help you work smarter, not harder.
+  
+  Think of me as your go-to partner for keeping things organized and moving forward. Whether you’re writing, talking, or sharing a file, I’m here to pick it up and make things easier.
+  
+  I take care of the small stuff, so you can focus on the big stuff. Right now, I’m still in my early stage, but learning quickly and finding new ways to support you every day.
+  
+  Let’s make productivity simple — together.
+   -->
+
+   <!-- Hi, I’m Vikaa 👋
+Your partner in getting things done.
+
+I’m here to make your day a little easier — whether that means helping you organize, handling tasks, or keeping things moving smoothly. You can talk to me, type it out, or even share files and images — I’ll take it from there.
+
+Think of me as someone who works quietly in the background, making smart moves so you can focus on what matters most. I’m still in my early phase, but learning fast and growing with new ways to support you every day.
+
+So, let’s team up and get more done — without the extra effort. -->
+
+
+  <style>
+    body {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        color: #272727;
+        background-color: #eaeaea;
+        margin: 0;
+        padding: 0;
+    }
+    h1, h2, h3, h4, h5 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        margin-top: 0;
+    }
+    p, a, li, span, input, button {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 400;
+    }
+    header {
+      background-color: #ffffff;
+      padding: 10px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #ddd;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      font-weight: 700;
+      color: #575757;
+      font-size: 1.1rem;
+    }
+    .logo img {
+      height: 32px;
+      margin-right: 10px;
+      border-radius: 4px;
+      object-fit: contain;
+    }
+    nav a {
+      margin-left: 20px;
+      font-weight: 600;
+      text-decoration: none;
+      color: #17bcfe;
+      font-size: 0.9rem;
+    }
+    nav a:hover { color: #0891b2; }
+    .horizontal-border {
+      background-color: #17bcfe;
+      /* border-bottom: 1px solid #ffffff; */
+      padding: 2px 2px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }    
+    .hero {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+      gap: 40px;
+    }
+    .hero img {
+      width: 500px;
+      max-width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .hero-text {
+      font-weight: bold;
+      max-width: 600px;
+    }
+    .hero-text h1 {
+      font-size: 1.8rem;
+      font-weight: 500;
+      margin-bottom: 30px;
+    }
+    .hero-text p {
+      font-size: 0.9rem;
+      /* font-size: 1rem; */
+      font-weight: 500;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 768px) {
+      .hero {
+        flex-direction: column;
+        padding: 40px 20px;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      nav {
+        margin-top: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="logo">
+      <img src="image/Logo4.jpeg" alt="Vikaa Logo">
+      <span style="font-size: 1.1rem; font-weight: 700; color: #575757; letter-spacing: -0.3px; white-space: nowrap;">Vikaa.AI</span>
+    </div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="AboutUs.html">About Us</a>
+      <a href="#" onclick="openLogin();">Login</a>
+    </nav>
+  </header>
+  <section class="horizontal-border">
+  </section>
+  <section class="hero">
+    <img src="image/AboutMe_1.jpeg" alt="AI Agent" id="aboutMePic" style="width:180px; height:180px; border-radius: 50%;" />
+
+    <script>
+      // // shape: "round", "square", "rectangle"
+      // function setAboutMePicShape(shape = "round", width = 180, height = 180) {
+      //   const img = document.getElementById('aboutMePic');
+      //   img.style.width = width + "px";
+      //   img.style.height = height + "px";
+      //   if (shape === "round") {
+      //     img.style.borderRadius = "50%";
+      //   } else if (shape === "square") {
+      //     img.style.borderRadius = "10px";
+      //   } else if (shape === "rectangle") {
+      //     img.style.borderRadius = "10px";
+      //     // You can set width/height for rectangle as needed
+      //   }
+      // }
+
+      // Example usage:
+      // setAboutMePicShape("round", 180, 180);
+      // setAboutMePicShape("square", 180, 180);
+      // setAboutMePicShape("rectangle", 220, 220);
+      // setAboutMePicShape("square", 480, 360); // Default
+    </script>
+    
+    <div class="hero-text">
+      <!-- Option 3 -->
+      <h3 style="font-size: 1.0rem;">Hi... I am Kunal Debnath</h3>
+      <div style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; font-weight: 400;">
+        <p>
+          Senior Data Architect by profession and Generative & Agentic AI builder by passion.
+        </p>
+        <p>
+          I'm not just learning AI — I'm building with it. What started as curiosity quickly became conviction, and Vikaa is the result: a solo project born from late nights, bold ideas, and a genuine love for what this technology can do.
+        </p>
+        <p>
+          She's a work in progress — but so is every great thing worth building. I add new capabilities continuously, pushing toward a vision of AI that's truly configurable, multi-persona, and built to evolve.
+        </p>
+        <p>
+          This is independent work. No team, no funding — just craft.
+        </p>
+        <p>
+          <br>
+          <span>Happy to connect with you on&nbsp;&nbsp;&nbsp;</span>           
+          <a href="https://www.linkedin.com/in/kd-dataarchitect/" target="_blank" style="display:inline-flex; align-items:center; ">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" alt="LinkedIn" style="background-color: #dddddd; width:20px; height:20px; margin-right:3px; vertical-align:middle; border-radius:4px;" />
+          </a>&nbsp;
+          <a href="https://x.com/KunalDebIND" target="_blank" style="display:inline-flex; align-items:center;">
+            <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/x.svg" alt="X" style="background-color: #dddddd; width:20px; height:20px; margin-right:3px; vertical-align:middle; border-radius:4px;" />
+          </a>
+        </p>
+      </div>      
+    </div>
+  </section>
+
+  <script>
+    document.addEventListener("contextmenu", e => e.preventDefault());
+    document.onkeydown = e => {
+      if (e.ctrlKey && ['u','s','c'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+      }
+    };
+  </script>
+  
+  <!-- ===================================================================================================================== -->
+  <!-- ✅ Refined Contact Section -->
+  <section style="padding: 10px 10px; background-color: #eaeaea; text-align:center; border-top: 0px solid #17bcfe;">  
+    <h2 style="color:#17bcfe; font-size: 1.1rem; margin-bottom: 10px;">Contact Us</h2>
+    <form id="contactForm" style="max-width:500px; margin: 0 auto; text-align:left; background-color:#dedede; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+      <label for="name" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; font-weight: 400; color:#4b4b4b;">Your Name</label>
+      <input type="text" name="name" required style="width:95%; padding:10px; margin-bottom:16px; border:1px solid #4b4b4b; border-radius:4px;">
+
+      <label for="email" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; font-weight: 400; color:#4b4b4b;">Your Email</label>
+      <input type="email" name="email" required style="width:95%; padding:10px; margin-bottom:16px; border:1px solid #4b4b4b; border-radius:4px;">
+
+      <label for="message" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; font-weight: 400; color:#4b4b4b;">Your Message</label>
+      <textarea name="message" rows="5" required style="width:95%; padding:10px; margin-bottom:16px; border:1px solid #4b4b4b; border-radius:4px;"></textarea>
+
+      <!-- 🛡️ Bot Protection: Honeypot (Invisible to humans) -->
+      <input type="text" name="hp_field" style="display:none !important" tabindex="-1" autocomplete="off">
+
+      <!-- 🛡️ Bot Protection: Math Challenge -->
+      <div style="margin-bottom:20px; font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color:#4b4b4b;">
+        <label id="mathLabel" style="font-weight: 600;"></label>
+        <input type="number" id="math_answer" name="math_answer" required style="width:60px; padding:5px; border:1px solid #4b4b4b; border-radius:4px; margin-left:10px;">
+      </div>
+
+      <button type="submit" id="submitBtn" style="background-color:#17bcfe; color:white; font-weight: 600; border:none; padding:10px 20px; font-size:0.80rem; border-radius:6px; cursor:pointer; transition: opacity 0.2s;">
+        Send Message
+      </button>
+    </form>
+  </section>
+
+  <script>
+  // Generate random math question
+  let val1 = Math.floor(Math.random() * 10) + 1;
+  let val2 = Math.floor(Math.random() * 10) + 1;
+  document.getElementById('mathLabel').innerText = `Spam Check: What is ${val1} + ${val2}?`;
+
+  function refreshMathQuestion() {
+    val1 = Math.floor(Math.random() * 10) + 1;
+    val2 = Math.floor(Math.random() * 10) + 1;
+    document.getElementById('mathLabel').innerText = `Spam Check: What is ${val1} + ${val2}?`;
+  }
+
+  document.getElementById("contactForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const submitBtn = document.getElementById('submitBtn');
+    const data = new FormData(form);
+    const json = Object.fromEntries(data.entries());
+
+    // Ensure numeric types for Pydantic
+    json["math_answer"] = parseInt(json.math_answer);
+    json["math_expected"] = val1 + val2;
+
+    // Frontend spam check
+    if (isNaN(json.math_answer) || json.math_answer !== json.math_expected) {
+      refreshMathQuestion();
+      return alert("Incorrect spam check answer. Please try again.");
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending…";
+
+    try {
+      // CONFIG fallback in case config.js didn't load
+      const baseUrl = (typeof CONFIG !== 'undefined')
+        ? CONFIG.API_BASE_URL
+        : "https://app-wtiw.onrender.com";
+      const apiUrl = baseUrl + "/api/contact";
+
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(json)
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        alert(result.detail || "Message sent successfully!");
+        form.reset();
+        refreshMathQuestion();
+      } else {
+        let errorMsg = result.detail;
+        if (Array.isArray(result.detail)) {
+          errorMsg = result.detail.map(err => `${err.loc?.join('.') ?? ''}: ${err.msg}`).join('\n');
+        } else if (typeof result.detail === 'object') {
+          errorMsg = JSON.stringify(result.detail);
+        }
+        alert("Submission error:\n" + (errorMsg || "Something went wrong. Please try again."));
+      }
+    } catch (err) {
+      console.error("Contact form error:", err);
+      alert("Could not reach the server. Please check your connection and try again.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Send Message";
+    }
+  });
+  </script>
+  <!-- ===================================================================================================================== -->
+
+
+
+</body>
+</html>

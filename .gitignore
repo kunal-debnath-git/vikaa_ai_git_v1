@@ -1,0 +1,54 @@
+.venv
+venv
+.env
+.env_copy
+.env_copy2
+etc
+etc/secrets/gemini-service-account.json
+"INFORMATION.txt"
+__NotForGithub
+
+.claude
+.cursorignore
+.cursor
+".cursor/index.mdc"
+".cursor/rules"
+"CursorGUIDE.md"
+
+datastore/Brazilian_E_Commerce
+
+INFORMATION.txt
+project.md
+
+# Personal action items / private notes
+_MyAction
+
+# Gmail OAuth — never commit these
+credentials.json
+token.json
+etc/secrets/credentials.json
+tokens/
+
+# Local debug server logs
+server.log
+server_err.log
+*.log
+
+# Python bytecode / cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Generated AI Scout digest exports (markdown files in root)
+AI_Scout_*.md
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
