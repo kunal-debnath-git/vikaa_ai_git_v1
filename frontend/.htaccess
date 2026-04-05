@@ -1,0 +1,18 @@
+# Vikaa.AI - Cache Control Rules
+
+# Disable caching for HTML files — always fetch fresh
+<FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</FilesMatch>
+
+# Always revalidate JS/CSS — browser checks ETag, re-downloads only if file changed
+<FilesMatch "\.(js|css)$">
+    Header set Cache-Control "no-cache"
+</FilesMatch>
+
+# Short cache for images
+<FilesMatch "\.(jpg|jpeg|png|gif|ico|svg|webp)$">
+    Header set Cache-Control "public, max-age=604800"
+</FilesMatch>

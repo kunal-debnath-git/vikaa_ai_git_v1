@@ -13,7 +13,6 @@ _ALLOWED_DOCS = {
     "Gmail_Intelligence.md",
     "ReAct_Research_Agent.md",
     "AI_Scout.md",
-    "GitHub_Code_Miner.md",
     "Databricks_Intelligence_Agent.md",
     "Synthetic_Data_Generation_Databricks.md",
     "RAG_Configurator.md",

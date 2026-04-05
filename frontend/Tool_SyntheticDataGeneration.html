@@ -4,24 +4,89 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Synthetic Data Generation (Databricks)</title>
-  <script src="config.js"></script>
+  <script src="config.js?v=20260404"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; background: #f3f5f8; color: #0f172a; font-family: 'Montserrat', sans-serif; }
     .status-bar { position: sticky; top: 0; z-index: 5; background: #fff; border-bottom: 1px solid #e2e8f0; padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
     .pill { border: 1px solid #dbe3ef; background: #f8fafc; border-radius: 999px; padding: 4px 10px; font-size: 0.72rem; }
+    .pill.state-running { background: #ecfdf5; border-color: #6ee7b7; color: #15803d; font-weight: 700; }
+    .pill.state-progress { background: #fffbeb; border-color: #fcd34d; color: #b45309; font-weight: 700; }
+    .warehouse-progress {
+      display: none;
+      flex-basis: 100%;
+      width: 100%;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      margin: 4px 0 0 0;
+      background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 1px solid #7dd3fc;
+      border-radius: 8px;
+    }
+    .warehouse-progress.is-visible { display: flex; }
+    .wh-spin {
+      width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px;
+      border: 2px solid #bae6fd; border-top-color: #0284c7;
+      border-radius: 50%; animation: sdg-spin .85s linear infinite;
+    }
+    .wh-progress-inner { flex: 1; min-width: 0; }
+    .wh-progress-label { display: block; font-size: 0.76rem; color: #0c4a6e; font-weight: 600; line-height: 1.35; margin-bottom: 8px; font-family: 'Roboto', sans-serif; }
+    .wh-bar { height: 5px; background: #bae6fd; border-radius: 999px; overflow: hidden; }
+    .wh-bar-fill {
+      display: block; height: 100%; width: 36%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #0284c7, #0ea5e9, #38bdf8, #0ea5e9);
+      animation: wh-bar-slide 1.35s ease-in-out infinite;
+    }
+    @keyframes wh-bar-slide {
+      0% { transform: translateX(-110%); }
+      100% { transform: translateX(320%); }
+    }
     .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
     .g { background: #16a34a; } .a { background: #d97706; } .r { background: #dc2626; }
-    .copy-btn, .btn { border: none; border-radius: 8px; padding: 8px 12px; font-size: 0.76rem; font-weight: 700; cursor: pointer; }
-    .copy-btn { background: #e2e8f0; color: #0f172a; }
-    .btn { background: #0f2942; color: #fff; }
+    .btn { border: none; border-radius: 8px; padding: 8px 12px; font-size: 0.76rem; font-weight: 700; cursor: pointer; background: #0f2942; color: #fff; }
     .btn.primary { background: #0ea5e9; }
     .btn.good { background: #15803d; }
     .btn.bad { background: #b91c1c; }
     .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .layout { max-width: 1220px; margin: 0 auto; padding: 14px; display: grid; grid-template-columns: 1fr 330px; gap: 14px; }
+    .layout { max-width: 1220px; margin: 0 auto; padding: 14px; display: grid; grid-template-columns: 1fr minmax(0, 330px); gap: 14px; }
+    .layout > div { min-width: 0; }
     .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+    .sidebar-workflow-note {
+      background: linear-gradient(180deg, #f0f9ff 0%, #f8fafc 100%);
+      border-color: #bae6fd;
+      padding: 16px 14px;
+      margin-bottom: 16px;
+    }
+    .sidebar-workflow-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: #0c4a6e;
+      margin: 0 0 10px 0;
+    }
+    .workflow-steps {
+      font-family: ui-monospace, monospace;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      background: #e0f2fe;
+      border: 1px solid #7dd3fc;
+      color: #0369a1;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+    }
+    .sidebar-workflow-body {
+      margin: 0;
+      font-size: 0.74rem;
+      line-height: 1.55;
+      color: #475569;
+      font-family: 'Roboto', sans-serif;
+    }
+    .sidebar-workflow-body strong { color: #0f2942; }
     .stepper { display: flex; gap: 8px; margin-bottom: 12px; }
     .step { flex: 1; border-radius: 8px; padding: 8px 10px; font-size: 0.75rem; border: 1px solid #dbe3ef; background: #f8fafc; color: #64748b; }
     .step.current { background: #e0f2fe; color: #0c4a6e; border-color: #7dd3fc; font-weight: 700; }
@@ -30,23 +95,267 @@
     label { display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; font-size: 0.68rem; font-weight: 700; }
     input, select { width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 9px 10px; font-size: 0.83rem; font-family: 'Montserrat', sans-serif; }
     input:disabled, select:disabled { background: #f1f5f9; color: #94a3b8; }
+    input.input-readonly {
+      background: #e8edf3 !important;
+      color: #64748b;
+      border-color: #cbd5e1;
+      cursor: default;
+    }
+    .warehouse-label-row, .field-label-tip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+    .warehouse-label-row label, .field-label-tip label { margin-bottom: 0; }
+    .field-tip-btn {
+      width: 13px;
+      height: 13px;
+      min-width: 13px;
+      padding: 0;
+      border-radius: 50%;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 13px;
+      cursor: help;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .field-tip-btn:hover, .field-tip-btn:focus-visible {
+      background: #e0f2fe;
+      border-color: #7dd3fc;
+      color: #0369a1;
+      outline: none;
+    }
+    /* Step-3 output path: compact help, no long body copy */
+    .output-path-help {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .output-path-help-btn {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      padding: 0;
+      border-radius: 50%;
+      border: 1px solid #cbd5e1;
+      background: linear-gradient(180deg, #fff 0%, #f1f5f9 100%);
+      color: #475569;
+      font-size: 11px;
+      font-weight: 700;
+      font-style: italic;
+      font-family: Georgia, 'Times New Roman', serif;
+      line-height: 1;
+      cursor: help;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+    .output-path-help-btn:hover,
+    .output-path-help-btn:focus-visible {
+      background: #e0f2fe;
+      border-color: #7dd3fc;
+      color: #0369a1;
+      outline: none;
+    }
+    .output-path-help-pop {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 10px);
+      transform: translateX(-50%);
+      width: min(300px, 78vw);
+      padding: 10px 12px;
+      background: #1e293b;
+      color: #f1f5f9;
+      font-size: 0.72rem;
+      line-height: 1.5;
+      font-weight: 400;
+      font-style: normal;
+      font-family: 'Roboto', sans-serif;
+      text-align: left;
+      border-radius: 8px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.22);
+      border: 1px solid #334155;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.16s ease, visibility 0.16s ease;
+      z-index: 30;
+    }
+    .output-path-help-pop::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -6px;
+      border: 6px solid transparent;
+      border-top-color: #1e293b;
+    }
+    .output-path-help:hover .output-path-help-pop,
+    .output-path-help:focus-within .output-path-help-pop {
+      opacity: 1;
+      visibility: visible;
+    }
+    .step3-dest-section label { margin-top: 0; }
+    .volume-picker-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .volume-select-wrap {
+      flex: 1;
+      min-width: min(100%, 220px);
+    }
+    .volume-select-wrap select {
+      width: 100%;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.78rem;
+    }
+    .volume-picker-row .btn {
+      flex-shrink: 0;
+      align-self: flex-start;
+    }
+    .output-feedback-panel {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+    }
+    .output-feedback-panel.is-empty {
+      display: none;
+    }
+    .output-feedback-title {
+      display: block;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    .output-feedback-line {
+      font-size: 0.76rem;
+      line-height: 1.5;
+      font-family: 'Roboto', sans-serif;
+      color: #334155;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+    .output-feedback-line.is-ok { color: #047857; }
+    .output-feedback-line.is-warn { color: #92400e; }
+    .output-feedback-line.is-err { color: #b91c1c; }
+    .output-feedback-line.is-muted { color: #64748b; }
+    .output-feedback-line.is-pending { color: #64748b; font-style: italic; }
+    .output-feedback-line-test {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+    }
+    .output-feedback-line-test .test-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      flex-basis: 100%;
+      margin-bottom: 2px;
+    }
+    .unified-step-toolbar {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #e8edf3;
+    }
+    .unified-step-toolbar .toolbar-mid {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+      flex-wrap: nowrap;
+    }
+    .unified-step-toolbar .toolbar-spacer {
+      flex: 1;
+      min-width: 6px;
+    }
+    @media (max-width: 900px) {
+      .unified-step-toolbar { flex-wrap: wrap; }
+      .unified-step-toolbar .toolbar-mid.step3-actions-wrap { flex-basis: 100%; flex-wrap: wrap; }
+      .unified-step-toolbar .toolbar-spacer { display: none; }
+    }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .table-select-toolbar { align-items: end; }
+    @media (min-width: 901px) {
+      .table-select-toolbar { grid-template-columns: 1fr auto; }
+    }
+    .output-mode-radios { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+    .output-mode-opt {
+      font-size: 0.76rem; font-weight: 600; color: #334155; display: flex; align-items: center; gap: 8px;
+      text-transform: none; letter-spacing: 0; cursor: pointer; margin: 0; font-family: 'Montserrat', sans-serif;
+    }
+    .output-mode-opt input { width: auto; margin: 0; cursor: pointer; }
     .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
     .toolbar { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
     .hint { font-size: 0.73rem; color: #64748b; font-family: 'Roboto', sans-serif; margin-top: 4px; }
+    .summary-box {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      max-width: 100%;
+      line-height: 1.5;
+      font-size: 0.72rem;
+    }
     .estimating { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #0c4a6e; margin-top: 4px; }
     .estimating .spin {
       width: 12px; height: 12px; border: 2px solid #bae6fd; border-top-color: #0284c7;
       border-radius: 50%; animation: sdg-spin .8s linear infinite;
     }
     @keyframes sdg-spin { to { transform: rotate(360deg); } }
-    .err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 8px; padding: 10px; font-size: 0.8rem; margin-bottom: 8px; }
+    .err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 8px; padding: 10px; font-size: 0.8rem; margin-bottom: 8px; white-space: pre-wrap; }
     .table-list { max-height: 220px; overflow: auto; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px; background: #fff; }
     .table-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+    .tables-load-block {
+      grid-column: 1 / -1;
+      padding: 14px 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%);
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      margin: 2px 0 6px 0;
+    }
+    .tables-load-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .tables-load-spin {
+      width: 14px; height: 14px; flex-shrink: 0;
+      border: 2px solid #bae6fd; border-top-color: #0284c7;
+      border-radius: 50%; animation: sdg-spin .85s linear infinite;
+    }
+    .tables-load-text { font-size: 0.78rem; color: #0c4a6e; font-weight: 600; line-height: 1.35; font-family: 'Roboto', sans-serif; }
+    .tables-load-bar { height: 5px; background: #bae6fd; border-radius: 999px; overflow: hidden; }
+    .tables-load-bar-fill {
+      display: block; height: 100%; width: 36%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #0284c7, #0ea5e9, #38bdf8, #0ea5e9);
+      animation: tbl-load-slide 1.35s ease-in-out infinite;
+    }
+    @keyframes tbl-load-slide {
+      0% { transform: translateX(-110%); }
+      100% { transform: translateX(320%); }
+    }
     .trow { border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 6px; background: #f8fafc; font-size: 0.68rem; }
     .trow .name { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; display: block; margin-bottom: 2px; }
     .trow .meta { color: #64748b; font-size: 0.64rem; white-space: nowrap; display: inline-block; }
     .checks .ok { color: #166534; } .checks .warn { color: #92400e; } .checks .fail { color: #991b1b; }
+    .preflight-box.preflight-pass { border-left: 4px solid #22c55e; background: linear-gradient(90deg, #f0fdf4 0%, #fff 14px); }
+    .preflight-box.preflight-warn { border-left: 4px solid #eab308; background: linear-gradient(90deg, #fffbeb 0%, #fff 14px); }
+    .preflight-box.preflight-blocked { border-left: 4px solid #ef4444; background: linear-gradient(90deg, #fef2f2 0%, #fff 14px); }
     .checks li { margin-bottom: 5px; font-size: 0.78rem; }
     .run-head { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
     .badge { border-radius: 999px; padding: 3px 9px; font-size: 0.68rem; border: 1px solid #cbd5e1; background: #f8fafc; }
@@ -55,22 +364,91 @@
     .bar-wrap { height: 7px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
     .bar-fill { height: 100%; background: #0ea5e9; width: 0%; }
     .logs { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 8px; max-height: 180px; overflow: auto; font-size: 0.7rem; }
-    .audit-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-    .audit-table th, .audit-table td { border-bottom: 1px solid #e2e8f0; padding: 6px; text-align: left; vertical-align: top; }
-    @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+    .audit-toolbar {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 14px;
+    }
+    .audit-refresh-btn {
+      min-width: 11.5rem;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+    }
+    .audit-refresh-btn .audit-refresh-inner {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .audit-refresh-spinner {
+      display: none;
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: sdg-spin 0.8s linear infinite;
+    }
+    .audit-refresh-btn.is-busy .audit-refresh-spinner { display: block; }
+    .audit-refresh-btn.is-busy:disabled { opacity: 0.9; cursor: wait; }
+    .audit-count-hint { font-size: 0.7rem; margin: 0; color: #64748b; min-height: 1.2em; }
+    .audit-table-wrap {
+      margin-top: 10px;
+      overflow: auto;
+      max-height: min(420px, 55vh);
+      min-height: 100px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #fff;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+    .audit-table { width: 100%; min-width: 720px; border-collapse: separate; border-spacing: 0; font-size: 0.72rem; }
+    .audit-table thead th {
+      position: sticky; top: 0; z-index: 1;
+      background: #f1f5f9; color: #334155; font-weight: 600;
+      border-bottom: 2px solid #cbd5e1; padding: 8px 10px; text-align: left;
+    }
+    .audit-table tbody tr:nth-child(even) { background: #f8fafc; }
+    .audit-table td { border-bottom: 1px solid #e2e8f0; padding: 8px 10px; text-align: left; vertical-align: middle; }
+    .audit-run-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.66rem; max-width: 220px; word-break: break-all; }
+    .audit-status { color: #475569; font-size: 0.7rem; }
+    .audit-btn-cell .btn { font-size: 0.68rem; padding: 4px 10px; }
+    .audit-summary-err { color: #b45309; font-size: 0.68rem; cursor: help; max-width: 120px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+    .summary-modal { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+    .summary-modal[hidden] { display: none !important; }
+    .summary-modal-backdrop { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.5); cursor: pointer; }
+    .summary-modal-panel {
+      position: relative; max-width: min(920px, 96vw); max-height: 85vh; width: 100%;
+      background: #fff; border-radius: 10px; box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .summary-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }
+    .summary-modal-head h3 { margin: 0; font-size: 0.9rem; color: #0f172a; }
+    .summary-modal-close { border: none; background: #f1f5f9; width: 32px; height: 32px; border-radius: 6px; font-size: 1.25rem; line-height: 1; cursor: pointer; color: #475569; }
+    .summary-modal-close:hover { background: #e2e8f0; }
+    .summary-modal-pre { margin: 0; padding: 14px 16px; overflow: auto; flex: 1; font-size: 0.7rem; line-height: 1.45; background: #0f172a; color: #e2e8f0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    @media (max-width: 1100px) { .layout { grid-template-columns: minmax(0, 1fr); } }
     @media (max-width: 900px) { .row2, .row3 { grid-template-columns: 1fr; } .table-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <div class="status-bar">
-    <strong style="font-size:0.82rem;">Synthetic Data Generation (Databricks)</strong>
+    <strong style="font-size:0.738rem;">Synthetic Data Generation (Databricks)</strong>
     <span id="connPill" class="pill"><span class="dot a"></span>Checking</span>
     <span id="clusterPill" class="pill">State: UNKNOWN</span>
-    <span id="latencyPill" class="pill">Latency: -- ms</span>
-    <span id="tokenPill" class="pill">Token: configured/not-configured</span>
-    <span id="warehousePill" class="pill mono">Warehouse: --</span>
-    <button id="btnCopyWarehouse" class="copy-btn" type="button">Copy Warehouse</button>
     <button id="btnStartStop" class="btn" type="button">Refresh Status</button>
+    <div id="warehouseProgressHost" class="warehouse-progress" role="status" aria-live="polite" aria-busy="false">
+      <span class="wh-spin" aria-hidden="true"></span>
+      <div class="wh-progress-inner">
+        <span id="warehouseProgressLabel" class="wh-progress-label"></span>
+        <div class="wh-bar"><span class="wh-bar-fill"></span></div>
+      </div>
+    </div>
   </div>
 
   <div class="layout">
@@ -87,8 +465,12 @@
         <div id="step1">
           <div class="row2">
             <div>
-              <label for="warehouseId">Warehouse ID</label>
-              <input id="warehouseId" value="f0ec353cb2780a8c" />
+              <div class="warehouse-label-row">
+                <label for="warehouseId">Warehouse ID</label>
+                <button type="button" class="field-tip-btn" id="warehouseTipBtn"
+                  title="Warehouse configuration help">?</button>
+              </div>
+              <input id="warehouseId" class="input-readonly" readonly autocomplete="off" placeholder="Resolving warehouse from API…" value="" />
             </div>
             <div style="display:flex; gap:8px; align-items:flex-end;">
               <button id="btnLoadMeta" class="btn" type="button">Load Metadata</button>
@@ -106,16 +488,11 @@
           </div>
           <div style="margin-top:10px;">
             <label>Table selection</label>
-            <div class="row3">
-              <div><input id="tableSearch" placeholder="Search tables..." /></div>
+            <div class="row2 table-select-toolbar">
               <div>
-                <select id="tableTypeFilter">
-                  <option value="ALL">ALL</option>
-                  <option value="FORECAST">FORECAST</option>
-                  <option value="HISTORICAL">HISTORICAL</option>
-                </select>
+                <input id="tableSearch" placeholder="Search by table name or prefix…" title="Filters the list below; does not change the server." />
               </div>
-              <div style="display:flex; align-items:center; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
                 <label style="margin:0; font-size:0.75rem; text-transform:none;"><input id="tblAll" type="checkbox" style="width:auto;"> Select all visible</label>
                 <span id="tblCounter" class="hint">0 selected</span>
               </div>
@@ -129,9 +506,12 @@
         </div>
 
         <div id="step2" style="display:none;">
-          <div class="row3">
+          <div class="row2">
             <div>
-              <label for="sampleAnchor">Sample anchor</label>
+              <div class="field-label-tip">
+                <label for="sampleAnchor">Sample anchor</label>
+                <button type="button" class="field-tip-btn" id="tipSampleAnchor" title="What full / delta / snapshot mean">?</button>
+              </div>
               <select id="sampleAnchor">
                 <option value="initial">full</option>
                 <option value="delta">delta</option>
@@ -139,24 +519,52 @@
               </select>
             </div>
             <div>
-              <label for="samplePercent">Sample percent</label>
+              <div class="field-label-tip">
+                <label for="samplePercent">Sample percent</label>
+                <button type="button" class="field-tip-btn" id="tipSamplePercent" title="Sample size help">?</button>
+              </div>
               <input id="samplePercent" type="range" min="1" max="100" value="5" />
               <p class="hint"><span id="samplePercentView">5</span>%</p>
             </div>
+          </div>
+          <div id="deltaLookbackWrap" style="display:none; margin-top:10px;">
+            <div class="field-label-tip">
+              <label for="deltaLookbackDays">Lookback days (delta only)</label>
+              <button type="button" class="field-tip-btn" id="tipLookback" title="Lookback help">?</button>
+            </div>
+            <input id="deltaLookbackDays" type="number" min="1" step="1" value="5" style="max-width:220px;" />
+          </div>
+          <div class="row2" style="margin-top:10px;">
             <div>
-              <label for="deltaLookbackDays">Lookback days</label>
-              <input id="deltaLookbackDays" type="number" min="1" value="5" />
+              <div class="field-label-tip">
+                <label for="snapshotTs">Snapshot time (optional)</label>
+                <button type="button" class="field-tip-btn" id="tipSnapshot" title="Snapshot help">?</button>
+              </div>
+              <input id="snapshotTs" type="datetime-local" />
+            </div>
+            <div>
+              <div class="field-label-tip">
+                <label for="maxRowsCap">Max rows cap (optional)</label>
+                <button type="button" class="field-tip-btn" id="tipMaxRows" title="Row cap help">?</button>
+              </div>
+              <input id="maxRowsCap" type="number" min="1" step="1" placeholder="optional" />
             </div>
           </div>
           <div class="row2" style="margin-top:10px;">
             <div>
-              <label for="snapshotTs">Snapshot timestamp (for snapshot)</label>
-              <input id="snapshotTs" type="datetime-local" />
+              <div class="field-label-tip">
+                <label for="outputFormat">Output file format</label>
+                <button type="button" class="field-tip-btn" id="tipOutputFormat" title="How exports appear in the volume">?</button>
+              </div>
+              <select id="outputFormat">
+                <option value="csv" selected>CSV</option>
+                <option value="json">JSON</option>
+                <option value="parquet">Parquet</option>
+              </select>
             </div>
-            <div>
-              <label for="maxRowsCap">Max rows cap (optional)</label>
-              <input id="maxRowsCap" type="number" min="1" placeholder="optional" />
-            </div>
+            <p class="hint" style="margin:0; align-self:end; max-width:280px;">
+              Run uses <span class="mono">INSERT OVERWRITE DIRECTORY … USING csv|json|parquet</span>. Files are named <span class="mono">part-00000-*</span> (Spark default); open or Auto&nbsp;Loader with the matching format.
+            </p>
           </div>
           <p id="estLine" class="hint">Estimated output rows: 0</p>
         </div>
@@ -186,21 +594,32 @@
               </select>
             </div>
           </div>
-          <div class="row2" style="margin-top:10px;">
-            <div>
-              <label for="outputVolume">Output volume (DBFS)</label>
-              <select id="outputVolume">
-                <option value="dbfs:/FileStore/vikaa/synthetic-data/">Default: dbfs:/FileStore/vikaa/synthetic-data/</option>
-              </select>
-              <p class="hint">Select a Unity Catalog volume. Falls back to default DBFS path if none found.</p>
+          <div class="step3-dest-section" style="margin-top:10px;">
+            <label>Output destination</label>
+            <div class="output-mode-radios">
+              <label class="output-mode-opt"><input type="radio" name="outputPathMode" value="volume_list" checked> Pick from volumes (all UC volumes in your Step-1 catalog)</label>
+              <label class="output-mode-opt"><input type="radio" name="outputPathMode" value="manual_path"> Enter DBFS path (folder under a UC volume)</label>
             </div>
-            <div style="display:flex; align-items:flex-end; gap:8px;">
-              <button id="btnSaveDraft" class="btn" type="button">Save draft</button>
-              <button id="btnPreflight" class="btn" type="button">Pre-flight</button>
-              <button id="btnRun" class="btn primary" type="button" disabled>Run</button>
+            <div id="outputVolumeSelectWrap" style="margin-top:8px;">
+              <div class="volume-picker-row">
+                <div class="volume-select-wrap">
+                  <select id="outputVolume" aria-label="Unity Catalog output volume">
+                    <option value="">— Select a Step-1 catalog first —</option>
+                  </select>
+                </div>
+                <button type="button" class="btn" id="btnRefreshVolumes">Refresh volumes</button>
+              </div>
+            </div>
+            <div id="outputPathManualWrap" style="display:none; margin-top:8px;">
+              <input id="outputPathManual" type="text" placeholder="e.g. dbfs:/Volumes/my_catalog/bronze/my_volume/synthetic-out/" />
+            </div>
+            <div id="outputFeedbackPanel" class="output-feedback-panel is-empty" aria-live="polite">
+              <span class="output-feedback-title">Destination status</span>
+              <div id="outputVolumeFeedbackLine" class="output-feedback-line is-muted" data-has-message=""></div>
+              <div id="outputPathTestLine" class="output-feedback-line output-feedback-line-test is-muted" hidden></div>
             </div>
           </div>
-          <div id="preflightBox" class="card" style="margin-top:10px; display:none; padding:10px;">
+          <div id="preflightBox" class="card preflight-box" style="margin-top:10px; display:none; padding:10px;">
             <h4 style="margin:0 0 6px 0; font-size:0.82rem;">Pre-flight checks</h4>
             <ul id="preflightList" class="checks" style="margin:0; padding-left:18px;"></ul>
             <label id="largeConfirmWrap" style="display:none; margin-top:8px; text-transform:none; letter-spacing:0; font-size:0.74rem;">
@@ -209,9 +628,21 @@
           </div>
         </div>
 
-        <div class="toolbar">
+        <div class="unified-step-toolbar">
           <button id="btnBack" class="btn" type="button" disabled>Back</button>
-          <button id="btnNext" class="btn" type="button">Next</button>
+          <div id="toolbarMidStep12" class="toolbar-mid">
+            <button id="btnNext" class="btn" type="button">Next</button>
+          </div>
+          <div id="toolbarMidStep3" class="toolbar-mid step3-actions-wrap" style="display:none;">
+            <button type="button" class="btn" id="btnTestOutputPath">Test path</button>
+            <span class="output-path-help">
+              <button type="button" class="output-path-help-btn" id="btnOutputPathHelp" aria-describedby="outputPathHelpTip" aria-label="Output path help">i</button>
+              <span id="outputPathHelpTip" class="output-path-help-pop" role="tooltip"><strong style="color:#fff;">Run</strong> exports CSVs with <span class="mono" style="color:#bae6fd;">INSERT OVERWRITE DIRECTORY</span> under your <span class="mono" style="color:#bae6fd;">dbfs:/…</span> / UC volume path (pick any volume in the Step-1 catalog or type a DBFS folder). <strong style="color:#fff;">Test path</strong> checks the string; Pre-flight and Run confirm the warehouse can write there. Use the same paths in your next pipeline stage (Auto Loader, notebooks, etc.).</span>
+            </span>
+            <span class="toolbar-spacer" aria-hidden="true"></span>
+            <button id="btnPreflight" class="btn" type="button">Pre-flight</button>
+            <button id="btnRun" class="btn primary" type="button" disabled>Run</button>
+          </div>
         </div>
       </div>
 
@@ -222,33 +653,68 @@
           <span id="runIdView" class="mono hint"></span>
           <span id="elapsedView" class="hint"></span>
         </div>
+        <div id="runExecProgress" class="warehouse-progress" style="margin-top:8px;" role="status" aria-live="polite" aria-busy="false">
+          <span class="wh-spin" aria-hidden="true"></span>
+          <div class="wh-progress-inner">
+            <span id="runExecProgressLabel" class="wh-progress-label"></span>
+            <div class="wh-bar"><span class="wh-bar-fill"></span></div>
+          </div>
+        </div>
         <div id="progressHost"></div>
         <div id="logHost" class="logs"></div>
       </div>
 
       <div class="card">
         <strong style="font-size:0.82rem;">Audit Log</strong>
-        <div style="margin-top:8px;">
-          <button id="btnLoadAudit" class="btn" type="button">Refresh audit</button>
+        <div class="audit-toolbar" role="group" aria-label="Audit log">
+          <button id="btnLoadAudit" class="btn audit-refresh-btn" type="button" aria-busy="false">
+            <span class="audit-refresh-inner">
+              <span class="audit-refresh-spinner" aria-hidden="true"></span>
+              <span id="auditRefreshLabel">Refresh audit</span>
+            </span>
+          </button>
+          <span id="auditCountHint" class="audit-count-hint" aria-live="polite"></span>
         </div>
-        <div style="margin-top:8px; overflow:auto;">
+        <div class="audit-table-wrap" role="region" aria-label="Audit records" tabindex="0">
           <table class="audit-table">
-            <thead><tr><th>Run ID</th><th>User</th><th>Time</th><th>Status</th><th>Source</th><th>Model</th></tr></thead>
-            <tbody id="auditBody"><tr><td colspan="6">No data</td></tr></tbody>
+            <thead><tr><th>Run ID</th><th>User</th><th>Time</th><th>Status</th><th>Source</th><th>Model</th><th>Summary</th></tr></thead>
+            <tbody id="auditBody"><tr><td colspan="7">No data</td></tr></tbody>
           </table>
         </div>
       </div>
     </div>
 
     <div>
+      <div class="card sidebar-workflow-note" aria-label="Three-step workflow overview">
+        <div class="sidebar-workflow-title">
+          <span class="workflow-steps">1 → 2 → 3</span>
+          <span>Three-step flow</span>
+        </div>
+        <p class="sidebar-workflow-body">
+          <strong>Step-1 Source</strong> — Warehouse, Catalog, Schema, and Tables.<BR>
+          <strong>Step-2 Sampling</strong> — How much data to mirror. <BR>
+          <strong>Step-3 Output &amp; Run</strong> — You choose where CSVs land on <strong>DBFS</strong> (any UC volume in that catalog—e.g. bronze vs gold—or a typed path). Same paths feed your next pipeline stage.<BR>
+        </p>
+      </div>
       <div class="card">
         <strong style="font-size:0.82rem;">Summary</strong>
-        <div id="summaryBox" class="hint" style="margin-top:8px; white-space:pre-wrap;"></div>
+        <div id="summaryBox" class="hint summary-box" style="margin-top:8px;"></div>
       </div>
       <div class="card">
         <strong style="font-size:0.82rem;">Schedules</strong>
         <div id="scheduleBox" class="hint" style="margin-top:8px;"></div>
       </div>
+    </div>
+  </div>
+
+  <div id="summaryModal" class="summary-modal" role="dialog" aria-modal="true" aria-labelledby="summaryModalTitle" hidden>
+    <div class="summary-modal-backdrop" id="summaryModalBackdrop" aria-hidden="true"></div>
+    <div class="summary-modal-panel">
+      <div class="summary-modal-head">
+        <h3 id="summaryModalTitle">Run summary</h3>
+        <button type="button" class="summary-modal-close" id="summaryModalClose" aria-label="Close">×</button>
+      </div>
+      <pre id="summaryModalBody" class="summary-modal-pre"></pre>
     </div>
   </div>
 
@@ -261,6 +727,9 @@
     let LAST_RUN_TIMER = null;
     let RUN_STARTED_AT = null;
     let WAREHOUSE_STATE = 'UNKNOWN';
+    let WAREHOUSE_POLL_UNTIL = null;
+    let WAREHOUSE_POLL_TIMER = null;
+    let WAREHOUSE_POLL_DEADLINE = 0;
     let ESTIMATE_TIMER = null;
     let ESTIMATING = false;
 
@@ -275,19 +744,57 @@
       throw new Error('Login required for this host.');
     }
     async function call(method, prefixes, suffix, body) {
-      const t0 = Date.now();
       let lastErr = null;
       for (const p of prefixes) {
         try {
           const r = await fetch(apiBase() + p + suffix, { method, headers: hdr(), body: body ? JSON.stringify(body) : undefined });
           const j = await r.json().catch(() => ({}));
-          document.getElementById('latencyPill').textContent = 'Latency: ' + (Date.now() - t0) + ' ms';
           if (r.ok) return j;
           const msg = typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail || j);
           throw new Error(msg || r.statusText);
         } catch (e) { lastErr = e; }
       }
       throw lastErr || new Error('Request failed');
+    }
+    const HEALTH_WAIT_MS = 25000;
+    /** Warehouse shown in the read-only field: API health first, then frontend/databricks_sql_config.json fallback. */
+    async function applyWarehouseDisplayFromSources(healthPayload) {
+      const input = document.getElementById('warehouseId');
+      let wid = '';
+      if (healthPayload && healthPayload.defaults && healthPayload.defaults.warehouse_id != null) {
+        wid = String(healthPayload.defaults.warehouse_id).trim();
+      }
+      if (!wid) {
+        try {
+          const r = await fetch('databricks_sql_config.json', { cache: 'no-store' });
+          if (r.ok) {
+            const j = await r.json().catch(() => ({}));
+            wid = String(j.defaultWarehouseId || '').trim();
+          }
+        } catch (_) {}
+      }
+      if (wid) {
+        input.value = wid;
+        input.placeholder = '';
+      } else {
+        input.value = '';
+        input.placeholder = 'No warehouse ID — log in, start API, or set server env / databricks_sql_config.json';
+      }
+    }
+    function formatApiError(e) {
+      const m = e && e.message != null ? String(e.message) : 'Error';
+      const t = m.trim();
+      if (t.startsWith('{') && t.endsWith('}')) {
+        try {
+          const o = JSON.parse(t);
+          if (o && typeof o.message === 'string' && o.message) {
+            let s = o.message;
+            if (o.table) s += '\n\nTable: ' + o.table;
+            return s;
+          }
+        } catch (_) {}
+      }
+      return m;
     }
     function showErr(msg) { const b = document.getElementById('errorBox'); b.style.display = 'block'; b.textContent = String(msg || 'Error'); }
     function clearErr() { const b = document.getElementById('errorBox'); b.style.display = 'none'; b.textContent = ''; }
@@ -298,18 +805,106 @@
       host.scrollTop = host.scrollHeight;
     }
     function formatNum(v) { const n = Number(v); if (!Number.isFinite(n)) return '—'; if (n >= 1e6) return (n/1e6).toFixed(1) + 'M'; if (n >= 1e3) return (n/1e3).toFixed(1) + 'K'; return String(Math.round(n)); }
+    function escHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function escAttr(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    }
+    function showTablesLoadingUi(catalog, schema) {
+      const host = document.getElementById('tableGrid');
+      const c = escHtml(catalog);
+      const sch = escHtml(schema);
+      host.innerHTML =
+        '<div class="tables-load-block" role="status" aria-live="polite" aria-busy="true">' +
+        '<div class="tables-load-row">' +
+        '<span class="tables-load-spin" aria-hidden="true"></span>' +
+        '<span class="tables-load-text">Loading tables for <span class="mono">' + c + '</span>.<span class="mono">' + sch + '</span>…</span>' +
+        '</div>' +
+        '<div class="tables-load-bar"><span class="tables-load-bar-fill"></span></div>' +
+        '</div>';
+    }
+    function getResolvedOutputPath() {
+      const modeEl = document.querySelector('input[name="outputPathMode"]:checked');
+      const mode = modeEl ? modeEl.value : 'volume_list';
+      if (mode === 'manual_path') {
+        return (document.getElementById('outputPathManual').value || '').trim();
+      }
+      return (document.getElementById('outputVolume').value || '').trim();
+    }
+    function syncOutputPathModeUi() {
+      const modeEl = document.querySelector('input[name="outputPathMode"]:checked');
+      const mode = modeEl ? modeEl.value : 'volume_list';
+      const wSel = document.getElementById('outputVolumeSelectWrap');
+      const wMan = document.getElementById('outputPathManualWrap');
+      if (wSel) wSel.style.display = mode === 'volume_list' ? '' : 'none';
+      if (wMan) wMan.style.display = mode === 'manual_path' ? '' : 'none';
+    }
+    function summaryLandingLines() {
+      const fmt = (document.getElementById('outputFormat') && document.getElementById('outputFormat').value) || 'csv';
+      const stamp = '_DDMonYYYY_HHMMSS_xxxxxxxx';
+      const root = (getResolvedOutputPath() || '').trim();
+      const lines = [];
+      lines.push('Destination: ' + (root || '— (choose in Step 3)'));
+      if (!root) {
+        lines.push('Files: <root>/<table>/' + stamp + '/ · ' + fmt + ' at Run');
+        return lines;
+      }
+      const r = root.replace(/\/$/, '');
+      const picked = Array.from(TABLES.selected).sort();
+      if (picked.length === 0) {
+        lines.push('Files: ' + r + '/<table>/' + stamp + '/ · ' + fmt + ' at Run');
+        return lines;
+      }
+      const maxShow = 6;
+      picked.slice(0, maxShow).forEach((t) => {
+        lines.push('Files: ' + r + '/' + t + '/' + stamp + '/ · ' + fmt + ' at Run');
+      });
+      if (picked.length > maxShow) {
+        lines.push('… +' + (picked.length - maxShow) + ' more table(s), same pattern');
+      }
+      return lines;
+    }
     function updateSummary() {
+      const cat = document.getElementById('catalogName').value || '—';
+      const sch = document.getElementById('schemaName').value || '—';
+      const tblPreview =
+        TABLES.selected.size === 0
+          ? 'none'
+          : Array.from(TABLES.selected)
+              .sort()
+              .slice(0, 5)
+              .join(', ') + (TABLES.selected.size > 5 ? ' …' : '');
       const txt = [
-        'Step: ' + STEP_STATE.step,
+        '── Step 1 · Source ──',
         'Warehouse: ' + (document.getElementById('warehouseId').value || '—'),
-        'Catalog.Schema: ' + (document.getElementById('catalogName').value || '—') + '.' + (document.getElementById('schemaName').value || '—'),
-        'Tables selected: ' + TABLES.selected.size,
+        'Catalog: ' + cat,
+        'Schema: ' + sch,
+        'Tables selected (' + TABLES.selected.size + '): ' + tblPreview,
+        '',
+        '── Step 2 · Sampling & file format ──',
         'Anchor: ' + document.getElementById('sampleAnchor').value,
         'Sample %: ' + document.getElementById('samplePercentView').textContent,
-        'Lookback days: ' + (document.getElementById('deltaLookbackDays').value || '—'),
+        'Lookback days (delta): ' + (document.getElementById('deltaLookbackDays').value || '—'),
+        'Output file format: ' + ((document.getElementById('outputFormat') && document.getElementById('outputFormat').value) || 'csv'),
+        '',
+        '── Step 3 · Schedule & landing path ──',
         'Frequency: ' + document.getElementById('frequencyMode').value,
-      ].join('\n');
+      ]
+        .concat(summaryLandingLines())
+        .join('\n');
       document.getElementById('summaryBox').textContent = txt;
+      refreshRunButtonIfPreflightDone();
+    }
+    function syncSampleAnchorUi() {
+      const a = document.getElementById('sampleAnchor').value;
+      const wrap = document.getElementById('deltaLookbackWrap');
+      if (wrap) wrap.style.display = a === 'delta' ? '' : 'none';
+      const lb = document.getElementById('deltaLookbackDays');
+      if (lb) lb.disabled = a !== 'delta';
+      const sn = document.getElementById('snapshotTs');
+      if (sn) sn.disabled = a !== 'snapshot';
     }
     function setSteps() {
       for (let i = 1; i <= 3; i++) {
@@ -318,13 +913,128 @@
         document.getElementById('step' + i).style.display = i === STEP_STATE.step ? '' : 'none';
       }
       document.getElementById('btnBack').disabled = STEP_STATE.step === 1;
-      document.getElementById('btnNext').style.display = STEP_STATE.step === 3 ? 'none' : '';
+      const t12 = document.getElementById('toolbarMidStep12');
+      const t3 = document.getElementById('toolbarMidStep3');
+      if (STEP_STATE.step === 3) {
+        if (t12) t12.style.display = 'none';
+        if (t3) t3.style.display = 'flex';
+      } else {
+        if (t12) t12.style.display = 'flex';
+        if (t3) t3.style.display = 'none';
+      }
+      if (STEP_STATE.step === 2) syncSampleAnchorUi();
+      if (STEP_STATE.step === 3) {
+        syncOutputPathModeUi();
+        document.getElementById('frequencyMode').dispatchEvent(new Event('change'));
+      }
       updateSummary();
     }
-    function stepValid(step) {
-      if (step === 1) return !!document.getElementById('catalogName').value && !!document.getElementById('schemaName').value && TABLES.selected.size > 0;
-      if (step === 2) return Number(document.getElementById('samplePercent').value) > 0;
-      return true;
+    /** True when Run cannot succeed until the user fixes the wizard (independent of preflight gate). */
+    function isRunConfigIncomplete() {
+      if (!document.getElementById('catalogName').value.trim() || !document.getElementById('schemaName').value.trim()) {
+        return true;
+      }
+      if (TABLES.all.length === 0) return true;
+      if (TABLES.selected.size === 0) return true;
+      if (!getResolvedOutputPath()) return true;
+      const pct = Number(document.getElementById('samplePercent').value);
+      if (!Number.isFinite(pct) || pct < 1 || pct > 100) return true;
+      const a = document.getElementById('sampleAnchor').value;
+      if (a === 'delta') {
+        const d = Number(document.getElementById('deltaLookbackDays').value);
+        if (!Number.isFinite(d) || d < 1 || !Number.isInteger(d)) return true;
+      }
+      const capRaw = document.getElementById('maxRowsCap').value.trim();
+      if (capRaw !== '') {
+        const cap = Number(capRaw);
+        if (!Number.isFinite(cap) || cap < 1 || !Number.isInteger(cap)) return true;
+      }
+      return false;
+    }
+    function refreshRunButtonIfPreflightDone() {
+      if (!LAST_PREFLIGHT) return;
+      const g = LAST_PREFLIGHT.gate;
+      document.getElementById('btnRun').disabled = g === 'blocked' || isRunConfigIncomplete();
+    }
+    /** Warn-only checks shown at top of Pre-flight (navigation no longer blocked on these). */
+    function collectWizardPreflightChecks() {
+      const out = [];
+      const cat = document.getElementById('catalogName').value.trim();
+      const sch = document.getElementById('schemaName').value.trim();
+      if (!cat) {
+        out.push({
+          id: 'wiz_catalog',
+          label: 'Step 1 — catalog',
+          status: 'warn',
+          hint: 'No catalog selected. Choose one before Run.',
+        });
+      }
+      if (!sch) {
+        out.push({
+          id: 'wiz_schema',
+          label: 'Step 1 — schema',
+          status: 'warn',
+          hint: 'No schema selected. Choose one before Run.',
+        });
+      }
+      if (cat && sch && TABLES.all.length === 0) {
+        out.push({
+          id: 'wiz_meta',
+          label: 'Step 1 — table metadata',
+          status: 'warn',
+          hint: 'Load metadata in Step 1 so tables are listed.',
+        });
+      }
+      if (cat && sch && TABLES.all.length > 0 && TABLES.selected.size === 0) {
+        out.push({
+          id: 'wiz_tables',
+          label: 'Step 1 — table selection',
+          status: 'warn',
+          hint: 'Select at least one table.',
+        });
+      }
+      const pct = Number(document.getElementById('samplePercent').value);
+      if (!Number.isFinite(pct) || pct < 1 || pct > 100) {
+        out.push({
+          id: 'wiz_sample',
+          label: 'Step 2 — sample percent',
+          status: 'warn',
+          hint: 'Use a sample percent between 1 and 100.',
+        });
+      }
+      const a = document.getElementById('sampleAnchor').value;
+      if (a === 'delta') {
+        const d = Number(document.getElementById('deltaLookbackDays').value);
+        if (!Number.isFinite(d) || d < 1 || !Number.isInteger(d)) {
+          out.push({
+            id: 'wiz_delta',
+            label: 'Step 2 — delta lookback',
+            status: 'warn',
+            hint: 'Enter whole lookback days (at least 1) for delta sampling.',
+          });
+        }
+      }
+      const capRaw = document.getElementById('maxRowsCap').value.trim();
+      if (capRaw !== '') {
+        const cap = Number(capRaw);
+        if (!Number.isFinite(cap) || cap < 1 || !Number.isInteger(cap)) {
+          out.push({
+            id: 'wiz_cap',
+            label: 'Step 2 — max rows cap',
+            status: 'warn',
+            hint: 'Cap must be a positive whole number or leave blank.',
+          });
+        }
+      }
+      if (!getResolvedOutputPath()) {
+        out.push({
+          id: 'wiz_output',
+          label: 'Step 3 — output destination',
+          status: 'warn',
+          hint: 'Pick a volume or enter a DBFS path before Run.',
+        });
+      }
+      return out;
     }
     function setEstimating(on) {
       ESTIMATING = !!on;
@@ -351,11 +1061,8 @@
     }
     function renderTables() {
       const q = (document.getElementById('tableSearch').value || '').trim().toLowerCase();
-      const t = document.getElementById('tableTypeFilter').value;
-      TABLES.visible = TABLES.all.filter(x => {
-        const okName = !q || String(x.name || '').toLowerCase().includes(q);
-        const okType = t === 'ALL' || x.group === t;
-        return okName && okType;
+      TABLES.visible = TABLES.all.filter((x) => {
+        return !q || String(x.name || '').toLowerCase().includes(q);
       });
       const host = document.getElementById('tableGrid');
       if (!TABLES.visible.length) {
@@ -384,28 +1091,120 @@
       document.getElementById('tblAll').checked = allVisibleSelected;
       queueEstimate();
     }
+    function isWarehouseTransitional(state) {
+      return ['STARTING', 'STOPPING', 'PENDING', 'PROVISIONING', 'RESTARTING'].indexOf(state) !== -1;
+    }
+    function stopWarehousePolling() {
+      if (WAREHOUSE_POLL_TIMER) {
+        clearInterval(WAREHOUSE_POLL_TIMER);
+        WAREHOUSE_POLL_TIMER = null;
+      }
+      WAREHOUSE_POLL_UNTIL = null;
+      WAREHOUSE_POLL_DEADLINE = 0;
+      applyWarehouseStatusUi();
+    }
+    function startWarehousePolling(untilState) {
+      stopWarehousePolling();
+      WAREHOUSE_POLL_UNTIL = untilState;
+      WAREHOUSE_POLL_DEADLINE = Date.now() + 4 * 60 * 1000;
+      WAREHOUSE_POLL_TIMER = setInterval(() => { void refreshWarehouseStatus(); }, 2500);
+      applyWarehouseStatusUi();
+    }
+    function applyWarehouseProgressRow() {
+      const host = document.getElementById('warehouseProgressHost');
+      const labelEl = document.getElementById('warehouseProgressLabel');
+      const transitional = isWarehouseTransitional(WAREHOUSE_STATE);
+      const polling = WAREHOUSE_POLL_UNTIL != null;
+      const waitingRun = polling && WAREHOUSE_POLL_UNTIL === 'RUNNING' && WAREHOUSE_STATE !== 'RUNNING';
+      const waitingStop = polling && WAREHOUSE_POLL_UNTIL === 'STOPPED' && WAREHOUSE_STATE !== 'STOPPED';
+      const show = transitional || waitingRun || waitingStop;
+      if (!show) {
+        host.classList.remove('is-visible');
+        host.setAttribute('aria-busy', 'false');
+        labelEl.textContent = '';
+        return;
+      }
+      host.classList.add('is-visible');
+      host.setAttribute('aria-busy', 'true');
+      let msg = '';
+      if (WAREHOUSE_STATE === 'STOPPING' || (waitingStop && WAREHOUSE_STATE !== 'STOPPED')) {
+        msg = 'Stopping SQL warehouse…';
+      } else if (WAREHOUSE_STATE === 'STARTING') {
+        msg = 'SQL warehouse is starting — usually ready within a minute.';
+      } else if (waitingRun) {
+        msg = WAREHOUSE_STATE === 'STOPPED'
+          ? 'Start requested — waiting for the warehouse to come online…'
+          : 'Warehouse is waking up — checking status every few seconds…';
+      } else {
+        msg = 'Warehouse status is updating…';
+      }
+      if (polling && WAREHOUSE_POLL_DEADLINE > 0 && Date.now() > WAREHOUSE_POLL_DEADLINE - 30000) {
+        msg += ' (still waiting — you can leave this page open)';
+      }
+      labelEl.textContent = msg;
+    }
+    function applyWarehouseStatusUi() {
+      const cp = document.getElementById('clusterPill');
+      cp.textContent = 'State: ' + WAREHOUSE_STATE;
+      cp.className = 'pill';
+      if (WAREHOUSE_STATE === 'RUNNING') cp.classList.add('state-running');
+      else if (isWarehouseTransitional(WAREHOUSE_STATE)) cp.classList.add('state-progress');
+
+      const b = document.getElementById('btnStartStop');
+      const pollingWait = WAREHOUSE_POLL_UNTIL != null &&
+        ((WAREHOUSE_POLL_UNTIL === 'RUNNING' && WAREHOUSE_STATE !== 'RUNNING') ||
+          (WAREHOUSE_POLL_UNTIL === 'STOPPED' && WAREHOUSE_STATE !== 'STOPPED'));
+      b.disabled = !!pollingWait;
+      if (pollingWait) {
+        b.className = 'btn';
+        b.textContent = 'Please wait…';
+      } else {
+        b.className = 'btn ' + (WAREHOUSE_STATE === 'RUNNING' ? 'bad' : WAREHOUSE_STATE === 'STOPPED' ? 'good' : '');
+        b.textContent = WAREHOUSE_STATE === 'RUNNING' ? 'Stop Warehouse' : WAREHOUSE_STATE === 'STOPPED' ? 'Start Warehouse' : 'Refresh Status';
+      }
+      applyWarehouseProgressRow();
+    }
     async function refreshConn() {
+      document.getElementById('connPill').innerHTML = '<span class="dot a"></span>Connecting…';
+      let healthPayload = null;
       try {
-        const h = await call('GET', PREFIX_SYNTH, '/health');
-        const ok = !!(h.databricks_host_configured && h.databricks_token_configured);
+        healthPayload = await Promise.race([
+          call('GET', PREFIX_SYNTH, '/health'),
+          new Promise((_, rej) =>
+            setTimeout(() => rej(new Error('API health check timed out (' + Math.round(HEALTH_WAIT_MS / 1000) + 's). Is the backend running and reachable?')), HEALTH_WAIT_MS)
+          ),
+        ]);
+        const ok = !!(healthPayload.databricks_host_configured && healthPayload.databricks_token_configured);
         document.getElementById('connPill').innerHTML = '<span class="dot ' + (ok ? 'g' : 'r') + '"></span>' + (ok ? 'Connected' : 'Disconnected');
-        document.getElementById('tokenPill').textContent = 'Token: ' + (h.databricks_token_configured ? 'valid (unknown expiry)' : 'missing');
-        if (h.defaults && h.defaults.warehouse_id) document.getElementById('warehouseId').value = h.defaults.warehouse_id;
-      } catch (e) { document.getElementById('connPill').innerHTML = '<span class="dot r"></span>Disconnected'; }
+        await applyWarehouseDisplayFromSources(healthPayload);
+      } catch (e) {
+        document.getElementById('connPill').innerHTML = '<span class="dot r"></span>Disconnected';
+        await applyWarehouseDisplayFromSources(null);
+        healthPayload = null;
+      }
       await refreshWarehouseStatus();
+      return healthPayload;
     }
     async function refreshWarehouseStatus() {
       const wid = document.getElementById('warehouseId').value.trim();
-      document.getElementById('warehousePill').textContent = 'Warehouse: ' + (wid || '--');
-      if (!wid) return;
+      if (!wid) {
+        stopWarehousePolling();
+        WAREHOUSE_STATE = 'UNKNOWN';
+        applyWarehouseStatusUi();
+        return;
+      }
       try {
         const st = await call('GET', PREFIX_SYNTH, '/warehouse/' + encodeURIComponent(wid) + '/status');
         WAREHOUSE_STATE = String(st.state || 'UNKNOWN').toUpperCase();
       } catch (_) { WAREHOUSE_STATE = 'UNKNOWN'; }
-      document.getElementById('clusterPill').textContent = 'State: ' + WAREHOUSE_STATE;
-      const b = document.getElementById('btnStartStop');
-      b.className = 'btn ' + (WAREHOUSE_STATE === 'RUNNING' ? 'bad' : WAREHOUSE_STATE === 'STOPPED' ? 'good' : '');
-      b.textContent = WAREHOUSE_STATE === 'RUNNING' ? 'Stop Warehouse' : WAREHOUSE_STATE === 'STOPPED' ? 'Start Warehouse' : 'Refresh Status';
+      applyWarehouseStatusUi();
+      if (WAREHOUSE_POLL_UNTIL === 'RUNNING' && WAREHOUSE_STATE === 'RUNNING') stopWarehousePolling();
+      else if (WAREHOUSE_POLL_UNTIL === 'STOPPED' && WAREHOUSE_STATE === 'STOPPED') stopWarehousePolling();
+      else if (WAREHOUSE_POLL_UNTIL && Date.now() > WAREHOUSE_POLL_DEADLINE) stopWarehousePolling();
+      else if (!WAREHOUSE_POLL_UNTIL && isWarehouseTransitional(WAREHOUSE_STATE)) {
+        if (WAREHOUSE_STATE === 'STOPPING') startWarehousePolling('STOPPED');
+        else startWarehousePolling('RUNNING');
+      }
     }
     async function loadCatalogs() {
       const c = document.getElementById('catalogName');
@@ -431,40 +1230,191 @@
       const c = document.getElementById('catalogName').value;
       const s = document.getElementById('schemaName').value;
       if (!c || !s) throw new Error('Select catalog and schema first.');
-      const wid = document.getElementById('warehouseId').value.trim();
-      const d = await call('GET', PREFIX_SYNTH, '/tables-meta?catalog_name=' + encodeURIComponent(c) + '&schema_name=' + encodeURIComponent(s) + '&warehouse_id=' + encodeURIComponent(wid));
-      TABLES.all = d.tables || [];
-      TABLES.selected = new Set(TABLES.all.map(t => t.name));
-      renderTables();
-      await loadVolumes(c, s);
-    }
-    async function loadVolumes(catalog, schema) {
-      const sel = document.getElementById('outputVolume');
-      sel.innerHTML = '<option value="dbfs:/FileStore/vikaa/synthetic-data/">Default: dbfs:/FileStore/vikaa/synthetic-data/</option>';
-      if (!catalog) return;
+      showTablesLoadingUi(c, s);
+      const host = document.getElementById('tableGrid');
       try {
-        const q = schema
-          ? ('/volumes?catalog_name=' + encodeURIComponent(catalog) + '&schema_name=' + encodeURIComponent(schema))
-          : ('/volumes?catalog_name=' + encodeURIComponent(catalog));
+        const wid = document.getElementById('warehouseId').value.trim();
+        const d = await call('GET', PREFIX_SYNTH, '/tables-meta?catalog_name=' + encodeURIComponent(c) + '&schema_name=' + encodeURIComponent(s) + '&warehouse_id=' + encodeURIComponent(wid));
+        TABLES.all = d.tables || [];
+        TABLES.selected = new Set(TABLES.all.map(t => t.name));
+        renderTables();
+        await loadVolumes(c);
+      } catch (e) {
+        TABLES.all = [];
+        TABLES.selected = new Set();
+        host.innerHTML = '<div class="hint" style="grid-column:1/-1;">Could not load table metadata for this schema.</div>';
+        document.getElementById('tblAll').checked = false;
+        updateTableCounter();
+        throw e;
+      }
+    }
+    function normalizeVolumePathKey(p) {
+      let s = String(p || '').trim();
+      if (!s) return '';
+      s = s.replace(/\/+$/, '');
+      return s.toLowerCase();
+    }
+    function dedupeVolumesByPath(list) {
+      const m = new Map();
+      (list || []).forEach((v) => {
+        if (!v || typeof v !== 'object' || !v.output_path) return;
+        const key = normalizeVolumePathKey(v.output_path);
+        if (!key || m.has(key)) return;
+        m.set(key, v);
+      });
+      return Array.from(m.values());
+    }
+    function applyVolumeSelectSize() {
+      const sel = document.getElementById('outputVolume');
+      if (!sel) return;
+      const mobile = window.matchMedia('(max-width: 640px)').matches;
+      const n = sel.options.length;
+      if (n > 1 && !mobile) sel.size = Math.min(8, n);
+      else sel.size = 1;
+    }
+    function syncOutputFeedbackPanelEmpty() {
+      const panel = document.getElementById('outputFeedbackPanel');
+      const vLine = document.getElementById('outputVolumeFeedbackLine');
+      const tLine = document.getElementById('outputPathTestLine');
+      if (!panel || !vLine || !tLine) return;
+      const hasVol = vLine.getAttribute('data-has-message') === '1';
+      const hasTest = !tLine.hidden && (tLine.textContent || '').trim().length > 0;
+      panel.classList.toggle('is-empty', !hasVol && !hasTest);
+    }
+    function setOutputVolumeFeedback(summaryText, tone, detailTooltip) {
+      const line = document.getElementById('outputVolumeFeedbackLine');
+      if (!line) return;
+      line.innerHTML = '';
+      line.className =
+        'output-feedback-line ' +
+        (tone === 'ok' ? 'is-ok' : tone === 'warn' ? 'is-warn' : tone === 'err' ? 'is-err' : 'is-muted');
+      if (!summaryText) {
+        line.setAttribute('data-has-message', '');
+        syncOutputFeedbackPanelEmpty();
+        return;
+      }
+      line.setAttribute('data-has-message', '1');
+      const span = document.createElement('span');
+      span.textContent = summaryText;
+      line.appendChild(span);
+      if (detailTooltip && detailTooltip.length && detailTooltip !== summaryText) {
+        const wrap = document.createElement('span');
+        wrap.className = 'output-path-help';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'output-path-help-btn';
+        btn.setAttribute('aria-label', 'More about volumes');
+        btn.textContent = 'i';
+        const tip = document.createElement('span');
+        tip.className = 'output-path-help-pop';
+        tip.setAttribute('role', 'tooltip');
+        tip.textContent = detailTooltip;
+        wrap.appendChild(btn);
+        wrap.appendChild(tip);
+        line.appendChild(wrap);
+      }
+      syncOutputFeedbackPanelEmpty();
+    }
+    function setPathTestFeedback(text, kind) {
+      const line = document.getElementById('outputPathTestLine');
+      if (!line) return;
+      if (!text) {
+        line.hidden = true;
+        line.innerHTML = '';
+        line.className = 'output-feedback-line output-feedback-line-test is-muted';
+        syncOutputFeedbackPanelEmpty();
+        return;
+      }
+      line.hidden = false;
+      line.innerHTML = '<span class="test-label">Path check</span><span>' + escHtml(text) + '</span>';
+      line.className =
+        'output-feedback-line output-feedback-line-test ' +
+        (kind === 'ok' ? 'is-ok' : kind === 'err' ? 'is-err' : kind === 'warn' ? 'is-warn' : 'is-pending');
+      const panel = document.getElementById('outputFeedbackPanel');
+      if (panel) panel.classList.remove('is-empty');
+      syncOutputFeedbackPanelEmpty();
+    }
+    function renderVolumeStatusLine(catalog, volCount) {
+      if (!catalog) {
+        setOutputVolumeFeedback('', 'muted', '');
+        return;
+      }
+      if (volCount === 0) {
+        setOutputVolumeFeedback(
+          'No Unity Catalog volumes listed for catalog · ' + catalog + '.',
+          'warn',
+          'Create UC volumes in this catalog (e.g. landing zones per layer), pick another catalog in Step-1, or use “Enter DBFS path”.'
+        );
+        return;
+      }
+      setOutputVolumeFeedback(
+        volCount + ' UC volume(s) under catalog · ' + catalog + ' — choose where to land CSVs (any schema’s volume).',
+        'ok',
+        'Source tables stay tied to Step-1 schema; output is independent. Pick e.g. bronze vs gold volume for your pipeline; selection is preserved on refresh when still in the list.'
+      );
+    }
+    async function loadVolumes(catalog) {
+      const sel = document.getElementById('outputVolume');
+      const refreshBtn = document.getElementById('btnRefreshVolumes');
+      const prevPath = (sel.value || '').trim();
+      const step1Schema = (document.getElementById('schemaName').value || '').trim();
+      setPathTestFeedback('', null);
+      if (!catalog) {
+        sel.innerHTML = '<option value="">— Select a Step-1 catalog first —</option>';
+        applyVolumeSelectSize();
+        setOutputVolumeFeedback('', 'muted', '');
+        return;
+      }
+      if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.textContent = 'Loading…';
+      }
+      sel.innerHTML = '';
+      applyVolumeSelectSize();
+      try {
+        const q = '/volumes?catalog_name=' + encodeURIComponent(catalog);
         const d = await call('GET', PREFIX_SYNTH, q);
-        const vols = d.volumes || [];
-        vols.forEach((v) => {
-          const opt = document.createElement('option');
-          opt.value = v.output_path;
-          const display = (v.full_name || (catalog + '.' + (v.schema_name || '?') + '.' + v.name));
-          opt.textContent = display + ' -> ' + v.output_path;
-          sel.appendChild(opt);
-        });
-        if (vols.length) {
-          // Prefer same-schema volume when schema is selected; else first available volume in catalog.
-          const preferred = schema
-            ? vols.find((v) => String(v.schema_name || '').trim() === String(schema).trim())
-            : vols[0];
-          if (preferred) sel.value = preferred.output_path;
-          else sel.selectedIndex = 1;
+        const vols = dedupeVolumesByPath(d.volumes || []);
+        if (vols.length === 0) {
+          const opt0 = document.createElement('option');
+          opt0.value = '';
+          opt0.textContent = '— No volumes in catalog — use “Enter DBFS path” —';
+          sel.appendChild(opt0);
+        } else {
+          vols.forEach((v) => {
+            const opt = document.createElement('option');
+            opt.value = v.output_path;
+            const display =
+              v.full_name ||
+              [v.catalog_name, v.schema_name, v.name].filter(Boolean).join('.') ||
+              catalog + '.' + (v.schema_name || '?') + '.' + v.name;
+            opt.textContent = display + '  →  ' + v.output_path;
+            sel.appendChild(opt);
+          });
         }
-      } catch (_) {
-        // Keep default option when volume listing is unavailable.
+        applyVolumeSelectSize();
+        renderVolumeStatusLine(catalog, vols.length);
+        const optionValues = new Set(Array.from(sel.options).map((o) => o.value));
+        if (prevPath && optionValues.has(prevPath)) {
+          sel.value = prevPath;
+        } else if (vols.length) {
+          const matched = step1Schema
+            ? vols.find((v) => String(v.schema_name || '').trim() === step1Schema)
+            : null;
+          sel.value = (matched || vols[0]).output_path;
+        } else {
+          sel.value = '';
+        }
+      } catch (e) {
+        const msg = e && e.message ? e.message : 'request failed';
+        sel.innerHTML = '<option value="">— Could not load volumes —</option>';
+        applyVolumeSelectSize();
+        setOutputVolumeFeedback('Could not load volumes.', 'err', msg + ' You can still use “Enter DBFS path”.');
+      } finally {
+        if (refreshBtn) {
+          refreshBtn.disabled = false;
+          refreshBtn.textContent = 'Refresh volumes';
+        }
       }
     }
     function payloadFromUi() {
@@ -477,31 +1427,101 @@
         catalog_name: document.getElementById('catalogName').value.trim(),
         schema_name: document.getElementById('schemaName').value.trim(),
         table_names: TABLES.selected.size === TABLES.all.length ? null : Array.from(TABLES.selected),
-        output_format: 'csv',
-        output_path: document.getElementById('outputVolume').value.trim(),
+        output_format: (document.getElementById('outputFormat') && document.getElementById('outputFormat').value) || 'csv',
+        output_path: getResolvedOutputPath(),
         sample_percent: pct,
         sample_anchor: anchor,
         frequency_mode: mode,
-        interval_minutes: mode === 'interval' ? Number(document.getElementById('intervalMinutes').value || 60) : null,
-        delta_lookback_minutes: anchor === 'delta' ? Number(document.getElementById('deltaLookbackDays').value || 5) * 1440 : null,
+        interval_minutes: mode === 'interval'
+          ? Math.max(1, Math.floor(Number(document.getElementById('intervalMinutes').value || 60)))
+          : null,
+        delta_lookback_minutes: anchor === 'delta'
+          ? Math.max(1, Math.floor(Number(document.getElementById('deltaLookbackDays').value || 5))) * 1440
+          : null,
         llm_model_name: document.getElementById('llmModelName').value.trim(),
         warehouse_id: document.getElementById('warehouseId').value.trim(),
-        max_rows_cap: document.getElementById('maxRowsCap').value ? Number(document.getElementById('maxRowsCap').value) : null
+        max_rows_cap: (() => {
+          const v = document.getElementById('maxRowsCap').value.trim();
+          if (!v) return null;
+          const n = Number(v);
+          return Number.isFinite(n) && n >= 1 ? Math.floor(n) : null;
+        })()
       };
     }
     async function runPreflight() {
-      const payload = payloadFromUi();
-      payload.large_run_threshold = 100000;
-      const d = await call('POST', PREFIX_SYNTH, '/preflight', payload);
-      LAST_PREFLIGHT = d;
+      const wizardChecks = collectWizardPreflightChecks();
+      const cat = document.getElementById('catalogName').value.trim();
+      const sch = document.getElementById('schemaName').value.trim();
+      const canCallApi = Boolean(cat && sch);
+
+      let d = {
+        checks: [],
+        gate: 'pass',
+        estimates: {},
+        large_run_confirmation_required: false,
+        large_run_threshold: 100000,
+      };
+      if (canCallApi) {
+        try {
+          const payload = payloadFromUi();
+          payload.large_run_threshold = 100000;
+          d = await call('POST', PREFIX_SYNTH, '/preflight', payload);
+        } catch (e) {
+          d = {
+            checks: [
+              {
+                id: 'preflight_api',
+                label: 'Preflight API',
+                status: 'fail',
+                hint: formatApiError(e),
+              },
+            ],
+            gate: 'blocked',
+            estimates: {},
+            large_run_confirmation_required: false,
+            large_run_threshold: 100000,
+          };
+        }
+      }
+
+      const serverChecks = d.checks || [];
+      const merged = wizardChecks.concat(serverChecks);
+      const anyFail = merged.some((c) => c.status === 'fail');
+      const anyWarn = merged.some((c) => c.status === 'warn');
+      let gate = 'pass';
+      if (anyFail) gate = 'blocked';
+      else if (anyWarn || d.gate === 'warn') gate = 'warn';
+      else if (d.gate === 'blocked') gate = 'blocked';
+
+      LAST_PREFLIGHT = Object.assign({}, d, { checks: merged, gate: gate });
       const box = document.getElementById('preflightBox');
       box.style.display = '';
+      box.classList.remove('preflight-pass', 'preflight-warn', 'preflight-blocked');
+      if (gate === 'blocked') box.classList.add('preflight-blocked');
+      else if (gate === 'warn') box.classList.add('preflight-warn');
+      else box.classList.add('preflight-pass');
       const ul = document.getElementById('preflightList');
-      ul.innerHTML = (d.checks || []).map((c) => '<li class="' + c.status + '"><strong>[' + c.status.toUpperCase() + ']</strong> ' + c.label + ' — ' + (c.hint || '') + '</li>').join('');
+      ul.innerHTML = merged
+        .map(
+          (c) =>
+            '<li class="' +
+            c.status +
+            '"><strong>[' +
+            c.status.toUpperCase() +
+            ']</strong> ' +
+            escHtml(c.label) +
+            ' — ' +
+            escHtml(c.hint || '') +
+            '</li>'
+        )
+        .join('');
       const confirmWrap = document.getElementById('largeConfirmWrap');
       confirmWrap.style.display = d.large_run_confirmation_required ? '' : 'none';
-      document.getElementById('btnRun').disabled = d.gate === 'blocked';
-      logLine('info', 'Preflight gate=' + d.gate + ', est_out=' + ((d.estimates || {}).estimated_output_rows || 0));
+      document.getElementById('btnRun').disabled = gate === 'blocked' || isRunConfigIncomplete();
+      logLine(
+        'info',
+        'Preflight gate=' + gate + (canCallApi ? '' : ' (wizard only)') + ', est_out=' + ((d.estimates || {}).estimated_output_rows || 0)
+      );
     }
     function startTimer() {
       RUN_STARTED_AT = Date.now();
@@ -516,109 +1536,254 @@
       const host = document.getElementById('progressHost');
       const ex = data.executions || [];
       if (!ex.length) { host.innerHTML = '<div class="hint">No per-table execution rows.</div>'; return; }
+      const fmtAll = (data.resolved_request && data.resolved_request.output_format) || '';
       host.innerHTML = ex.map((e) => {
         const pct = e.state === 'SUCCEEDED' ? 100 : 0;
-        return '<div class="progress-row"><div style="display:flex;justify-content:space-between;gap:8px;"><strong class="mono">' + e.table_name + '</strong><span class="hint">' + e.state + ' · ' + (e.elapsed_ms || 0) + ' ms</span></div><div class="bar-wrap"><div class="bar-fill" style="width:' + pct + '%"></div></div><div class="hint mono">' + (e.statement_id || '') + '</div></div>';
+        const fmt = (e.output_format || fmtAll || '—').toUpperCase();
+        return '<div class="progress-row"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;"><strong class="mono">' + escHtml(e.table_name) + '</strong><span class="hint">' + escHtml(e.state) + ' · ' + (e.elapsed_ms || 0) + ' ms · ' + escHtml(fmt) + '</span></div><div class="bar-wrap"><div class="bar-fill" style="width:' + pct + '%"></div></div><div class="hint mono">' + escHtml(e.statement_id || '') + '</div></div>';
       }).join('');
     }
     async function loadAudit() {
       const d = await call('GET', PREFIX_SYNTH, '/audit?limit=200');
       const rows = d.records || [];
       const body = document.getElementById('auditBody');
-      if (!rows.length) { body.innerHTML = '<tr><td colspan="6">No audit records.</td></tr>'; return; }
+      const hint = document.getElementById('auditCountHint');
+      const n = rows.length;
+      if (hint) {
+        hint.textContent = n
+          ? n + ' row' + (n === 1 ? '' : 's') + ' (max 200) · scroll the bordered area when the list is long'
+          : 'No rows yet — completed runs appear here';
+      }
+      if (!rows.length) { body.innerHTML = '<tr><td colspan="7">No audit records.</td></tr>'; return; }
       body.innerHTML = rows.map((r) => {
-        const src = (r.source && r.source.catalog && r.source.schema) ? (r.source.catalog + '.' + r.source.schema) : '-';
-        return '<tr><td class="mono">' + (r.run_id || '-') + '</td><td>' + (r.initiated_by || '-') + '</td><td>' + (r.timestamp_utc || '-') + '</td><td>' + (r.status || '-') + '</td><td>' + src + '</td><td>' + (r.model || '-') + '</td></tr>';
+        const src = (r.source && r.source.catalog && r.source.schema) ? (r.source.catalog + '.' + r.source.schema) : '—';
+        const rid = r.run_id || '';
+        const sum =
+          (r.summary_uri || r.summary_file) && rid
+            ? '<button type="button" class="btn audit-summary-btn" data-run-id="' + escAttr(rid) + '">View</button>'
+            : rid && r.summary_write_error
+              ? '<span class="audit-summary-err" title="' + escAttr(r.summary_write_error) + '">Save failed — see tooltip</span>'
+              : '<span class="hint">—</span>';
+        return (
+          '<tr>' +
+          '<td class="audit-run-id">' + escHtml(rid || '—') + '</td>' +
+          '<td>' + escHtml(r.initiated_by || '—') + '</td>' +
+          '<td class="mono" style="font-size:0.66rem;white-space:nowrap;">' + escHtml(r.timestamp_utc || '—') + '</td>' +
+          '<td class="audit-status">' + escHtml(r.status || '—') + '</td>' +
+          '<td>' + escHtml(src) + '</td>' +
+          '<td>' + escHtml(r.model || '—') + '</td>' +
+          '<td class="audit-btn-cell">' + sum + '</td>' +
+          '</tr>'
+        );
       }).join('');
+    }
+    function openSummaryModal(title, obj) {
+      const m = document.getElementById('summaryModal');
+      const pre = document.getElementById('summaryModalBody');
+      const h = document.getElementById('summaryModalTitle');
+      if (h) h.textContent = title || 'Run summary';
+      if (pre) pre.textContent = JSON.stringify(obj, null, 2);
+      if (m) { m.hidden = false; m.setAttribute('aria-hidden', 'false'); }
+    }
+    function closeSummaryModal() {
+      const m = document.getElementById('summaryModal');
+      if (m) { m.hidden = true; m.setAttribute('aria-hidden', 'true'); }
     }
     async function loadSchedules() {
       const d = await call('GET', PREFIX_SYNTH, '/schedules');
       document.getElementById('scheduleBox').textContent = 'Active entries: ' + (d.count || 0);
     }
-    function saveDraft() { localStorage.setItem('synth_data_draft_v1', JSON.stringify(payloadFromUi())); logLine('info', 'Draft saved.'); }
-    function restoreDraft() {
-      const raw = localStorage.getItem('synth_data_draft_v1');
-      if (!raw) return;
+    async function testOutputPath() {
+      const p = getResolvedOutputPath();
+      if (!p) {
+        setPathTestFeedback('Choose a volume or enter a path, then run Test path.', 'err');
+        return;
+      }
+      setPathTestFeedback('Checking…', 'pending');
       try {
-        const d = JSON.parse(raw);
-        if (d.warehouse_id) document.getElementById('warehouseId').value = d.warehouse_id;
-        if (d.sample_percent) document.getElementById('samplePercent').value = String(d.sample_percent);
-        if (d.output_path) {
-          const sel = document.getElementById('outputVolume');
-          const exists = Array.from(sel.options).some((o) => o.value === d.output_path);
-          if (!exists) {
-            const opt = document.createElement('option');
-            opt.value = d.output_path;
-            opt.textContent = 'Draft: ' + d.output_path;
-            sel.appendChild(opt);
-          }
-          sel.value = d.output_path;
+        const j = await call('GET', PREFIX_SYNTH, '/validate-output-path?output_path=' + encodeURIComponent(p));
+        if (j.ok) {
+          const line = (j.detail || 'OK') + (j.normalized_path ? ' → ' + j.normalized_path : '');
+          const runnable = j.runnable_in_v1 !== false;
+          setPathTestFeedback(line, runnable ? 'ok' : 'warn');
+        } else {
+          setPathTestFeedback(j.detail || 'Invalid path.', 'err');
         }
-        if (d.llm_model_name) document.getElementById('llmModelName').value = d.llm_model_name;
-      } catch (_) {}
+      } catch (e) {
+        let msg = e.message || 'Request failed.';
+        if (/404|not found/i.test(msg)) {
+          msg += ' Deploy the latest API (includes GET …/validate-output-path) or use Pre-flight to validate the full run.';
+        }
+        setPathTestFeedback(msg, 'err');
+      }
     }
 
-    document.getElementById('btnCopyWarehouse').addEventListener('click', () => navigator.clipboard && navigator.clipboard.writeText(document.getElementById('warehouseId').value || ''));
     document.getElementById('btnStartStop').addEventListener('click', async () => {
       clearErr();
       try {
         const wid = document.getElementById('warehouseId').value.trim();
-        if (!wid) throw new Error('Warehouse ID is required.');
+        if (!wid) {
+          throw new Error('Warehouse ID is missing. Wait for “Connected”, sign in if this host requires it, or set the ID via API env / frontend/databricks_sql_config.json (see ?).');
+        }
         const action = WAREHOUSE_STATE === 'RUNNING' ? 'stop' : WAREHOUSE_STATE === 'STOPPED' ? 'wake' : 'status';
+        if (action === 'wake') startWarehousePolling('RUNNING');
+        else if (action === 'stop') startWarehousePolling('STOPPED');
         if (action !== 'status') await call('POST', PREFIX_SYNTH, '/warehouse/' + encodeURIComponent(wid) + '/' + action);
         await refreshWarehouseStatus();
-      } catch (e) { showErr(e.message); }
+      } catch (e) { stopWarehousePolling(); showErr(e.message); }
     });
-    document.getElementById('warehouseId').addEventListener('blur', () => { void refreshWarehouseStatus(); });
+    document.getElementById('warehouseId').addEventListener('blur', () => { stopWarehousePolling(); void refreshWarehouseStatus(); });
+    document.getElementById('warehouseTipBtn').addEventListener('click', () => {
+      window.alert(
+        'Contact your administrator for warehouse provisioning.\n\n' +
+        'They should add or update the warehouse entry in:\nfrontend/databricks_sql_config.json'
+      );
+    });
     document.getElementById('btnLoadMeta').addEventListener('click', async () => { clearErr(); try { await loadCatalogs(); } catch (e) { showErr(e.message); } });
     document.getElementById('catalogName').addEventListener('change', async () => {
       clearErr();
       try {
         const c = document.getElementById('catalogName').value;
         await loadSchemas(c);
-        await loadVolumes(c, null);
+        await loadVolumes(c);
+        updateSummary();
       } catch (e) { showErr(e.message); }
     });
-    document.getElementById('schemaName').addEventListener('change', async () => { clearErr(); try { await loadTablesMeta(); } catch (e) { showErr(e.message); } });
+    document.getElementById('schemaName').addEventListener('change', async () => {
+      clearErr();
+      try {
+        await loadTablesMeta();
+        updateSummary();
+      } catch (e) { showErr(e.message); }
+    });
     document.getElementById('tableSearch').addEventListener('input', renderTables);
-    document.getElementById('tableTypeFilter').addEventListener('change', renderTables);
     document.getElementById('tblAll').addEventListener('change', (e) => {
       const checked = e.target.checked;
       TABLES.visible.forEach((t) => { if (checked) TABLES.selected.add(t.name); else TABLES.selected.delete(t.name); });
       renderTables();
     });
     document.getElementById('samplePercent').addEventListener('input', (e) => { document.getElementById('samplePercentView').textContent = String(e.target.value); queueEstimate(); });
+    document.getElementById('outputFormat').addEventListener('change', () => { updateSummary(); });
     document.getElementById('sampleAnchor').addEventListener('change', () => {
-      const a = document.getElementById('sampleAnchor').value;
-      document.getElementById('deltaLookbackDays').disabled = a !== 'delta';
-      document.getElementById('snapshotTs').disabled = a !== 'snapshot';
+      syncSampleAnchorUi();
       updateSummary();
+    });
+    document.getElementById('tipSampleAnchor').addEventListener('click', () => {
+      window.alert(
+        'Sample anchor\n\n' +
+        '• full — Sample from the whole table (default).\n' +
+        '• delta — Only rows touched in the lookback window; tables need a suitable timestamp column.\n' +
+        '• snapshot — Label in the UI only: the API still uses a full sample today. Use the time field as a note if you need it.'
+      );
+    });
+    document.getElementById('tipSamplePercent').addEventListener('click', () => {
+      window.alert(
+        'Sample percent\n\n' +
+        'Share of rows to take per table after the anchor rule runs. Delta mode may scale the effective percent on the server.\n' +
+        'The estimate under Step-1 updates when you change this.'
+      );
+    });
+    document.getElementById('tipLookback').addEventListener('click', () => {
+      window.alert(
+        'Lookback days (delta only)\n\n' +
+        'How many days back from “now” to include when selecting changed rows. The server converts this to minutes.'
+      );
+    });
+    document.getElementById('tipSnapshot').addEventListener('click', () => {
+      window.alert(
+        'Snapshot time\n\n' +
+        'Optional. Not sent to the API in v1 — snapshot anchor is treated like a full sample on the server. You can record a planned cut time here for your own reference.'
+      );
+    });
+    document.getElementById('tipMaxRows').addEventListener('click', () => {
+      window.alert(
+        'Max rows cap\n\n' +
+        'Optional limit on output rows per table. Leave blank for no cap. If set, use a positive whole number.'
+      );
+    });
+    document.getElementById('tipOutputFormat').addEventListener('click', () => {
+      window.alert(
+        'Output file format (CSV / JSON / Parquet)\n\n' +
+        'The warehouse runs INSERT OVERWRITE DIRECTORY with USING CSV, USING JSON, or USING PARQUET. ' +
+        'Databricks still names output files part-00000-… (no .csv in the filename). That is normal Spark layout.\n\n' +
+        '• CSV — text with header row; open in a text editor or read_csv.\n' +
+        '• JSON — newline-delimited JSON objects per line (uncompressed parts).\n' +
+        '• Parquet — binary columnar; use Parquet readers or Auto Loader format=parquet.'
+      );
     });
     document.getElementById('frequencyMode').addEventListener('change', () => {
       const m = document.getElementById('frequencyMode').value;
       document.getElementById('intervalMinutes').disabled = (m === 'one-time');
       updateSummary();
     });
+    Array.from(document.querySelectorAll('input[name="outputPathMode"]')).forEach((el) => {
+      el.addEventListener('change', () => {
+        syncOutputPathModeUi();
+        setPathTestFeedback('', null);
+        updateSummary();
+      });
+    });
+    document.getElementById('outputPathManual').addEventListener('input', () => {
+      setPathTestFeedback('', null);
+      updateSummary();
+    });
+    document.getElementById('outputVolume').addEventListener('change', () => {
+      setPathTestFeedback('', null);
+      updateSummary();
+    });
+    document.getElementById('btnTestOutputPath').addEventListener('click', () => { void testOutputPath(); });
+    document.getElementById('btnRefreshVolumes').addEventListener('click', async () => {
+      clearErr();
+      try {
+        const c = document.getElementById('catalogName').value;
+        if (!c) { showErr('Select a catalog in Step-1 first.'); return; }
+        await loadVolumes(c);
+        setPathTestFeedback('', null);
+        logLine('info', 'Volume list refreshed.');
+        updateSummary();
+      } catch (e) { showErr(e.message); }
+    });
     document.getElementById('btnBack').addEventListener('click', () => { STEP_STATE.step = Math.max(1, STEP_STATE.step - 1); setSteps(); });
     document.getElementById('btnNext').addEventListener('click', () => {
-      if (!stepValid(STEP_STATE.step)) { showErr('Please complete required fields in this step.'); return; }
       clearErr();
       STEP_STATE.step = Math.min(3, STEP_STATE.step + 1);
       setSteps();
     });
-    document.getElementById('btnSaveDraft').addEventListener('click', saveDraft);
     document.getElementById('btnPreflight').addEventListener('click', async () => { clearErr(); try { await runPreflight(); } catch (e) { showErr(e.message); } });
+    function setRunExecutionProgress(on, label) {
+      const host = document.getElementById('runExecProgress');
+      const labelEl = document.getElementById('runExecProgressLabel');
+      if (!host || !labelEl) return;
+      if (on) {
+        host.classList.add('is-visible');
+        host.setAttribute('aria-busy', 'true');
+        labelEl.textContent = label || 'Running export on warehouse — one statement per table…';
+      } else {
+        host.classList.remove('is-visible');
+        host.setAttribute('aria-busy', 'false');
+        labelEl.textContent = '';
+      }
+    }
     document.getElementById('btnRun').addEventListener('click', async () => {
       clearErr();
+      const outPath = getResolvedOutputPath();
+      if (!outPath) {
+        showErr('Select an output volume or enter a DBFS path before Run.');
+        return;
+      }
       try {
-        if (!LAST_PREFLIGHT) await runPreflight();
+        await runPreflight();
         if (!LAST_PREFLIGHT) throw new Error('Preflight did not complete.');
+        if (isRunConfigIncomplete()) {
+          throw new Error('Wizard incomplete. Use Pre-flight warnings to fix Step 1–3 before Run.');
+        }
         if (LAST_PREFLIGHT.gate === 'blocked') throw new Error('Preflight blocked. Resolve failed checks.');
         if (LAST_PREFLIGHT.large_run_confirmation_required && !document.getElementById('largeConfirm').checked) {
           throw new Error('Large-run confirmation required.');
         }
         document.getElementById('runStatusBadge').textContent = 'RUNNING';
         startTimer();
+        setRunExecutionProgress(true, 'Synthetic run in progress — waiting for Databricks SQL…');
         logLine('info', 'Run started.');
         const payload = payloadFromUi();
         const res = await call('POST', PREFIX_SYNTH, '/run', payload);
@@ -626,25 +1791,85 @@
         document.getElementById('runIdView').textContent = String(res.run_id || '');
         renderExecution(res);
         stopTimer();
-        logLine('info', 'Run finished with status=' + res.status);
+        setRunExecutionProgress(false);
+        logLine(
+          'info',
+          'Run finished with status=' +
+            res.status +
+            (res.export_folder ? ' · landing folder: ' + res.export_folder : '') +
+            (res.summary_uri || res.summary_file
+              ? ' · summary: ' + (res.summary_uri || res.summary_file)
+              : res.summary_write_error
+                ? ' · summary not written: ' + res.summary_write_error
+                : '')
+        );
         await loadAudit();
         await loadSchedules();
       } catch (e) {
         stopTimer();
+        setRunExecutionProgress(false);
         document.getElementById('runStatusBadge').textContent = 'FAILED';
-        showErr(e.message);
-        logLine('error', e.message);
+        const msg = formatApiError(e);
+        showErr(msg);
+        logLine('error', msg);
       }
     });
-    document.getElementById('btnLoadAudit').addEventListener('click', async () => { clearErr(); try { await loadAudit(); } catch (e) { showErr(e.message); } });
+    document.getElementById('btnLoadAudit').addEventListener('click', async () => {
+      const btn = document.getElementById('btnLoadAudit');
+      const label = document.getElementById('auditRefreshLabel');
+      clearErr();
+      btn.disabled = true;
+      btn.classList.add('is-busy');
+      btn.setAttribute('aria-busy', 'true');
+      if (label) label.textContent = 'Refreshing…';
+      try {
+        await loadAudit();
+      } catch (e) {
+        showErr(e.message);
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('is-busy');
+        btn.setAttribute('aria-busy', 'false');
+        if (label) label.textContent = 'Refresh audit';
+      }
+    });
+    document.getElementById('summaryModalClose').addEventListener('click', closeSummaryModal);
+    document.getElementById('summaryModalBackdrop').addEventListener('click', closeSummaryModal);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeSummaryModal();
+    });
+    document.getElementById('auditBody').addEventListener('click', async (ev) => {
+      const btn = ev.target.closest('.audit-summary-btn');
+      if (!btn) return;
+      const rid = btn.getAttribute('data-run-id');
+      if (!rid) return;
+      clearErr();
+      btn.disabled = true;
+      const prev = btn.textContent;
+      btn.textContent = '…';
+      try {
+        const j = await call('GET', PREFIX_SYNTH, '/run-summary?run_id=' + encodeURIComponent(rid));
+        openSummaryModal('Run summary · ' + rid, j);
+      } catch (e) {
+        showErr(e.message || 'Could not load summary.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prev;
+      }
+    });
 
     (async function init() {
       setSteps();
-      restoreDraft();
+      syncOutputPathModeUi();
       document.getElementById('sampleAnchor').dispatchEvent(new Event('change'));
       document.getElementById('frequencyMode').dispatchEvent(new Event('change'));
       try {
-        await refreshConn();
+        const hp = await refreshConn();
+        if (hp && hp.run_export_sql) {
+          logLine('info', 'Synth API export mode: ' + hp.run_export_sql + ' (if Run errors still show COPY INTO, the server process is old — restart it).');
+        } else if (hp) {
+          logLine('info', 'Synth API: no run_export_sql in health — restart backend for latest CSV export SQL.');
+        }
         await loadCatalogs();
         await loadSchedules();
         await loadAudit();

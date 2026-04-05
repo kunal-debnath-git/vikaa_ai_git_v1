@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Databricks Conversational SQL — Vikaa.AI</title>
 
-  <script src="config.js"></script>
+  <script src="config.js?v=20260404"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -33,7 +33,7 @@
     }
     .action-bar h3 {
       margin: 0;
-      font-size: 0.95rem;
+      font-size: 0.855rem;
       font-weight: 700;
       color: #0f2942;
       flex: 1;
@@ -228,8 +228,8 @@
       min-height: 120px;
     }
     .answer-box.markdown-body :first-child { margin-top: 0; }
-    .answer-box.markdown-body h1 { font-size: 1.05rem; margin: 0.6em 0 0.35em; }
-    .answer-box.markdown-body h2 { font-size: 0.98rem; margin: 0.6em 0 0.35em; }
+    .answer-box.markdown-body h1 { font-size: 0.945rem; margin: 0.6em 0 0.35em; }
+    .answer-box.markdown-body h2 { font-size: 0.882rem; margin: 0.6em 0 0.35em; }
     .answer-box.markdown-body ul { margin: 0.4em 0; padding-left: 1.2em; }
     .answer-box.markdown-body code { background: #e2e8f0; padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
     .answer-box.thinking { color: #64748b; }
@@ -438,7 +438,7 @@
 <body>
   <div class="action-bar">
     <h3><i class="fas fa-comments" style="color:#ff5a1f;"></i> Databricks Conversational SQL <span class="badge-v1">Unity Catalog · SQL</span></h3>
-    <button type="button" class="btn btn-secondary" id="btnHistory"><i class="fas fa-clock-rotate-left"></i> History</button>
+    <button type="button" class="btn btn-secondary" id="btnHistory"><i class="fas fa-clock-rotate-left"></i> Load History</button>
   </div>
 
   <div id="contentArea">
@@ -448,12 +448,7 @@
       <h4><i class="fas fa-circle-info"></i> Natural language → read-only Spark SQL on Databricks</h4>
       <p>
         First choose the <strong>SQL warehouse</strong> that will run the query. Then pick <strong>catalog</strong> and
-        <strong>schema</strong> from Unity Catalog (same APIs as the UC browser). Warehouses are listed from
-        <code style="background:rgba(255,255,255,.15);padding:1px 6px;border-radius:4px;">databricks_sql_config.json</code>
-        (UUID per warehouse).         The server needs <code style="background:rgba(255,255,255,.15);padding:1px 6px;border-radius:4px;">DATABRICKS_*</code> and an LLM key:
-        <code style="background:rgba(255,255,255,.15);padding:1px 6px;border-radius:4px;">GEMINI_API_KEY</code> or
-        <code style="background:rgba(255,255,255,.15);padding:1px 6px;border-radius:4px;">GOOGLE_API_KEY</code>
-        (primary), with <code style="background:rgba(255,255,255,.15);padding:1px 6px;border-radius:4px;">ANTHROPIC_API_KEY</code> as optional fallback.
+        <strong>schema</strong> from Unity Catalog (same APIs as the UC browser). <BR>
         <strong>Ask</strong> stays disabled until warehouse, catalog, schema scope, and your question are set.
       </p>
     </div>
@@ -1011,7 +1006,7 @@
       return (sec >= 10 ? sec.toFixed(1) : sec.toFixed(2)) + ' s';
     }
 
-    /** Grey execution line + technical meta for Conversational SQL (uses API completed_at_utc). */
+    /** Grey execution line + catalog / table / row stats (uses API completed_at_utc). */
     function buildAnswerMetaHtml(data) {
       const esc = (x) => escapeHtml(x == null ? '' : String(x));
       const whenBits = [];
@@ -1039,10 +1034,6 @@
       if (data.tables_in_model_context != null) bits.push('tables in model context: ' + esc(data.tables_in_model_context));
       if (data.row_count_returned != null) bits.push('rows returned: ' + esc(data.row_count_returned));
       if (data.result_truncated) bits.push('truncated');
-      if (data.statement_id) bits.push('stmt: ' + esc(String(data.statement_id).slice(0, 12)) + '…');
-      if (data.workspace_sql_console_base) bits.push('console: ' + esc(data.workspace_sql_console_base));
-      if (data.llm_sql_label) bits.push('SQL gen: ' + esc(data.llm_sql_label));
-      if (data.llm_summary_label) bits.push('summary: ' + esc(data.llm_summary_label));
 
       return (
         '<div class="answer-meta-when">' + esc(whenBits.join(' · ')) + '</div>' +

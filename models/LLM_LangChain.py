@@ -7,17 +7,14 @@
 # pip install soundfile
 # ===============================================
 import os
-import threading
 import xml.etree.ElementTree as ET
 from types import SimpleNamespace
 from base64 import b64decode
 
-from langchain.memory import ConversationBufferMemory
-# from langchain_openai import ChatOpenAI
-# from langchain_google_genai import GoogleGenerativeAIEmbeddings
 import re
 from models.attachment_handlers import *
 from models.LLM_GEMINI import *
+from models.memory_manager import history_manager
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -27,23 +24,7 @@ OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 
 MAX_COMBINED_ATTACHMENT_MB = 20
 # ==================================================================
-class InMemoryHistoryManager:
-    def __init__(self):
-        self.sessions = {}
-        self.lock = threading.Lock()
-
-    def get_memory(self, session_id):
-        with self.lock:
-            if session_id not in self.sessions:
-                self.sessions[session_id] = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-            return self.sessions[session_id]
-
-    def clear_memory(self, session_id):
-        with self.lock:
-            if session_id in self.sessions:
-                del self.sessions[session_id]
-
-history_manager = InMemoryHistoryManager()
+# history_manager is imported from models.memory_manager (shared single instance)
 # ==================================================================
 def sanitize_session_id(session_id):
     return ''.join(c for c in session_id if c.isalnum() or c in ('-', '_'))
@@ -62,7 +43,6 @@ def invoke_langchain(agent_request):
         use_vision = False
         image_payloads = []
         attachment_texts = []
-        total_attachment_bytes = 0
 
         # ✅ Check for YouTube URL in the query BEFORE processing attachments
         print(f">> Checking YouTube/ETC link in query: {query}")
@@ -72,12 +52,21 @@ def invoke_langchain(agent_request):
             print(f">> Matched YouTube URL: {youtube_url}")
             return handle_youtube_link(youtube_url, query)
 
-        # ✅ Process file attachments
+        # ✅ Pre-check: decode all attachments and enforce size limit BEFORE processing
+        decoded_atts = []
+        total_attachment_bytes = 0
         for att in attachments:
             base64_data = att.dataUrl.split(",")[1]
             decoded_bytes = b64decode(base64_data)
             total_attachment_bytes += len(decoded_bytes)
+            decoded_atts.append((att, base64_data, decoded_bytes))
 
+        if total_attachment_bytes > (MAX_COMBINED_ATTACHMENT_MB * 1024 * 1024):
+            used_mb = total_attachment_bytes // (1024 * 1024)
+            return f"⚠️ Combined attachment size ({used_mb} MB) exceeds the {MAX_COMBINED_ATTACHMENT_MB} MB limit."
+
+        # ✅ Process attachments (already decoded — no second b64decode)
+        for att, base64_data, decoded_bytes in decoded_atts:
             filename = att.filename.lower()
 
             print(f">> Received attachment: {att.filename}")
@@ -90,23 +79,23 @@ def invoke_langchain(agent_request):
                 image_payloads.append({ "mime_type": image_type, "data": base64_data })
             elif filename.endswith(".pdf"):
                 attachment_texts.append(handle_pdf(att.filename, decoded_bytes))
-            # ===============================================================================                
+            # ===============================================================================
             elif filename.endswith(".csv"):
-                attachment_texts.append(handle_csv(att.filename, decoded_bytes))            
+                attachment_texts.append(handle_csv(att.filename, decoded_bytes))
             elif filename.endswith(".xlsx"):
                 attachment_texts.append(handle_xlsx(att.filename, decoded_bytes))
             elif filename.endswith(".json"):
                 attachment_texts.append(handle_json(att.filename, decoded_bytes))
-            # ===============================================================================                
+            # ===============================================================================
             elif filename.endswith(".zip") or filename.endswith(".tar") or filename.endswith(".gz"):
                 attachment_texts.append(handle_archive(att.filename, decoded_bytes))
             # ===============================================================================
             elif filename.endswith(".docx"):
                 attachment_texts.append(handle_docx(att.filename, decoded_bytes))
             elif filename.endswith(".xml"):
-                attachment_texts.append(handle_xml(att.filename, decoded_bytes))                
+                attachment_texts.append(handle_xml(att.filename, decoded_bytes))
             elif filename.endswith(".pptx"):
-                attachment_texts.append(handle_pptx(att.filename, decoded_bytes))                
+                attachment_texts.append(handle_pptx(att.filename, decoded_bytes))
             # ===============================================================================
             elif filename.endswith(".doc"):
                 attachment_texts.append(f"\n⚠️ Legacy .doc format not supported for parsing: {att.filename}. Please convert to .docx")
@@ -118,16 +107,11 @@ def invoke_langchain(agent_request):
                 attachment_texts.append(f"\n⚠️ Unsupported legacy Paintbrush format: {att.filename}")
             # ===============================================================================
             elif filename.endswith(".mp3") or filename.endswith(".wav") or filename.endswith(".m4a") or filename.endswith(".flac"):
-                # attachment_texts.append(handle_audio(att.filename, decoded_bytes))
                 attachment_texts.append(route_audio_handler(att.filename, decoded_bytes, query))
-
             elif filename.endswith(".mp4") or filename.endswith(".mov") or filename.endswith(".webm"):
                 attachment_texts.append(handle_video(att.filename, decoded_bytes))
             else:
                 attachment_texts.append(f"\n📎 File attached: {att.filename} (unprocessed format)")
-
-        if total_attachment_bytes > (MAX_COMBINED_ATTACHMENT_MB * 1024 * 1024):
-            return f"⚠️ You have exceeded the maximum combined attachment size of {MAX_COMBINED_ATTACHMENT_MB}MB."
 
         ##############################################################################
         if model_choice == "gpt":

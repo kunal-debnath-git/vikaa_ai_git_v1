@@ -5,6 +5,11 @@ let activeSessionIndex = null;
 let pendingAttachments = [];  // ✅ REQUIRED: Holds files/images before sending
 let canExecute = false;
 
+// Track last sent query for Regenerate button
+let _lastUserQuery = "";
+let _lastModelType = "gemini";
+let _lastStyleType = "balanced";
+
 async function fetchAccessMode() {
   const raw = localStorage.getItem("authData");
   let token = null;
@@ -64,8 +69,6 @@ function applyRunControls(canRun) {
 
 // ============= added on 08-May
 function renderPendingAttachments() {
-  // console.log("🔥 renderPendingAttachments CALLED. Items =", pendingAttachments.length);
-
   const container = document.getElementById("pendingAttachmentsPreview");
   container.innerHTML = "";
 
@@ -145,7 +148,7 @@ function getSelectedStyle() {
 function getSessionId() {
   let sessionId = sessionStorage.getItem("agent_session_id");
   if (!sessionId) {
-    sessionId = Math.random().toString(36).substring(2);
+    sessionId = crypto.randomUUID();
     sessionStorage.setItem("agent_session_id", sessionId);
   }
   return sessionId;
@@ -168,12 +171,9 @@ function startNewChat() {
 
   activeSessionIndex = chatSessions.length - 1;
   clearMessages();
+  showWelcomeScreen();
   renderChatHistory();
   // Don't save yet — persist only when the first message is sent
-}
-
-function clearMessages() {
-  document.getElementById("messages").innerHTML = "";
 }
 
 // ----------------------- MESSAGE SENDING -----------------------
@@ -186,37 +186,30 @@ async function sendMessage() {
   const message = inputBox.value.trim();
   if (!message) return;
 
-  /// NEW LINE
   if (activeSessionIndex === null) startNewChat();
 
-  // const msgDiv = appendMessage("Me", message, "user");
   let combinedContent = '';
 
   if (pendingAttachments.length > 0) {
       pendingAttachments.forEach(att => {
           if (att.dataUrl.startsWith("data:image")) {
-              // combinedContent += `<img src="${att.dataUrl}" style="max-width:100px; border-radius:6px; margin-bottom:5px;"><br>`;
               combinedContent += `<img src="${att.dataUrl}" style="max-width:100px; border-radius:6px; display:block; margin:0 auto 1px;">`;
-
           } else {
               combinedContent += `📎 ${att.filename}<br>`;
           }
       });
   }
-  
+
   combinedContent += "<br>" + message;
   const msgDiv = appendMessage("Me", combinedContent, "user", true);
-  
+
   inputBox.value = "";
   setMsgTick(msgDiv, "sent");
 
-  /// NEW LINE
   chatSessions[activeSessionIndex].messages.push({ sender: "user", text: message, timestamp: new Date() });
   saveChatSessions();
-  
-  // [NEW] If this is the first user message → update session title to be meaningful
+
   if (chatSessions[activeSessionIndex].messages.length === 1) {
-      // chatSessions[activeSessionIndex].title = message.length > 30 ? message.substring(0, 30) + '...' : message;
       const trimmed = message.length > 30 ? message.substring(0, 30) + '...' : message;
       chatSessions[activeSessionIndex].title = '📝 ' + trimmed;
       renderChatHistory();
@@ -236,104 +229,150 @@ async function sendMessage() {
     llmStyleValue = 0.6;
   }
 
-  try {
-    const apiUrl = (typeof CONFIG !== 'undefined' ? CONFIG.API_BASE_URL : "https://app-wtiw.onrender.com") + "/agent/message";
-    const tokenDataRaw = localStorage.getItem("authData");
-    const accessToken = tokenDataRaw ? JSON.parse(tokenDataRaw)?.accessToken : null;
-    if (!accessToken) {
-      appendMessage("Vikaa.AI", "⚠️ Please login first. Execution requires an authenticated account.", "agent");
-      return;
-    }
+  const apiUrl = (typeof CONFIG !== 'undefined' ? CONFIG.API_BASE_URL : "https://app-wtiw.onrender.com") + "/agent/message";
+  const tokenDataRaw = localStorage.getItem("authData");
+  const accessToken = tokenDataRaw ? JSON.parse(tokenDataRaw)?.accessToken : null;
+  if (!accessToken) {
+    appendMessage("Vikaa.AI", "⚠️ Please login first. Execution requires an authenticated account.", "agent");
+    return;
+  }
 
-    const response = await fetch(apiUrl, {
+  // Track for Regenerate; snapshot & clear attachments immediately
+  _lastUserQuery = message;
+  _lastModelType = modelType;
+  _lastStyleType = styleType;
+  const attachmentsToSend = [...pendingAttachments];
+  pendingAttachments = [];
+  renderPendingAttachments();
+
+  try {
+    const res = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${accessToken}`
-      },
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
       body: JSON.stringify({
         session_id: sessionId,
         query: message,
         model: modelType,
         temperature: llmStyleValue,
-        attachments: pendingAttachments, // ✅ send base64 files to backend
+        attachments: attachmentsToSend,
       }),
     });
 
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const msg = typeof data.detail === "string" ? data.detail : `Request failed (${response.status})`;
-      appendMessage("Vikaa.AI", `⚠️ ${msg}`, "agent");
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const errMsg = typeof data.detail === "string" ? data.detail : `Request failed (${res.status})`;
+      appendMessage("Vikaa.AI", `⚠️ ${errMsg}`, "agent");
       return;
     }
-    if (data.response && data.response.startsWith("Access denied")) {
-        alert(data.response); // Show popup
-        return;
+
+    // ── Async job pattern: backend returns job_id immediately ────────────────
+    if (data.job_id) {
+      const typingDiv = _showTypingIndicator();
+      const statusUrl = `${apiUrl}/status/${data.job_id}`;
+      let pollCount = 0;
+      const poll = setInterval(async () => {
+        if (++pollCount > 60) { // 60 × 2.5s = 150s max wait
+          clearInterval(poll);
+          _removeTypingIndicator(typingDiv);
+          appendMessage("Vikaa.AI", "⚠️ Response is taking too long. Please try again.", "agent");
+          return;
+        }
+        try {
+          const sr = await fetch(statusUrl, { headers: { "Authorization": `Bearer ${accessToken}` } });
+          if (!sr.ok) {
+            clearInterval(poll);
+            _removeTypingIndicator(typingDiv);
+            appendMessage("Vikaa.AI", `⚠️ Status check failed (${sr.status})`, "agent");
+            return;
+          }
+          const sd = await sr.json();
+          if (sd.status === "done" || sd.status === "error") {
+            clearInterval(poll);
+            _removeTypingIndicator(typingDiv);
+            _deliverAgentReply(sd.response ?? "No response from agent.", modelType, styleType, msgDiv);
+          }
+        } catch (_) {
+          clearInterval(poll);
+          _removeTypingIndicator(typingDiv);
+          appendMessage("Vikaa.AI", "⚠️ Failed to check response status.", "agent");
+        }
+      }, 2500);
+      return;
     }
-    const agentReply = data.response ?? "No response from agent.";
 
-    let newagentReply = agentReply + " - ["+modelType+"/"+styleType+"]"
-    appendMessage("Vikaa.AI", newagentReply , "agent");
-
-    /// NEW LINE
-    chatSessions[activeSessionIndex].messages.push({ sender: "agent", text: newagentReply, timestamp: new Date() });
-    saveChatSessions();
-    setTimeout(() => setMsgTick(msgDiv, "read"), 1000);
-
-    pendingAttachments = [];
-    renderPendingAttachments();
+    // ── Fallback: synchronous response (backward compat) ────────────────────
+    _deliverAgentReply(data.response ?? "No response from agent.", modelType, styleType, msgDiv);
 
   } catch (error) {
     appendMessage("Vikaa.AI", "⚠️ **Failed to reach Agent**. API Call Error in **sendMessage()** catch", "agent");
   }
 }
 
-// ----------------------- MESSAGE UI -----------------------      
-function appendMessage(sender, text, type, isHtml = false) {
+// ----------------------- MESSAGE UI -----------------------
+/** Strip trailing " — [model/style]" from agent replies (shown in meta row instead). */
+function stripAgentMetaSuffix(raw) {
+    const s = String(raw);
+    const m = s.match(/\s+—\s+\[([^\]]+)\]\s*$/);
+    if (!m) return { body: s, tag: "" };
+    return { body: s.slice(0, m.index).trimEnd(), tag: m[1] };
+}
+
+function formatMessageTime(d) {
+    return d.toLocaleString(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+    });
+}
+
+/** @param when Optional Date (or ISO string) for meta time — used when replaying saved sessions */
+function appendMessage(sender, text, type, isHtml = false, when = null) {
     const messages = document.getElementById("messages");
     const div = document.createElement("div");
     div.className = `message ${type}`;
 
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = (now.getMonth() + 1).toString().padStart(2, "0");
-    const day = now.getDate().toString().padStart(2, "0");
-    let hours = now.getHours();
-    const minutes = now.getMinutes().toString().padStart(2, "0");
-    const ampm = hours >= 12 ? "PM" : "AM";
-    hours = hours % 12;
-    hours = hours ? hours : 12; // 0 should be 12
-    const hoursStr = hours.toString().padStart(2, "0");
-    const fullDateTime = `${year}-${month}-${day} ${hoursStr}:${minutes} ${ampm}`;
-    
+    const parsed = when != null ? new Date(when) : null;
+    const at = parsed && !Number.isNaN(parsed.getTime()) ? parsed : new Date();
+    const timeStr = formatMessageTime(at);
+
     let inner;
 
-    if (isHtml) {
-        inner = type === "agent"
-            ? `<strong>${sender}:</strong> ${text}`
-            : `<span class="msg-sender-label">${sender}</span>${text}`;
-    } else {
-        if (type === "agent") {
-            const formattedText = marked.parse(text);
-            inner = `<strong>${sender}:</strong><div class="agent-response">${formattedText}</div>`;
+    if (type === "user") {
+        const timeHtml = `<span class="message-time">${timeStr}<span class="msg-tick" title="Sent">&#10003;</span></span>`;
+        const meta = `<div class="msg-meta-row"><span class="msg-sender-label">${sender}</span>${timeHtml}</div>`;
+        if (isHtml) {
+            inner = `${meta}<div class="msg-body msg-body-user">${text}</div>`;
         } else {
-            inner = `<span class="msg-sender-label">${sender}</span>${marked.parseInline(text)}`;
+            inner = `${meta}<div class="msg-body msg-body-user">${marked.parseInline(text)}</div>`;
+        }
+    } else {
+        const { body, tag } = stripAgentMetaSuffix(text);
+        const timeHtml = `<span class="message-time">${timeStr}</span>`;
+        const tagHtml = tag
+            ? `<span class="msg-model-tag" title="Model / style">${tag.replace(/</g, "&lt;")}</span>`
+            : "";
+        const metaRight = `<span class="msg-meta-right">${tagHtml}${timeHtml}</span>`;
+        const meta = `<div class="msg-meta-row"><strong>${sender}</strong>${metaRight}</div>`;
+        if (isHtml) {
+            inner = `${meta}<div class="agent-response">${body}</div>`;
+        } else {
+            inner = `${meta}<div class="agent-response">${marked.parse(body)}</div>`;
         }
     }
-    if (type === "user") {
-        inner += `<span class="message-time">${fullDateTime}<span class="msg-tick" title="Sent">&#10003;</span></span>`;
-    } else {
-        inner += `<span class="message-time">${fullDateTime}</span>`;
-    }
-    div.innerHTML = inner;
+
+    // Sanitize LLM-generated content; user messages are self-constructed (safe)
+    div.innerHTML = (type === "agent" && typeof DOMPurify !== "undefined")
+      ? DOMPurify.sanitize(inner)
+      : inner;
     messages.appendChild(div);
     messages.scrollTop = messages.scrollHeight;
     // ========================================================
     if (type === "agent") {
-      addDownloadIfNeeded(div, text);  // 👈 inject download button if needed
+      addDownloadIfNeeded(div, text);
     }
-
-    // ========================================================    
+    // ========================================================
     return div;
 }
 
@@ -385,7 +424,6 @@ function renderChatHistory() {
     const container = document.getElementById("chatHistoryContainer");
     container.innerHTML = "";
 
-    // Remove active class from all (precaution)
     document.querySelectorAll(".history-item").forEach(item => {
         item.classList.remove("active");
     });
@@ -412,7 +450,6 @@ function renderChatHistory() {
                     item.classList.add("active");
                 }
 
-                // Make the inner HTML -> title + options (...)
                 item.innerHTML = `
                   <span class="history-item-title" style="flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${sess.title}</span>
                   <span class="history-item-options" style="margin-left:auto; cursor:pointer; display:inline-block; font-weight:bold;" onclick="event.stopPropagation(); showHistoryOptions(${sess.index}, this)">⋯</span>
@@ -420,7 +457,6 @@ function renderChatHistory() {
                 item.style.display = "flex";
                 item.style.alignItems = "center";
 
-                // Handle clicking on the title → load session
                 item.querySelector('.history-item-title').onclick = () => {
                     loadSessionMessages(sess.index);
                     renderChatHistory();
@@ -443,15 +479,18 @@ function loadSessionMessages(index) {
 
   if (!session || !messagesContainer) return;
   if (!session.messages || session.messages.length === 0) {
-    messagesContainer.innerHTML = `
-      <div style="text-align:center; color:#999; padding-top:60px; font-size:16px;">
-        👋 Start a conversation by typing below...
-      </div>`;
+    showWelcomeScreen();
     return;
   }
 
   session.messages.forEach(msg => {
-    appendMessage(msg.sender === "user" ? "Me" : "Vikaa.AI", msg.text, msg.sender);
+    appendMessage(
+      msg.sender === "user" ? "Me" : "Vikaa.AI",
+      msg.text,
+      msg.sender,
+      false,
+      msg.timestamp
+    );
   });
 }
 
@@ -507,24 +546,20 @@ async function doLogout() {
 
 // ======== Chat History Management =======================================================
 function showHistoryOptions(index, button) {
-  // Remove existing menu if already open
   const existingMenu = document.getElementById("history-options-menu");
   if (existingMenu) existingMenu.remove();
 
-  // Create menu
   const menu = document.createElement("div");
   menu.id = "history-options-menu";
   menu.className = "history-options-menu";
   menu.innerHTML = `
       <div style="font-weight:normal;" onclick="renameSession(${index})">Rename</div>
       <div style="font-weight:normal;" onclick="deleteSession(${index})">Delete</div>
-      <div style="font-weight:normal;" onclick="downloadSession(${index})">Download</div>      
+      <div style="font-weight:normal;" onclick="downloadSession(${index})">Download</div>
   `;
 
-  // Position and add
   button.parentNode.appendChild(menu);
 
-  // Close on outside click
   document.addEventListener("click", function handler(e) {
       if (!menu.contains(e.target) && e.target !== button) {
           menu.remove();
@@ -585,9 +620,7 @@ function deleteSession(index) {
 }
 
 // ======================================================================
-// ======================================================================
 // 1️⃣ Voice Command (Microphone)
-// - Toggles on/off; populates input field for review before sending
 // ======================================================================
 
 const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -602,7 +635,6 @@ function startVoiceRecognition() {
 
   const voiceBtn = document.getElementById("voiceButton");
 
-  // Toggle off if already recording
   if (isRecording && recognition) {
     recognition.stop();
     return;
@@ -614,7 +646,6 @@ function startVoiceRecognition() {
   recognition.maxAlternatives = 1;
   recognition.continuous = false;
 
-  // Visual: mark button as active
   isRecording = true;
   voiceBtn.classList.add("recording");
   voiceBtn.title = "Recording… click to stop";
@@ -629,7 +660,6 @@ function startVoiceRecognition() {
       if (event.results[i].isFinal) final += t;
       else interim += t;
     }
-    // Show live interim text in the input box so the user can see/edit
     const input = document.getElementById("user-input");
     input.value = final || interim;
   };
@@ -638,7 +668,6 @@ function startVoiceRecognition() {
     isRecording = false;
     voiceBtn.classList.remove("recording");
     voiceBtn.title = "Voice Input";
-    // Do NOT auto-send — let the user review and press Enter/Send
   };
 
   recognition.onerror = (event) => {
@@ -658,7 +687,6 @@ function startVoiceRecognition() {
 
 // ======================================================================
 // 2️⃣ Camera Snapshot (Webcam)
-// - Waits for a real video frame before capturing
 // ======================================================================
 
 async function captureImage() {
@@ -687,14 +715,12 @@ async function captureImage() {
     video.muted = true;
     video.playsInline = true;
 
-    // Wait for the video to have actual frame data before capturing
     await new Promise((resolve, reject) => {
       video.onloadeddata = resolve;
       video.onerror = reject;
       video.play().catch(reject);
     });
 
-    // Small settle delay so the first frame is rendered
     await new Promise(r => setTimeout(r, 150));
 
     const canvas = document.createElement('canvas');
@@ -723,8 +749,7 @@ async function captureImage() {
 
 // =================================================================
 function addDownloadIfNeeded(div, rawText) {
-  const codeBlock = div.querySelector("code");
-  const textContent = rawText.trim();  // use original rawText first
+  const textContent = rawText.trim();
 
   let detected = "txt";
   let mime = "text/plain";
@@ -733,7 +758,7 @@ function addDownloadIfNeeded(div, rawText) {
   const lines = textContent.split("\n");
 
   // === TEXT FORMATS ===
-  if (textContent.startsWith("<?xml")  || textContent.includes("</")) {
+  if (textContent.startsWith("<?xml") || textContent.includes("</")) {
     detected = "xml";
     mime = "application/xml";
   } else if (textContent.startsWith("{") || textContent.startsWith("[")) {
@@ -776,13 +801,11 @@ function addDownloadIfNeeded(div, rawText) {
   const url = URL.createObjectURL(blob);
 
   const buttonGroup = document.createElement("div");
-  buttonGroup.style.marginTop = "6px";
-  buttonGroup.style.display = "flex";
-  buttonGroup.style.gap = "8px";
+  buttonGroup.className = "message-agent-actions";
 
   const copyBtn = document.createElement("button");
   copyBtn.innerHTML = `<i class="fa-regular fa-copy"></i>`;
-  copyBtn.title = "Copy response to clipboard";  
+  copyBtn.title = "Copy response to clipboard";
   copyBtn.onclick = async () => {
     try {
       await navigator.clipboard.writeText(textContent);
@@ -795,7 +818,6 @@ function addDownloadIfNeeded(div, rawText) {
 
   const downloadBtn = document.createElement("button");
   downloadBtn.textContent = `⬇️`;
-  downloadBtn.className = "text-xs bg-gray-100 border border-gray-300 rounded px-2 py-1";
   downloadBtn.title = `Download this response`;
   downloadBtn.onclick = () => {
     const a = document.createElement("a");
@@ -805,14 +827,20 @@ function addDownloadIfNeeded(div, rawText) {
     URL.revokeObjectURL(url);
   };
 
+  const regenBtn = document.createElement("button");
+  regenBtn.innerHTML = `<i class="fas fa-redo-alt" style="font-size:10px;"></i>`;
+  regenBtn.title = "Regenerate response";
+  regenBtn.onclick = regenerateLastResponse;
+
   buttonGroup.appendChild(copyBtn);
   buttonGroup.appendChild(downloadBtn);
+  buttonGroup.appendChild(regenBtn);
   div.appendChild(buttonGroup);
 }
 
 // =================================================================
 // Pressing Enter → sends message ✅
-// Pressing Shift + Enter → adds a new line ✅ (optional editing)
+// Pressing Shift + Enter → adds a new line ✅
 // =================================================================
 
 window.onload = function () {
@@ -846,7 +874,7 @@ window.onload = function () {
     });
   });
 
-  // ✅ NEW: Send on Enter (not Shift+Enter)
+  // ✅ Send on Enter (not Shift+Enter)
   document.getElementById("user-input").addEventListener("keydown", function (event) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -859,7 +887,85 @@ window.onload = function () {
 };
 
 
+// ======================= NEW HELPERS ============================
+
+// ── Typing indicator ─────────────────────────────────────────────
+function _showTypingIndicator() {
+  const messages = document.getElementById("messages");
+  const div = document.createElement("div");
+  div.className = "typing-indicator";
+  div.id = "vikaa-typing";
+  div.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return div;
+}
+
+function _removeTypingIndicator(div) {
+  if (div && div.parentNode) div.parentNode.removeChild(div);
+}
+
+// ── Deliver agent reply + save to session ────────────────────────
+function _deliverAgentReply(agentReply, modelType, styleType, msgDiv) {
+  const tagged = agentReply + " — [" + modelType + "/" + styleType + "]";
+  appendMessage("Vikaa.AI", tagged, "agent");
+  if (activeSessionIndex !== null && chatSessions[activeSessionIndex]) {
+    chatSessions[activeSessionIndex].messages.push({ sender: "agent", text: tagged, timestamp: new Date() });
+    saveChatSessions();
+  }
+  setTimeout(() => setMsgTick(msgDiv, "read"), 1000);
+}
+
+// ── Regenerate last response ─────────────────────────────────────
+function regenerateLastResponse() {
+  if (!_lastUserQuery || !canExecute) return;
+  const input = document.getElementById("user-input");
+  input.value = _lastUserQuery;
+  sendMessage();
+}
+
+// ── Welcome screen with starter prompts ─────────────────────────
+function showWelcomeScreen() {
+  const messages = document.getElementById("messages");
+  if (!messages) return;
+
+  const starters = [
+    { icon: "📄", label: "Summarize a document",    prompt: "Please summarize the key points from this document." },
+    { icon: "📊", label: "Analyze a dataset",        prompt: "Analyze this data and give me the key insights and trends." },
+    { icon: "🎥", label: "Explain a YouTube video",  prompt: "Please summarize this video: [paste YouTube URL here]" },
+    { icon: "💻", label: "Review my code",           prompt: "Please review this code and suggest improvements." },
+    { icon: "🔍", label: "Research a topic",         prompt: "Give me a structured overview of: [your topic here]" },
+  ];
+
+  const btns = starters.map(s => {
+    const safe = s.prompt.replace(/"/g, "&quot;");
+    return `<button class="starter-btn"
+      data-prompt="${safe}"
+      onclick="useStarterPrompt(this.dataset.prompt)"
+      style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:9px 15px;
+             font-size:12px;font-family:Montserrat,sans-serif;color:#444;cursor:pointer;
+             transition:all 0.15s;display:flex;align-items:center;gap:7px;">
+      <span>${s.icon}</span><span>${s.label}</span>
+    </button>`;
+  }).join('');
+
+  messages.innerHTML = `
+    <div style="text-align:center;padding:44px 20px 20px;font-family:Montserrat,sans-serif;">
+      <div style="font-size:30px;margin-bottom:8px;">👋</div>
+      <div style="font-weight:700;color:#444;font-size:13.5px;margin-bottom:5px;">Welcome to Vikaa.AI Chat</div>
+      <div style="font-size:12px;color:#aaa;margin-bottom:26px;">Ask anything — attach files, images, audio, or video.</div>
+      <div style="display:flex;flex-wrap:wrap;gap:9px;justify-content:center;max-width:520px;margin:0 auto;">
+        ${btns}
+      </div>
+    </div>`;
+}
+
+function useStarterPrompt(prompt) {
+  const input = document.getElementById("user-input");
+  if (!input) return;
+  input.value = prompt;
+  input.focus();
+  input.setSelectionRange(prompt.length, prompt.length);
+}
 
 // ======================= END ============================
-
-

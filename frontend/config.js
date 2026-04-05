@@ -31,8 +31,6 @@
 
   window.CONFIG = {
     API_BASE_URL: vikaaComputeApiBaseUrl(),
-    // If GitHub mining health probe fails (404), try setting this to your full POST URL (no trailing slash):
-    // GITHUB_CODE_MINING_POST_URL: "http://localhost:8000/tools/github-code-mining",
   };
 })();
 

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Databricks Unity Browser — Vikaa.AI</title>
 
-  <script src="config.js"></script>
+  <script src="config.js?v=20260404"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
@@ -29,7 +29,7 @@
     }
     .action-bar h3 {
       margin: 0;
-      font-size: 0.95rem;
+      font-size: 0.855rem;
       font-weight: 700;
       color: #0f2942;
       flex: 1;
@@ -266,6 +266,26 @@
       border-top: 1px solid #e2e8f0;
       background: #fff;
     }
+    .tree-schema-details > summary.tree-schema-h {
+      list-style: none;
+      cursor: pointer;
+      user-select: none;
+    }
+    .tree-schema-details > summary.tree-schema-h::-webkit-details-marker { display: none; }
+    .tree-schema-details > summary.tree-schema-h::before {
+      content: '';
+      width: 0;
+      height: 0;
+      border-left: 5px solid #94a3b8;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      transition: transform 0.15s;
+      flex-shrink: 0;
+    }
+    .tree-schema-details[open] > summary.tree-schema-h::before {
+      transform: rotate(90deg);
+      border-left-color: #ff5a1f;
+    }
     .tree-schema-h {
       padding: 10px 14px;
       background: #f8fafc;
@@ -275,6 +295,9 @@
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+    .tree-schema-details > summary.tree-schema-h:hover {
+      background: #f1f5f9;
     }
     .tree-tables {
       margin: 0;
@@ -430,9 +453,57 @@
       font-size: 0.72rem;
       color: #64748b;
     }
-    .tables-host .hint-load {
-      font-style: italic;
-      padding: 6px 0;
+    .load-block {
+      margin: 8px 0 18px 0;
+      padding: 14px 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      max-width: 520px;
+      box-shadow: 0 1px 2px rgba(15, 41, 66, 0.04);
+    }
+    .load-block--compact {
+      margin: 4px 0 10px 0;
+      padding: 10px 12px;
+      max-width: none;
+    }
+    .load-block-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+      color: #475569;
+      font-family: 'Roboto', sans-serif;
+    }
+    .load-block--compact .load-block-row { font-size: 0.75rem; }
+    .load-spinner {
+      color: #ff5a1f;
+      font-size: 1.05rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .load-text { font-weight: 500; }
+    .load-bar { margin-top: 12px; }
+    .load-block--compact .load-bar { margin-top: 8px; }
+    .load-bar-track {
+      display: block;
+      height: 5px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .load-block--compact .load-bar-track { height: 4px; }
+    .load-bar-fill {
+      display: block;
+      height: 100%;
+      width: 38%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #e04d16, #ff5a1f, #fb923c, #ff5a1f);
+      animation: uc-load-slide 1.35s ease-in-out infinite;
+    }
+    @keyframes uc-load-slide {
+      0% { transform: translateX(-105%); }
+      100% { transform: translateX(280%); }
     }
     .tables-host .tables-error {
       color: #b91c1c;
@@ -459,14 +530,14 @@
       <h4><i class="fas fa-circle-info"></i> Browse Databricks Unity Catalog</h4>
       <p style="margin:0;font-size:0.82rem;line-height:1.55;font-family:Roboto,sans-serif;">
         Use <strong>List catalogs + schemas</strong> to see your catalogs and every schema. Open a schema row to load table names.
-        <strong>Load tree</strong> uses the filters above. Nothing you type here is sent to Databricks as a secret — tokens live only on the API server.
+        <strong>Load tree</strong> uses the filters above.
       </p>
     </div>
 
     <div class="panel">
       <label>Catalog, schema &amp; limits</label>
       <p class="meta-line" style="margin-top:-4px;">
-        <strong>List catalogs + schemas:</strong> optional <em>Catalog</em> / <em>Schema</em> narrow what is listed (empty = all).
+        <strong>List catalogs + schemas:</strong> optional <em>Catalog</em> / <em>Schema</em> narrow what is listed (empty = all). <BR>
         <strong>Load tree:</strong> same fields fetch a full table list in one go; <em>Schema</em> requires <em>Catalog</em>.
         <strong>Max tables</strong> caps table rows (tree load and expanding a schema below).
       </p>
@@ -583,6 +654,22 @@
         .replace(/&/g, '&amp;')
         .replace(/"/g, '&quot;')
         .replace(/</g, '&lt;');
+    }
+
+    function loadingMarkup(message, compact) {
+      const wrapCls = compact ? 'load-block load-block--compact' : 'load-block';
+      const aria = escapeAttr(message);
+      return (
+        '<div class="' + wrapCls + '" role="status" aria-live="polite" aria-busy="true">' +
+        '<div class="load-block-row">' +
+        '<span class="load-spinner" aria-hidden="true"><i class="fas fa-spinner fa-spin"></i></span>' +
+        '<span class="load-text">' + escapeHtml(message) + '</span>' +
+        '</div>' +
+        '<div class="load-bar" role="progressbar" aria-valuetext="' + aria + '">' +
+        '<span class="load-bar-track"><span class="load-bar-fill"></span></span>' +
+        '</div>' +
+        '</div>'
+      );
     }
 
     function formatTs(ms) {
@@ -727,10 +814,11 @@
           const sch = sentry.schema || {};
           const sname = sch.name || '—';
           const tables = sentry.tables || [];
-          html += '<div class="tree-schema">';
-          html += '<div class="tree-schema-h"><i class="fas fa-folder-open"></i> ' +
+          const openAttr = !tables.length ? ' open' : '';
+          html += '<details class="tree-schema tree-schema-details"' + openAttr + '>';
+          html += '<summary class="tree-schema-h"><i class="fas fa-folder-open" style="opacity:0.75"></i> ' +
             escapeHtml(cname) + '<span style="opacity:0.5">.</span>' + escapeHtml(sname);
-          html += '<span class="result-count" style="margin-left:auto">' + tables.length + ' tables</span></div>';
+          html += '<span class="result-count" style="margin-left:auto">' + tables.length + ' tables</span></summary>';
           if (!tables.length) {
             html += '<p class="meta-line" style="margin:0 14px 12px;">No tables listed.</p>';
           } else {
@@ -745,7 +833,7 @@
             });
             html += '</ul>';
           }
-          html += '</div>';
+          html += '</details>';
         });
         html += '</div>';
       });
@@ -829,7 +917,7 @@
         if (!catalog || !schema) return;
 
         host.setAttribute('data-loading', '1');
-        host.innerHTML = '<div class="hint-load">Loading tables…</div>';
+        host.innerHTML = loadingMarkup('Loading tables…', true);
         const maxT = Math.min(500, Math.max(1, parseInt(document.getElementById('maxTables').value || '25', 10)));
         try {
           const q = '?catalog_name=' + encodeURIComponent(catalog) + '&schema_name=' + encodeURIComponent(schema);
@@ -888,7 +976,7 @@
       }
       const filterCat = document.getElementById('filterCatalog').value.trim();
       const filterSch = document.getElementById('filterSchema').value.trim();
-      out.innerHTML = '<p class="meta-line">Loading catalogs…</p>';
+      out.innerHTML = loadingMarkup('Loading catalogs…');
       try {
         const data = await fetchWithPathVariants('/catalogs');
         let catalogs = data.catalogs || [];
@@ -900,7 +988,7 @@
             return;
           }
         }
-        out.innerHTML = '<p class="meta-line">Loaded ' + catalogs.length + ' catalog(s). Fetching schemas…</p>';
+        out.innerHTML = loadingMarkup('Loaded ' + catalogs.length + ' catalog(s). Fetching schemas…');
         const schemaResults = await Promise.all(
           catalogs.map(async (c) => {
             const cname = c.name;
@@ -981,7 +1069,7 @@
       if (catalog) qs.set('catalog', catalog);
       if (schema) qs.set('schema', schema);
       qs.set('max_tables', String(maxT));
-      out.innerHTML = '<p class="meta-line">Loading tree…</p>';
+      out.innerHTML = loadingMarkup('Loading tree…');
       try {
         const data = await fetchWithPathVariants('/tree?' + qs.toString());
         out.innerHTML = renderTreeView(data);

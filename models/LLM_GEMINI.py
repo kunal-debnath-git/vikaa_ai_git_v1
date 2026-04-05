@@ -7,12 +7,10 @@
 
 import os
 import tempfile
-import threading
 import logging
 
-from langchain.memory import ConversationBufferMemory
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 
 from moviepy.editor import VideoFileClip
 from PIL import Image
@@ -29,25 +27,24 @@ GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 # that other routers (e.g. web_research_router) can import _resolve_gemini_model
 # without pulling in moviepy / PIL at startup.
 from models.gemini_resolver import _resolve_gemini_model  # noqa: E402
-# ==================================================================
-# from LLM_LangChain import history_manager
-# from attachment_handlers import *
-# from models import attachment_handlers
-
 from models.attachment_handlers import *
+from models.memory_manager import history_manager  # shared single instance
 
 # ==================================================================
-class InMemoryHistoryManager:
-    def __init__(self):
-        ...
+# System prompt — gives the agent a consistent persona and output format
+VIKAA_SYSTEM_PROMPT = """You are Vikaa.AI, a smart, professional, and concise AI assistant.
 
-    def get_memory(self, session_id):
-        ...
-
-    def clear_memory(self, session_id):
-        ...
-
-history_manager = InMemoryHistoryManager()
+Guidelines:
+- Be direct and structured. Use bullet points and markdown for clarity.
+- For data files (CSV, Excel, JSON): start with a brief schema summary, then key insights.
+- For documents (PDF, DOCX, PPTX): start with a 2-line summary, then key points.
+- For images and camera snapshots: describe what you see first, then answer the question.
+- For code: explain what it does first, then suggest improvements only if asked.
+- For YouTube videos: identify the content type (song/lecture/tutorial), then answer.
+- If you cannot determine the answer from the context provided, say so clearly — do not guess.
+- Keep responses concise unless the user explicitly asks for more detail.
+- End analytical responses with: "Need deeper analysis? Just ask."
+"""
 # ==================================================================
 def summarize_frames_with_gemini(frame_descriptions, user_query, transcript_text=None):
     ...

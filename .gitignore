@@ -17,6 +17,9 @@ __NotForGithub
 
 datastore/Brazilian_E_Commerce
 
+# Run summaries default to the job's dbfs:/Volumes/... root; ignore accidental local copies
+backend/data/synth_run_summaries/*.json
+
 INFORMATION.txt
 project.md
 

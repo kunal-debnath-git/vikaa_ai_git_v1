@@ -39,24 +39,13 @@
     },
 
     {
-      "_status": "LIVE v1 — ReAct agent on main API; GitHub PAT recommended for code search",
-      "id": "github-code-mining",
-      "group": "experimental",
-      "name": "GitHub Code Mining Agent",
-      "icon": "fab fa-github",
-      "emoji": "⛏️",
-      "page": "Tool_GitHubCodeMining.html",
-      "enabled": true,
-      "default": false
-    },
-
-    {
       "_status": "PARKED — replaced by Document Intelligence concept inside agent tools",
       "id": "rag-config",
       "group": "experimental",
       "name": "RAG Configurator",
       "icon": "fas fa-database",
       "emoji": "⚙️",
+      "page": "Tool_RAGConfigurator.html",
       "enabled": true,
       "default": false
     },
@@ -68,6 +57,7 @@
       "name": "Autonomous FnO PaperTrade",
       "icon": "fas fa-chart-line",
       "emoji": "📈",
+      "page": "Tool_FnOPaperTrade.html",
       "enabled": true,
       "default": false
     },
@@ -91,7 +81,7 @@
       "name": "Databricks Conversational SQL",
       "icon": "fas fa-comments",
       "emoji": "💬",
-      "page": "Tool_CatalogSearch.html",
+      "page": "Tool_DatabricksNLP.html",
       "enabled": true,
       "default": false
     },
@@ -100,10 +90,22 @@
       "_status": "LIVE v1 — Databricks-native API + dedicated UI; one-time run + interval schedule registry",
       "id": "databricks-synth-data",
       "group": "enterprise",
-      "name": "Synthetic Data Generation (Databricks)",
+      "name": "Synthetic Data Generation (Databricks AI)",
       "icon": "fas fa-vials",
       "emoji": "🧪",
       "page": "Tool_SyntheticDataGeneration.html",
+      "enabled": true,
+      "default": false
+    },
+
+    {
+      "_status": "COMING SOON — Needs Databricks AI pipeline health API + alerting hooks",
+      "id": "pipeline-health-check",
+      "group": "enterprise",
+      "name": "Pipeline Health Check (Databricks AI)",
+      "icon": "fas fa-heartbeat",
+      "emoji": "🩺",
+      "page": "Tool_PipelineHealthCheck.html",
       "enabled": true,
       "default": false
     },
@@ -170,6 +172,7 @@
       "name": "LinkedIn Assistant",
       "icon": "fab fa-linkedin",
       "emoji": "💼",
+      "page": "Tool_LinkedInAssistant.html",
       "enabled": true,
       "default": false
     }

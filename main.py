@@ -25,11 +25,6 @@ from backend.routes.web_research_router import router as web_research_router
 from backend.routes.gmail_router import router as gmail_router
 from backend.routes.ai_scout_router import router as ai_scout_router
 from backend.routes.tool_docs_router import router as tool_docs_router
-from backend.routes.github_code_mining_router import (
-    router as github_code_mining_router,
-    router_api_alias as github_code_mining_api_alias,
-    router_root as github_code_mining_root,
-)
 from backend.routes.unity_catalog_router import (
     router as unity_catalog_router,
     router_api_alias as unity_catalog_api_alias,
@@ -101,14 +96,6 @@ app.include_router(web_research_router)
 app.include_router(gmail_router)
 app.include_router(ai_scout_router)
 app.include_router(tool_docs_router)
-include_router_triplet(
-    app,
-    (
-        github_code_mining_router,
-        github_code_mining_api_alias,
-        github_code_mining_root,
-    ),
-)
 include_router_triplet(
     app,
     (unity_catalog_router, unity_catalog_api_alias, unity_catalog_root),

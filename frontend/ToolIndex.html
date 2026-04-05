@@ -10,9 +10,9 @@
   <title>Vikaa.AI - Tool Workspace</title>
 
   <!-- Config & Auth -->
-  <script src="config.js"></script>
+  <script src="config.js?v=20260404"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="LoginPage.js?v=<%= Date.now() %>" defer></script>
+  <script src="LoginPage.js?v=20260404" defer></script>
 
   <!-- Google Fonts & Font Awesome -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@300;500;700&display=swap" rel="stylesheet">
@@ -48,7 +48,7 @@
       align-items: center;
       font-weight: 700;
       color: #575757;
-      font-size: 1.1rem;
+      font-size: 0.99rem;
     }
 
     .logo img {
@@ -121,7 +121,7 @@
 
     /* --- Left Sidebar: Tools --- */
     .tool-sidebar {
-      width: 308px;
+      width: 262px; /* was 308px; −15% */
       background-color: #ffffff;
       border-right: 1px solid #ddd;
       display: flex;
@@ -142,7 +142,7 @@
     }
 
     .sidebar-title {
-      font-size: 0.8rem;
+      font-size: 0.64rem;
       font-weight: 700;
       color: #0391b5;
       text-transform: uppercase;
@@ -170,7 +170,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 0.82rem;
+      font-size: 0.656rem;
       font-weight: 800;
       color: #0891b2;
     }
@@ -213,7 +213,7 @@
       align-items: flex-start;
       gap: 4px;
       transition: all 0.2s ease;
-      font-size: 0.8rem;
+      font-size: 0.64rem;
       font-weight: 400;
       color: #575757;
     }
@@ -272,7 +272,7 @@
       margin-top: 1px;
     }
     .tool-link-btn i {
-      font-size: 0.55rem;
+      font-size: 0.44rem;
       line-height: 1;
     }
     .tool-link-btn:hover {
@@ -316,7 +316,7 @@
       margin: 10px 25px 0;
       padding: 8px 12px;
       border-radius: 8px;
-      font-size: 0.78rem;
+      font-size: 0.624rem;
       font-weight: 600;
       display: none;
       border: 1px solid transparent;
@@ -324,9 +324,10 @@
     .access-mode-banner.readonly { display:block; background:#fff7ed; color:#9a3412; border-color:#fdba74; }
     .access-mode-banner.execute { display:block; background:#ecfeff; color:#0f766e; border-color:#67e8f9; }
 
+    /* Main tool name — unchanged at 100% zoom scale */
     .activity-header h2 {
       margin: 0;
-      font-size: 1rem;
+      font-size: 0.9rem;
       font-weight: 700;
       color: #444;
       display: inline-flex;
@@ -334,7 +335,7 @@
       gap: 8px;
     }
     .title-access-tag {
-      font-size: 0.72rem;
+      font-size: 0.576rem;
       font-weight: 700;
       border-radius: 999px;
       padding: 3px 10px;
@@ -361,6 +362,7 @@
       flex-direction: column;
       gap: 20px;
       font-family: 'Roboto', sans-serif;
+      font-size: 0.8rem;
     }
 
     /* Placeholder Status Card */
@@ -398,7 +400,7 @@
       background: transparent;
       resize: none;
       font-family: 'Montserrat', sans-serif;
-      font-size: 0.9rem;
+      font-size: 0.72rem;
       padding: 5px;
       max-height: 150px;
       outline: none;
@@ -425,7 +427,7 @@
     /* Utilities — tool status */
     .badge {
       font-family: 'Montserrat', sans-serif;
-      font-size: 0.7rem;
+      font-size: 0.56rem;
       padding: 4px 10px;
       border-radius: 10px;
       font-weight: 700;
@@ -473,7 +475,7 @@
     }
     .tool-popup-head h3 {
       margin: 0;
-      font-size: 0.95rem;
+      font-size: 0.855rem;
       color: #1f2937;
     }
     .tool-popup-close {
@@ -509,9 +511,9 @@
       font-family: 'Montserrat', sans-serif;
       font-weight: 700;
     }
-    .tool-popup-body h1 { font-size: 1.06rem; }
-    .tool-popup-body h2 { font-size: 0.95rem; }
-    .tool-popup-body h3 { font-size: 0.88rem; }
+    .tool-popup-body h1 { font-size: 0.954rem; }
+    .tool-popup-body h2 { font-size: 0.855rem; }
+    .tool-popup-body h3 { font-size: 0.792rem; }
     .tool-popup-body p { margin: 0.48rem 0; }
     .tool-popup-body ul { margin: 0.36rem 0 0.72rem 1rem; padding: 0; }
     .tool-popup-body code {
@@ -540,7 +542,7 @@
     }
 
     @media (max-width: 768px) {
-      .tool-sidebar { width: 70px; padding: 15px 5px; }
+      .tool-sidebar { width: 60px; padding: 15px 5px; } /* was 70px; −15% */
       .tool-item-main span, .sidebar-title span { display: none; }
       .tool-item { justify-content: center; padding: 8px; }
       .tool-link-btn { display: none; }
@@ -595,7 +597,7 @@
           <i class="fas fa-chevron-right"></i>
         </summary>
         <ul class="tool-list" id="toolListPersonalized">
-          <li style="padding:6px 12px; color:#bbb; font-size:0.85rem;">Loading tools…</li>
+          <li style="padding:6px 12px; color:#bbb; font-size:0.68rem;">Loading tools…</li>
         </ul>
       </details>
 
@@ -605,7 +607,7 @@
           <i class="fas fa-chevron-right"></i>
         </summary>
         <ul class="tool-list" id="toolListEnterprise">
-          <li style="padding:6px 12px; color:#bbb; font-size:0.85rem;">Loading tools…</li>
+          <li style="padding:6px 12px; color:#bbb; font-size:0.68rem;">Loading tools…</li>
         </ul>
       </details>
 
@@ -615,7 +617,7 @@
           <i class="fas fa-chevron-right"></i>
         </summary>
         <ul class="tool-list" id="toolListExperimental">
-          <li style="padding:6px 12px; color:#bbb; font-size:0.85rem;">Loading tools…</li>
+          <li style="padding:6px 12px; color:#bbb; font-size:0.68rem;">Loading tools…</li>
         </ul>
       </details>
       </div>
@@ -638,15 +640,15 @@
       <!-- Generic feed for placeholder tools -->
       <div class="activity-content" id="activityFeed" style="display:flex;">
         <div class="status-card">
-          <h4 style="margin-bottom: 10px;">Activity Log</h4>
-          <p style="font-size: 0.85rem; color: #666; line-height: 1.5;">
+          <h4 style="margin-bottom: 8px; font-size: 0.72rem;">Activity Log</h4>
+          <p style="font-size: 0.68rem; color: #666; line-height: 1.5;">
             Welcome to the Tool Workspace. Select a tool from the left to begin.
           </p>
         </div>
       </div>
 
       <div class="communication-hub" id="communicationHub">
-        <div style="font-size: 0.75rem; font-weight: 700; color: #999; margin-bottom: 5px;">COMMUNICATION & PROMPTS</div>
+        <div style="font-size: 0.6rem; font-weight: 700; color: #999; margin-bottom: 5px;">COMMUNICATION & PROMPTS</div>
         <div class="prompt-container">
           <textarea id="toolPrompt" rows="1" placeholder="Type your instruction for the selected tool..."></textarea>
           <button class="send-btn" onclick="executePrompt()">
@@ -790,7 +792,7 @@
         [listPersonalized, listEnterprise, listExperimental].forEach((ul) => {
           if (!ul.children.length) {
             const emptyLi = document.createElement('li');
-            emptyLi.style.cssText = 'padding:6px 12px; color:#bbb; font-size:0.82rem; line-height:1.4;';
+            emptyLi.style.cssText = 'padding:6px 12px; color:#bbb; font-size:0.656rem; line-height:1.4;';
             emptyLi.textContent = emptyGroupMsg;
             ul.appendChild(emptyLi);
           }
@@ -805,7 +807,7 @@
         selectTool(defaultTool, false);
 
       } catch (err) {
-        const errHtml = '<li style="padding:6px 12px; color:#e53e3e; font-size:0.85rem;">Failed to load tools.</li>';
+        const errHtml = '<li style="padding:6px 12px; color:#e53e3e; font-size:0.68rem;">Failed to load tools.</li>';
         document.getElementById('toolListPersonalized').innerHTML = errHtml;
         document.getElementById('toolListEnterprise').innerHTML = errHtml;
         document.getElementById('toolListExperimental').innerHTML = errHtml;
@@ -827,7 +829,6 @@
       "gmail-intelligence": "Gmail_Intelligence.md",
       "web-research": "ReAct_Research_Agent.md",
       "ai-scout": "AI_Scout.md",
-      "github-code-mining": "GitHub_Code_Miner.md",
       "unity-catalog": "Databricks_Unity_Browser.md",
       "sql-agent": "Databricks_Conversational_SQL.md",
       "databricks-synth-data": "Synthetic_Data_Generation_Databricks.md",

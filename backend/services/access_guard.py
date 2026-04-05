@@ -7,6 +7,7 @@
 
 import logging
 import ipaddress
+import time
 from typing import Literal
 from urllib.parse import urlparse
 
@@ -18,6 +19,10 @@ from datastore.supabase_client import SUPABASE_ANON_KEY, SUPABASE_URL, supabase
 logger = logging.getLogger(__name__)
 
 AclStatus = Literal["whitelist", "blacklist", "guest", "unknown"]
+
+# ── JWT validation cache (avoids one Supabase HTTP call per request) ──────────
+_token_cache: dict[str, tuple[dict, float]] = {}
+_TOKEN_CACHE_TTL = 300  # 5 minutes
 
 
 def _host_from_url(url: str) -> str | None:

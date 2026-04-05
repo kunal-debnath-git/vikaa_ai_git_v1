@@ -7,6 +7,7 @@ services:
     plan: free
     buildCommand: chmod +x build.sh && ./build.sh
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
     envVars:
 
       # ── LLM APIs ──────────────────────────────────────────────────────────────

@@ -1,8 +1,8 @@
 HI Clause Code,
 
-Please Audit my tool called "ReAct Research Agent".
+Please Audit my chat tool called "vikaa_ai_agent.html".
 
-This should be audited from following points but no hard action unless u bave a go. scan all files associated with this tool.
+This should be audited from following points but no hard action unless u have a go. scan all files associated with this tool.
 If needed you cover your points for later correction. Name it as "ReAct Research-Audit-Action.MD"
 
 Key Points for Audit:

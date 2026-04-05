@@ -83,7 +83,7 @@ function openInternals() {
                             <tr style="border-bottom:1px solid #e0e0e0;">
                                 <td style="padding:8px 10px; font-weight:600; color:rgb(11, 104, 147);">Dataset reference URL</td>
                                 <td style="padding:8px 10px; color: #555;">
-                                    <a href="../datastore/olist_dataset_briefing.html" target="_blank" 
+                                    <a href="olist_dataset_briefing.html" target="_blank" 
                                         rel="noopener noreferrer" style="color:rgb(11, 104, 147);
                                         font-weight:600; text-decoration:none;">Olist Brazilian E-Commerce (Kaggale dataset)</a>
                                 </td>
@@ -92,7 +92,7 @@ function openInternals() {
                             <tr style="border-bottom:1px solid #e0e0e0;">
                                 <td style="padding:8px 10px; font-weight:600; color:rgb(11, 104, 147);">GitHub Pubilic Repo</td>
                                 <td style="padding:8px 10px; color: #555;">
-                                    <a href="https://github.com/kunal-debnath-git" target="_blank" 
+                                    <a href="https://github.com/kunal-debnath-git/vikaa_ai_git_v1" target="_blank" 
                                         rel="noopener noreferrer" style="color:rgb(11, 104, 147);
                                         font-weight:600; text-decoration:none;">https://github.com/kunal-debnath-git</a>
                                 </td>

@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="icon" type="image/png" href="image/Logo4.jpeg">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
@@ -72,12 +73,135 @@
       flex-shrink: 0;
     }
     .brand-name {
-      font-size: 1.1rem;
+      font-size: 0.99rem;
       font-weight: 700;
       color: #575757;
       letter-spacing: -0.3px;
       white-space: nowrap;
     }
+    /* Same control as ToolIndex.html .tool-link-btn — opens chat tool doc */
+    .chat-tool-link-btn {
+      border: none;
+      background: transparent;
+      color: #6b7280;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      margin-left: 2px;
+      padding: 0;
+    }
+    .chat-tool-link-btn i {
+      font-size: 0.55rem;
+      line-height: 1;
+    }
+    .chat-tool-link-btn:hover {
+      background: #eaf7ff;
+      color: #0ea5e9;
+    }
+
+    .tool-popup-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .tool-popup-backdrop.open { display: flex; }
+    .tool-popup {
+      width: min(1360px, 96vw);
+      height: min(94vh, 980px);
+      background: #e6e6e6;
+      background: color-mix(in srgb, rgb(204, 204, 204) 20%, white);
+      border-radius: 14px;
+      box-shadow: 0 18px 48px rgba(0,0,0,0.2);
+      border: 1px solid #e5e7eb;
+      display: flex;
+      flex-direction: column;
+    }
+    .tool-popup-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid #eef2f7;
+    }
+    .tool-popup-head h3 {
+      margin: 0;
+      font-size: 0.855rem;
+      color: #1f2937;
+    }
+    .tool-popup-close {
+      border: none;
+      background: transparent;
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      color: #6b7280;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tool-popup-close:hover {
+      background: #f3f4f6;
+      color: #111827;
+    }
+    .tool-popup-body {
+      padding: 16px 18px 20px;
+      font-size: 0.84rem;
+      color: #4b5563;
+      line-height: 1.6;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+    }
+    .tool-popup-body h1,
+    .tool-popup-body h2,
+    .tool-popup-body h3 {
+      margin: 0.35rem 0 0.55rem;
+      color: #111827;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+    }
+    .tool-popup-body h1 { font-size: 0.954rem; }
+    .tool-popup-body h2 { font-size: 0.855rem; }
+    .tool-popup-body h3 { font-size: 0.792rem; }
+    .tool-popup-body p { margin: 0.48rem 0; }
+    .tool-popup-body ul { margin: 0.36rem 0 0.72rem 1rem; padding: 0; }
+    .tool-popup-body code {
+      background: #f3f4f6;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 0.78rem;
+      color: #334155;
+    }
+    .tool-popup-body pre {
+      margin: 0.6rem 0 0.9rem;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #0f172a;
+      color: #e2e8f0;
+      overflow-x: auto;
+      font-size: 0.76rem;
+      line-height: 1.5;
+    }
+    .tool-popup-note {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-top: 12px;
+    }
+
     .v-divider {
       width: 1px;
       height: 22px;
@@ -390,25 +514,31 @@
     #messages {
       flex: 1;
       overflow-y: auto;
-      padding: 28px 48px;
+      padding: 20px 40px 24px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
       background: #f5f6f8;
     }
     #messages::-webkit-scrollbar { width: 5px; }
     #messages::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 3px; }
     #messages::-webkit-scrollbar-track { background: transparent; }
 
-    /* ---- Message Bubbles ---- */
+    /* ---- Message Bubbles (compact: shrink to content, cap width for long replies) ---- */
     .message {
-      max-width: 68%;
-      padding: 10px 15px;
-      border-radius: 14px;
-      line-height: 1.6;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: stretch;
+      width: fit-content;
+      max-width: min(720px, 78%);
+      min-width: 0;
+      padding: 5px 10px 6px;
+      border-radius: 12px;
+      line-height: 1.42;
       word-break: break-word;
       font-size: 13px;
       animation: msgIn 0.22s ease-out;
+      box-sizing: border-box;
     }
     @keyframes msgIn {
       from { opacity: 0; transform: translateY(7px); }
@@ -419,48 +549,97 @@
       align-self: flex-end;
       background: linear-gradient(135deg, #17bcfe 0%, #09a5e3 100%);
       color: #ffffff;
-      border-radius: 14px 4px 14px 14px;
-      box-shadow: 0 3px 12px rgba(23, 188, 254, 0.28);
+      border-radius: 12px 4px 12px 12px;
+      box-shadow: 0 2px 10px rgba(23, 188, 254, 0.22);
       text-align: left;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 500;
-      min-width: 60px;
     }
     .message.agent {
       align-self: flex-start;
       background: #ffffff;
       color: #333333;
-      border-radius: 4px 14px 14px 14px;
-      box-shadow: 0 1px 5px rgba(0,0,0,0.07);
-      border: 1px solid #eeeeee;
+      border-radius: 4px 12px 12px 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      border: 1px solid #ececec;
       text-align: left;
     }
 
-    /* Timestamps + tick row — always pinned to bottom-right of bubble */
-    .message-time {
+    /* Top row: sender / model + time on one line (saves vertical space) */
+    .msg-meta-row {
       display: flex;
-      justify-content: flex-end;
       align-items: center;
-      gap: 3px;
-      font-size: 10px;
-      margin-top: 5px;
-      font-family: 'Roboto', sans-serif;
-      font-weight: 300;
-      opacity: 0.75;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 0 0 1px 0;
+      min-width: 0;
     }
-    .message.user  .message-time { color: #ffffff; }
-    .message.agent .message-time { color: #aaa; justify-content: flex-start; }
-
-    /* Subtle sender label inside user bubble */
-    .msg-sender-label {
-      display: block;
+    .msg-meta-row .message-time {
+      margin-top: 0;
+      flex-shrink: 0;
+    }
+    .msg-meta-right {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-left: auto;
+    }
+    .msg-model-tag {
+      font-size: 9px;
+      font-weight: 600;
+      color: #9ca3af;
+      letter-spacing: 0.02em;
+      font-family: 'Roboto', sans-serif;
+      white-space: nowrap;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .message.agent .msg-meta-row strong {
       font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.6);
-      margin-bottom: 0;
-      line-height: 1.2;
+      color: #17bcfe;
+      margin: 0;
+      line-height: 1.15;
+      flex-shrink: 0;
+    }
+
+    .message-time {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 9px;
+      margin-top: 0;
+      font-family: 'Roboto', sans-serif;
+      font-weight: 400;
+      opacity: 0.88;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+    .message.user  .message-time { color: rgba(255,255,255,0.82); }
+    .message.agent .message-time { color: #9ca3af; }
+
+    .msg-body-user {
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Subtle sender label (user meta row, left) */
+    .msg-sender-label {
+      display: inline;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.62);
+      margin: 0;
+      line-height: 1.15;
+      flex-shrink: 0;
     }
 
     /* Read receipts */
@@ -468,13 +647,16 @@
     .msg-tick.read { color: #ffffff; }
 
     /* Agent markdown content */
-    .agent-response p            { margin-bottom: 0.5rem; line-height: 1.65; }
+    .agent-response              { margin: 0; }
+    .agent-response > *:first-child { margin-top: 0; }
+    .agent-response p            { margin: 0 0 0.4rem; line-height: 1.55; }
+    .agent-response p:last-child { margin-bottom: 0; }
     .agent-response ul,
-    .agent-response ol           { margin: 0.4rem 0 0.4rem 1.4rem; }
-    .agent-response li           { margin-bottom: 0.2rem; }
+    .agent-response ol           { margin: 0.25rem 0 0.35rem 1.15rem; }
+    .agent-response li           { margin-bottom: 0.15rem; }
     .agent-response h1,
     .agent-response h2,
-    .agent-response h3           { margin: 0.75rem 0 0.35rem; font-weight: 700; color: #222; }
+    .agent-response h3           { margin: 0.5rem 0 0.28rem; font-weight: 700; color: #222; }
     .agent-response code {
       background: #f0f4f8;
       padding: 1px 5px;
@@ -510,21 +692,32 @@
       font-family: monospace;
       font-size: 12px;
     }
-    .message.agent button {
-      background-color: #f5f5f5;
-      font-size: 11px;
-      margin-top: 8px;
-      margin-bottom: 4px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      padding: 4px 10px;
-      cursor: pointer;
-      display: inline-block;
-      font-family: 'Montserrat', sans-serif;
-      color: #555;
-      transition: background 0.1s;
+    .message-agent-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+      align-self: flex-start;
     }
-    .message.agent button:hover { background-color: #ebebeb; }
+    .message.agent button {
+      background-color: #f3f4f6;
+      font-size: 10px;
+      margin: 0;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 3px 7px;
+      min-width: 26px;
+      min-height: 26px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Montserrat', sans-serif;
+      color: #4b5563;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .message.agent button:hover { background-color: #e5e7eb; border-color: #d1d5db; }
 
     /* ====================================================
        ATTACHMENT PREVIEW
@@ -691,6 +884,43 @@
     /* ====================================================
        RESPONSIVE
     ==================================================== */
+    /* ====================================================
+       TYPING INDICATOR
+    ==================================================== */
+    .typing-indicator {
+      align-self: flex-start;
+      width: fit-content;
+      background: #ffffff;
+      border: 1px solid #ececec;
+      border-radius: 4px 12px 12px 12px;
+      padding: 8px 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      animation: msgIn 0.22s ease-out;
+    }
+    .typing-dot {
+      width: 7px;
+      height: 7px;
+      background: #17bcfe;
+      border-radius: 50%;
+      animation: typingBounce 1.2s ease-in-out infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40%            { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* Starter prompt buttons */
+    .starter-btn:hover {
+      background: #eef9ff !important;
+      border-color: #17bcfe !important;
+      color: #17bcfe !important;
+    }
+
     @media (max-width: 768px) {
       #leftSidebar { width: 0; min-width: 0; }
       #messages { padding: 16px; }
@@ -698,7 +928,8 @@
       #inputContainer { padding: 8px 16px 14px; }
       .v-header { padding: 8px 16px; }
       .ctrl-group { display: none; }
-      .message { max-width: 86%; }
+      .message { max-width: min(92%, 560px); }
+      .chat-tool-link-btn { display: none; }
     }
   </style>
 </head>
@@ -714,6 +945,9 @@
       <div class="brand-area">
         <img class="brand-logo-img" src="image/Logo4.jpeg" alt="Vikaa Logo">
         <span class="brand-name">Vikaa.AI - Chat</span>
+        <button type="button" class="chat-tool-link-btn" id="chatToolInfoBtn" title="Open chat tool info" aria-label="Open chat tool info">
+          <i class="fas fa-up-right-from-square"></i>
+        </button>
       </div>
 
       <div class="v-divider"></div>
@@ -852,6 +1086,18 @@
 
 </div><!-- .app-shell -->
 
+  <div class="tool-popup-backdrop" id="chatToolPopupBackdrop" aria-hidden="true">
+    <div class="tool-popup" role="dialog" aria-modal="true" aria-labelledby="chatToolPopupTitle">
+      <div class="tool-popup-head">
+        <h3 id="chatToolPopupTitle">Vikaa.AI Chat — Tool Info</h3>
+        <button class="tool-popup-close" id="chatToolPopupCloseBtn" type="button" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="tool-popup-body" id="chatToolPopupBody"></div>
+    </div>
+  </div>
+
 <script>
   // Security defaults (per frontend_style.md)
   document.addEventListener("contextmenu", e => e.preventDefault());
@@ -860,8 +1106,110 @@
   };
 </script>
 
-<script src="config.js"></script>
-<script src="vikaa_ai_agent.js" defer></script>
-<script src="vikaa_ai_settings.js" defer></script>
+<script src="config.js?v=20260404"></script>
+<script src="vikaa_ai_agent.js?v=20260404" defer></script>
+<script src="vikaa_ai_settings.js?v=20260404" defer></script>
+<script>
+(function () {
+  const DOC_FILE = 'vikaa-chat-tool.MD';
+  const backdrop = document.getElementById('chatToolPopupBackdrop');
+  const bodyEl = document.getElementById('chatToolPopupBody');
+  const closeBtn = document.getElementById('chatToolPopupCloseBtn');
+  const openBtn = document.getElementById('chatToolInfoBtn');
+  if (!backdrop || !bodyEl || !closeBtn || !openBtn) return;
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function renderMarkdown(mdRaw) {
+    let md = mdRaw || '';
+    const blocks = [];
+    md = md.replace(/```([\s\S]*?)```/g, (_, code) => {
+      const token = `__CODE_BLOCK_${blocks.length}__`;
+      blocks.push(`<pre><code>${escapeHtml(code.trim())}</code></pre>`);
+      return token;
+    });
+
+    let html = escapeHtml(md);
+    html = html.replace(/^###\s+(.*)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^##\s+(.*)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^#\s+(.*)$/gm, '<h1>$1</h1>');
+    html = html.replace(/^\s*[-*]\s+(.*)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>');
+    html = html.replace(/<\/ul>\s*<ul>/g, '');
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    html = html.replace(/\n{2,}/g, '</p><p>');
+    html = `<p>${html}</p>`;
+    html = html.replace(/<p>\s*(<h[1-3]>)/g, '$1');
+    html = html.replace(/(<\/h[1-3]>)\s*<\/p>/g, '$1');
+    html = html.replace(/<p>\s*(<ul>)/g, '$1');
+    html = html.replace(/(<\/ul>)\s*<\/p>/g, '$1');
+
+    blocks.forEach((block, i) => {
+      html = html.replace(`__CODE_BLOCK_${i}__`, block);
+    });
+    return html;
+  }
+
+  async function loadChatToolMarkdown() {
+    const apiBase = (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL)
+      ? String(CONFIG.API_BASE_URL).replace(/\/$/, '')
+      : null;
+    const candidates = [
+      ...(apiBase ? [`${apiBase}/tools/docs/${encodeURIComponent(DOC_FILE)}`] : []),
+      `../docs/tools/${DOC_FILE}`,
+      `docs/tools/${DOC_FILE}`,
+      `/docs/tools/${DOC_FILE}`,
+    ];
+    for (const url of candidates) {
+      try {
+        const r = await fetch(url);
+        if (r.ok) return await r.text();
+      } catch (_) { /* try next */ }
+    }
+    return null;
+  }
+
+  function closeChatToolPopup() {
+    backdrop.classList.remove('open');
+    backdrop.setAttribute('aria-hidden', 'true');
+  }
+
+  async function openChatToolPopup() {
+    bodyEl.innerHTML = '<div style="font-size:0.82rem;color:#6b7280;">Loading from <code>docs/tools</code>…</div>';
+    backdrop.classList.add('open');
+    backdrop.setAttribute('aria-hidden', 'false');
+
+    const md = await loadChatToolMarkdown();
+    const docHtml = md
+      ? renderMarkdown(md)
+      : '<div class="tool-popup-note">Could not load <code>docs/tools/' + escapeHtml(DOC_FILE) + '</code>.</div>';
+
+    bodyEl.innerHTML = `
+      <div><strong>Tool:</strong> Vikaa.AI Chat</div>
+      <div><strong>ID:</strong> <code>vikaa-chat</code></div>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0 10px;" />
+      ${docHtml}`;
+  }
+
+  openBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openChatToolPopup();
+  });
+  closeBtn.addEventListener('click', closeChatToolPopup);
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) closeChatToolPopup();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && backdrop.classList.contains('open')) closeChatToolPopup();
+  });
+})();
+</script>
 </body>
 </html>

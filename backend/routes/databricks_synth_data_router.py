@@ -3,23 +3,27 @@ Synthetic Data Generation (Databricks) API.
 
 v1 scope:
 - Validate Databricks-native synthetic generation requests.
-- Execute one-time runs directly on Databricks SQL Warehouse (COPY INTO CSV on DBFS).
+- Execute one-time runs directly on Databricks SQL Warehouse (CSV export to DBFS/UC paths).
 - Register interval schedules in-memory for controlled recurring runs (app-managed registry).
 """
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import uuid
 from collections import OrderedDict
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from backend.integrations.databricks.dbfs_io import read_json_from_dbfs_uri, write_json_to_dbfs_uri
 from backend.integrations.databricks.read_unity_catalog import _resolve_host, _resolve_token
 from backend.integrations.databricks.sql_statements import execute_sql_statement
 from backend.integrations.databricks.warehouse_errors import classify_warehouse_error
@@ -34,7 +38,7 @@ _ALL_ROUTERS = (router, router_api_alias, router_root)
 
 _DEFAULT_OUTPUT_PATH = "dbfs:/FileStore/vikaa/synthetic-data/"
 _DEFAULT_WAREHOUSE_ID = "f0ec353cb2780a8c"
-_ALLOWED_OUTPUT_FORMATS = {"csv"}
+_ALLOWED_OUTPUT_FORMATS = frozenset({"csv", "json", "parquet"})
 _SAMPLE_PERCENT_MIN = 1
 _SAMPLE_PERCENT_MAX = 100
 _SAMPLE_PERCENT_PRESETS = (1, 5)
@@ -43,10 +47,80 @@ _ALLOWED_FREQUENCY = {"one-time", "interval"}
 _MAX_TABLES_PER_RUN = 30
 _DELTA_SAMPLE_MULTIPLIER = 5
 _SAFE_IDENTIFIER = re.compile(r"^[A-Za-z0-9_]+$")
+_EXPORT_MONTHS_EN = (
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+)
 _SCHEDULES: OrderedDict[str, dict[str, Any]] = OrderedDict()
 _MAX_SCHEDULES = 200
 _AUDIT_RUNS: OrderedDict[str, dict[str, Any]] = OrderedDict()
 _MAX_AUDIT_RUNS = 1000
+_SAFE_SUMMARY_FILENAME = re.compile(r"^summary__[A-Za-z0-9_.-]+\.json$")
+
+
+def _optional_local_summary_dir() -> Path | None:
+    """If set, legacy GET /run-summary can read basename-only audit rows from this folder."""
+    raw = (os.getenv("DATABRICKS_SYNTH_SUMMARY_DIR") or "").strip()
+    if not raw:
+        return None
+    return Path(raw).expanduser().resolve()
+
+
+def _summary_filename_for_run(run_id: str, submitted_at_utc: str) -> str:
+    """summary__05Apr2026_064949_a035823b.json (UTC, English month)."""
+    raw = (submitted_at_utc or "").strip()
+    try:
+        if raw.endswith("Z"):
+            raw = raw[:-1] + "+00:00"
+        dt = datetime.fromisoformat(raw)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        else:
+            dt = dt.astimezone(timezone.utc)
+    except ValueError:
+        dt = datetime.now(timezone.utc)
+    mo = _EXPORT_MONTHS_EN[dt.month - 1]
+    part = f"{dt.day:02d}{mo}{dt.year:04d}_{dt.strftime('%H%M%S')}"
+    rid = (run_id or "").replace("-", "")[:8]
+    return f"summary__{part}_{rid}.json"
+
+
+def _persist_run_summary_volume(
+    payload: dict[str, Any],
+    *,
+    output_root_dbfs: str,
+    host: str,
+    token: str,
+) -> tuple[str | None, str | None, str | None]:
+    """
+    Write summary JSON at the volume root (same output_path as the run).
+
+    Returns (basename, dbfs_uri, error_message). On success error_message is None.
+    """
+    run_id = str(payload.get("run_id") or "").strip()
+    ts = str(payload.get("submitted_at_utc") or "").strip()
+    if not run_id or not ts:
+        return None, None, "missing run_id or submitted_at_utc"
+    name = _summary_filename_for_run(run_id, ts)
+    if not _SAFE_SUMMARY_FILENAME.match(name):
+        return None, None, "invalid summary filename"
+    root = (output_root_dbfs or "").strip().rstrip("/")
+    summary_uri = f"{root}/{name}"
+    try:
+        write_json_to_dbfs_uri(host, token, summary_uri, payload)
+    except (OSError, ValueError, RuntimeError) as exc:
+        return None, None, str(exc)[:800]
+    return name, summary_uri, None
 
 
 def _env_or_default(name: str, default: str) -> str:
@@ -66,9 +140,81 @@ def _validate_dbfs_path(path: str) -> str:
     return p
 
 
+_OUTPUT_PATH_PROBE_SCHEMES = frozenset(
+    {"https", "http", "abfs", "abfss", "wasb", "wasbs", "s3", "s3a", "s3n", "gs", "azure"}
+)
+
+
+def _validate_output_path_probe(raw: str) -> dict[str, Any]:
+    """
+    Format check for the UI "validate output path" action.
+
+    - dbfs:/… is accepted and is what v1 Run uses for export paths.
+    - Other common destination URIs (cloud storage, public URL) are accepted as format-only;
+      execution still requires dbfs:/ until the pipeline supports external writes.
+    """
+    s = (raw or "").strip()
+    if not s:
+        return {"ok": False, "detail": "output_path is empty."}
+    if "\n" in s or "\r" in s:
+        return {"ok": False, "detail": "Path must not contain line breaks."}
+
+    if s.startswith("dbfs:/"):
+        try:
+            normalized = _validate_dbfs_path(s)
+        except HTTPException as exc:
+            detail = exc.detail
+            if not isinstance(detail, str):
+                detail = str(detail)
+            return {"ok": False, "detail": detail}
+        return {
+            "ok": True,
+            "detail": "DBFS path format is valid. Writable access is verified at Pre-flight and Run.",
+            "normalized_path": normalized,
+            "path_kind": "dbfs",
+            "runnable_in_v1": True,
+        }
+
+    parsed = urlparse(s)
+    scheme = (parsed.scheme or "").lower()
+    if not scheme:
+        return {
+            "ok": False,
+            "detail": "Unrecognized path. Use dbfs:/… or a URI with a scheme (e.g. https://, abfs://, wasbs://).",
+        }
+    if scheme not in _OUTPUT_PATH_PROBE_SCHEMES:
+        return {
+            "ok": False,
+            "detail": (
+                f"Scheme {scheme!r} is not in the allowed probe list. "
+                "Try dbfs:/, https://, abfs://, wasbs://, or s3://."
+            ),
+        }
+
+    if scheme in {"http", "https"}:
+        if not parsed.netloc:
+            return {"ok": False, "detail": "URL must include a host (e.g. https://example.com/export/)."}
+    elif not parsed.netloc:
+        return {
+            "ok": False,
+            "detail": "Cloud URI must include an authority (e.g. bucket or container@account).",
+        }
+
+    return {
+        "ok": True,
+        "detail": (
+            "URI format looks valid (format check only). "
+            "v1 Run exports CSV to DBFS — use a dbfs:/ or Unity Catalog volume path to execute here."
+        ),
+        "normalized_path": s,
+        "path_kind": scheme,
+        "runnable_in_v1": False,
+    }
+
+
 def _to_sql_path(dbfs_path: str) -> str:
     """
-    Databricks SQL COPY INTO expects POSIX-style DBFS/Volumes path (e.g. /Volumes/...),
+    POSIX-style DBFS/Volumes path (e.g. /Volumes/...) for SQL that expects volume paths,
     not dbfs:/ URI format.
     """
     p = (dbfs_path or "").strip()
@@ -77,6 +223,22 @@ def _to_sql_path(dbfs_path: str) -> str:
     if not p.startswith("/"):
         p = "/" + p
     return p
+
+
+def _sql_single_quoted_literal(value: str) -> str:
+    """SQL string literal with standard single-quote doubling."""
+    return "'" + (value or "").replace("'", "''") + "'"
+
+
+def _export_subfolder_stamp(utc: datetime, run_id: str) -> str:
+    """
+    Per-run folder under each table path: _DDMMMYYY_HHMMSS (24h UTC) + short run id
+    so two runs in the same second do not overwrite the same directory.
+    """
+    mo = _EXPORT_MONTHS_EN[utc.month - 1]
+    base = f"_{utc.day:02d}{mo}{utc.year:04d}_{utc.strftime('%H%M%S')}"
+    short = (run_id or "").replace("-", "")[:8]
+    return f"{base}_{short}" if short else base
 
 
 def _warehouse_id(request_id: str | None) -> str:
@@ -193,6 +355,7 @@ async def _synth_health() -> dict[str, Any]:
         ],
         "defaults": {
             "output_format": "csv",
+            "allowed_output_formats": sorted(_ALLOWED_OUTPUT_FORMATS),
             "output_path": _env_or_default(
                 "DATABRICKS_SYNTH_DEFAULT_OUTPUT_PATH",
                 _DEFAULT_OUTPUT_PATH,
@@ -213,6 +376,9 @@ async def _synth_health() -> dict[str, Any]:
         "sql_warehouse_configured": bool(warehouse),
         "schedule_registry_size": len(_SCHEDULES),
         "audit_registry_size": len(_AUDIT_RUNS),
+        # Lets you confirm the running process picked up the latest code (see _build_copy_sql).
+        "run_export_sql": "insert_overwrite_directory_v2_options",
+        "run_summary_storage": "dbfs_volume_root",
     }
 
 
@@ -305,6 +471,35 @@ async def _synth_warehouse_status(
     }
 
 
+def _uc_volume_dbfs_root(v: dict[str, Any], param_catalog: str, param_schema: str | None) -> str:
+    """
+    Build the dbfs: URI for the root of a Unity Catalog volume.
+
+    Must match how Databricks exposes volumes to SQL (dbfs:/Volumes/<catalog>/<schema>/<volume>/).
+    Prefer fields returned on each volume object from the 2.1 API, not only the list() query params,
+    so catalog-wide enumeration does not attach the wrong catalog/schema to a volume.
+    """
+    name = str(v.get("name") or "").strip()
+    if not name:
+        return ""
+    cat = str(v.get("catalog_name") or param_catalog or "").strip()
+    sch = str(v.get("schema_name") or (param_schema or "") or "").strip()
+    full_name = str(v.get("full_name") or "").strip()
+    if full_name.count(".") >= 2:
+        parts = full_name.split(".", 2)
+        cat = cat or parts[0].strip()
+        sch = sch or parts[1].strip()
+        name = parts[2].strip() or name
+    if not cat or not sch:
+        return ""
+    loc = str(v.get("storage_location") or "").strip()
+    if loc.startswith("dbfs:/Volumes/"):
+        return loc if loc.endswith("/") else loc + "/"
+    if loc.startswith("/Volumes/"):
+        return "dbfs:" + (loc if loc.endswith("/") else loc + "/")
+    return f"dbfs:/Volumes/{cat}/{sch}/{name}/"
+
+
 async def _synth_volumes(
     request: Request,
     catalog_name: str,
@@ -362,20 +557,23 @@ async def _synth_volumes(
         name = str(v.get("name") or "").strip()
         if not name:
             continue
-        sname = str(v.get("schema_name") or schema or "").strip()
-        fqn = f"{catalog}.{sname}.{name}" if sname else f"{catalog}.{name}"
+        v_cat = str(v.get("catalog_name") or catalog or "").strip()
+        v_sch = str(v.get("schema_name") or schema or "").strip()
+        full_name = str(v.get("full_name") or "").strip()
+        if not full_name and v_cat and v_sch:
+            full_name = f"{v_cat}.{v_sch}.{name}"
+        out = _uc_volume_dbfs_root(v, catalog, schema)
+        if not out:
+            continue
         volumes.append(
             {
                 "name": name,
-                "schema_name": sname or None,
-                "full_name": fqn,
+                "catalog_name": v_cat or None,
+                "schema_name": v_sch or None,
+                "full_name": full_name or (f"{v_cat}.{v_sch}.{name}" if v_cat and v_sch else name),
                 "volume_type": v.get("volume_type"),
                 "storage_location": v.get("storage_location"),
-                "output_path": (
-                    f"dbfs:/Volumes/{catalog}/{sname}/{name}/synthetic-data/"
-                    if sname
-                    else f"dbfs:/Volumes/{catalog}/{name}/synthetic-data/"
-                ),
+                "output_path": out,
             }
         )
     return {
@@ -444,13 +642,35 @@ def _append_audit(record: dict[str, Any]) -> None:
         _AUDIT_RUNS.popitem(last=False)
 
 
+def _insert_overwrite_using_clause(output_format: str) -> tuple[str, str]:
+    """Returns (USING clause fragment, trailing OPTIONS + space before SELECT).
+
+    Spark writes standard Hadoop layout: ``part-00000-*`` files (no ``.csv`` / ``.parquet``
+    suffix in the name). The *contents* match the chosen format (CSV text, NDJSON lines, or
+    Parquet binary). Use boolean/string OPTIONS grammar from Spark SQL, not quoted keys.
+    """
+    fmt = (output_format or "csv").strip().lower()
+    if fmt == "csv":
+        return "USING CSV", "OPTIONS (header = true)"
+    if fmt == "json":
+        # Avoid gzip so each part file is plain newline-delimited JSON (easier to inspect in Catalog).
+        return "USING JSON", "OPTIONS (compression = 'none')"
+    if fmt == "parquet":
+        return "USING PARQUET", ""
+    raise HTTPException(
+        status_code=400,
+        detail=f"output_format must be one of {sorted(_ALLOWED_OUTPUT_FORMATS)}.",
+    )
+
+
 def _build_copy_sql(
     *,
     catalog_name: str,
     schema_name: str,
     table_name: str,
     output_root: str,
-    run_id: str,
+    export_folder: str,
+    output_format: str,
     sample_percent: int,
     sample_anchor: str,
     delta_lookback_minutes: int | None,
@@ -487,18 +707,16 @@ def _build_copy_sql(
         f"{where_clause}{limit_clause}"
     )
 
-    table_folder = (
-        f"{output_root.rstrip('/')}/{catalog_name}/{schema_name}/{table_name}/{run_id}/"
-    )
-    sql_folder = _to_sql_path(table_folder)
-    copy_sql = (
-        f"COPY INTO '{sql_folder}' "
-        f"FROM ({source_query}) "
-        "FILEFORMAT = CSV "
-        "FORMAT_OPTIONS ('header'='true') "
-        "COPY_OPTIONS ('overwrite'='true')"
-    )
-    return copy_sql, table_folder
+    # Land under chosen volume/DBFS root only: root/<table>/<timestamp_stamp>/ (no extra catalog/schema path).
+    table_folder = f"{output_root.rstrip('/')}/{table_name}/{export_folder}/"
+    sql_dir = _to_sql_path(table_folder)
+    if not sql_dir.endswith("/"):
+        sql_dir = sql_dir + "/"
+    dir_lit = _sql_single_quoted_literal(sql_dir)
+    using, opt_tail = _insert_overwrite_using_clause(output_format)
+    suffix = (opt_tail.rstrip() + " ") if opt_tail else " "
+    export_sql = f"INSERT OVERWRITE DIRECTORY {dir_lit} {using} {suffix}" + source_query.strip()
+    return export_sql, table_folder
 
 
 async def _synth_run(
@@ -604,7 +822,9 @@ async def _synth_run(
         effective_sample_percent = min(100, requested_sample_percent * _DELTA_SAMPLE_MULTIPLIER)
 
     run_id = str(uuid.uuid4())
-    submitted_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    run_started_utc = datetime.now(timezone.utc)
+    export_folder = _export_subfolder_stamp(run_started_utc, run_id)
+    submitted_at = run_started_utc.isoformat().replace("+00:00", "Z")
     schedule = (
         {"mode": "one-time"}
         if frequency_mode == "one-time"
@@ -697,7 +917,8 @@ async def _synth_run(
             schema_name=schema_name,
             table_name=table_name,
             output_root=output_path,
-            run_id=run_id,
+            export_folder=export_folder,
+            output_format=output_format,
             sample_percent=effective_sample_percent,
             sample_anchor=sample_anchor,
             delta_lookback_minutes=body.delta_lookback_minutes,
@@ -731,23 +952,53 @@ async def _synth_run(
             {
                 "table_name": table_name,
                 "output_path": table_folder,
+                "output_format": output_format,
                 "statement_id": exec_result.get("statement_id"),
                 "elapsed_ms": exec_result.get("elapsed_ms"),
                 "state": exec_result.get("state"),
             }
         )
 
+    summary_payload: dict[str, Any] = {
+        "run_id": run_id,
+        "submitted_at_utc": submitted_at,
+        "export_folder": export_folder,
+        "status": "completed",
+        "service": "databricks-synth-data",
+        "initiated_by": initiated_by,
+        "resolved_request": resolved_request,
+        "executions": executions,
+        "duration_ms": sum(int(e.get("elapsed_ms") or 0) for e in executions),
+        "tables_succeeded": len(executions),
+        "tables_failed": 0,
+        "export_layout_note": (
+            "Spark writes part-00000-* files under each table folder; filenames have no .csv/.parquet suffix. "
+            "Content matches output_format (CSV text, NDJSON lines, or Parquet binary)."
+        ),
+    }
+    summary_file, summary_uri, summary_err = _persist_run_summary_volume(
+        summary_payload,
+        output_root_dbfs=output_path,
+        host=host,
+        token=token,
+    )
+
     result = {
         "status": "completed",
         "service": "databricks-synth-data",
         "run_id": run_id,
         "submitted_at_utc": submitted_at,
+        "export_folder": export_folder,
+        "summary_file": summary_file,
+        "summary_uri": summary_uri,
         "request_validated": True,
         "databricks_only_enforced": True,
         "resolved_request": resolved_request,
         "schedule": schedule,
         "executions": executions,
     }
+    if summary_err:
+        result["summary_write_error"] = summary_err
     _append_audit(
         {
             "run_id": run_id,
@@ -770,9 +1021,12 @@ async def _synth_run(
             "output_path": output_path,
             "rows_in_source_estimate": None,
             "rows_out_synthetic": None,
-            "duration_ms": sum(int(e.get("elapsed_ms") or 0) for e in executions),
+            "duration_ms": summary_payload["duration_ms"],
             "tables_succeeded": len(executions),
             "tables_failed": 0,
+            "summary_file": summary_file,
+            "summary_uri": summary_uri,
+            "summary_write_error": summary_err,
         }
     )
     return result
@@ -878,6 +1132,12 @@ async def _synth_preflight(
 ) -> dict[str, Any]:
     catalog_name = _safe_ident(body.catalog_name, "catalog_name")
     schema_name = _safe_ident(body.schema_name, "schema_name")
+    output_fmt = (body.output_format or "csv").strip().lower()
+    if output_fmt not in _ALLOWED_OUTPUT_FORMATS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"output_format must be one of {sorted(_ALLOWED_OUTPUT_FORMATS)}.",
+        )
     output_path = _validate_dbfs_path(body.output_path or _DEFAULT_OUTPUT_PATH)
     host = _resolve_host()
     token = _resolve_token()
@@ -920,7 +1180,12 @@ async def _synth_preflight(
 
     checks.append({"id": "token", "label": "Token valid", "status": "pass" if bool(token) else "fail", "hint": "Token present." if token else "Token missing."})
     checks.append({"id": "output_path", "label": "Output path writable", "status": "pass" if output_path.startswith("dbfs:/") else "fail", "hint": output_path})
-    checks.append({"id": "quota", "label": "Storage quota headroom", "status": "warn", "hint": "Quota API not configured; assume manual monitoring."})
+    checks.append({
+        "id": "quota",
+        "label": "Storage quota headroom",
+        "status": "pass",
+        "hint": "Not checked in v1 (no quota API wired). Monitor volume usage in Databricks if needed.",
+    })
     conflict = _check_schedule_conflict(body.interval_minutes if body.frequency_mode == "interval" else None)
     checks.append({
         "id": "schedule_conflict",
@@ -997,6 +1262,83 @@ async def _synth_audit_log(
     return {"count": len(items), "records": items}
 
 
+def _load_summary_from_audit_record(rec: dict[str, Any]) -> dict[str, Any]:
+    """Load JSON for a completed run from volume (dbfs) or optional local mirror."""
+    uri = str(rec.get("summary_uri") or "").strip()
+    write_err = str(rec.get("summary_write_error") or "").strip()
+    host = _resolve_host()
+    token = _resolve_token()
+    if uri:
+        if not host or not token:
+            raise HTTPException(
+                status_code=503,
+                detail="Databricks host/token are required to read the summary from the volume.",
+            )
+        try:
+            return read_json_from_dbfs_uri(host, token, uri)
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=502, detail="Summary file on volume is not valid JSON.") from exc
+        except (ValueError, RuntimeError) as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Could not read summary from volume: {exc}",
+            ) from exc
+
+    name = str(rec.get("summary_file") or "").strip()
+    if not name or not _SAFE_SUMMARY_FILENAME.match(name):
+        if write_err:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Summary was not written to the volume: {write_err}",
+            )
+        raise HTTPException(status_code=404, detail="No stored summary for this run.")
+    base = _optional_local_summary_dir()
+    if not base:
+        detail = (
+            f"Summary was not written to the volume: {write_err}"
+            if write_err
+            else "No volume summary URI for this run. Set DATABRICKS_SYNTH_SUMMARY_DIR only for legacy local files."
+        )
+        raise HTTPException(status_code=404, detail=detail)
+    path = (base / name).resolve()
+    try:
+        path.relative_to(base.resolve())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid summary path.") from exc
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Summary file not found.")
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=500, detail="Could not read summary file.") from exc
+    if not isinstance(data, dict):
+        raise HTTPException(status_code=500, detail="Summary file is invalid.")
+    return data
+
+
+async def _synth_run_summary(
+    request: Request,
+    run_id: str = "",
+    _acl: dict = Depends(require_whitelisted_user),
+) -> dict[str, Any]:
+    rid = (run_id or "").strip()
+    if not rid:
+        raise HTTPException(status_code=400, detail="run_id is required.")
+    rec = _AUDIT_RUNS.get(rid)
+    if not rec:
+        raise HTTPException(status_code=404, detail="run_id not found in audit registry.")
+    return _load_summary_from_audit_record(rec)
+
+
+async def _synth_validate_output_path(
+    output_path: str = "",
+    _acl: dict = Depends(require_whitelisted_user),
+) -> dict[str, Any]:
+    """Format check for output destinations: dbfs (runnable in v1) or other URI (probe only)."""
+    return _validate_output_path_probe(output_path or "")
+
+
 for _r in _ALL_ROUTERS:
     _r.add_api_route("/databricks-synth-data/health", _synth_health, methods=["GET"])
     _r.add_api_route(
@@ -1017,6 +1359,11 @@ for _r in _ALL_ROUTERS:
     _r.add_api_route(
         "/databricks-synth-data/volumes",
         _synth_volumes,
+        methods=["GET"],
+    )
+    _r.add_api_route(
+        "/databricks-synth-data/validate-output-path",
+        _synth_validate_output_path,
         methods=["GET"],
     )
     _r.add_api_route(
@@ -1043,6 +1390,11 @@ for _r in _ALL_ROUTERS:
     _r.add_api_route(
         "/databricks-synth-data/audit",
         _synth_audit_log,
+        methods=["GET"],
+    )
+    _r.add_api_route(
+        "/databricks-synth-data/run-summary",
+        _synth_run_summary,
         methods=["GET"],
     )
 

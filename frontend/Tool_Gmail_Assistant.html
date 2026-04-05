@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Gmail Intelligence — Vikaa.AI</title>
 
-  <script src="config.js"></script>
+  <script src="config.js?v=20260404"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
@@ -33,9 +33,10 @@
       flex-wrap: wrap;
       flex-shrink: 0;
     }
+    /* Tool title line — keep at prior visual size (100% scale) */
     .action-bar h3 {
       margin: 0;
-      font-size: 0.95rem;
+      font-size: 0.855rem;
       font-weight: 700;
       color: #0f2942;
       flex: 1;
@@ -44,7 +45,7 @@
       gap: 8px;
     }
     .demo-badge {
-      font-size: 0.65rem;
+      font-size: 0.52rem;
       font-weight: 700;
       background: #fff3cd;
       color: #856404;
@@ -54,7 +55,7 @@
       letter-spacing: 0.5px;
     }
     .live-badge {
-      font-size: 0.65rem;
+      font-size: 0.52rem;
       font-weight: 700;
       background: #d1fae5;
       color: #065f46;
@@ -64,7 +65,7 @@
     }
     .btn {
       font-family: 'Montserrat', sans-serif;
-      font-size: 0.78rem;
+      font-size: 0.624rem;
       font-weight: 700;
       padding: 8px 18px;
       border-radius: 8px;
@@ -84,7 +85,7 @@
       margin: 10px 20px 0;
       padding: 8px 12px;
       border-radius: 8px;
-      font-size: 0.78rem;
+      font-size: 0.624rem;
       font-weight: 600;
       display: none;
       border: 1px solid transparent;
@@ -100,13 +101,13 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 0.78rem;
+      font-size: 0.624rem;
       color: #6b7280;
     }
     .account-select-wrap i { color: #17bcfe; }
     #accountSelect {
       font-family: 'Montserrat', sans-serif;
-      font-size: 0.78rem;
+      font-size: 0.624rem;
       font-weight: 600;
       color: #0f2942;
       background: #f0faff;
@@ -134,16 +135,16 @@
       padding: 60px 20px;
       color: #aaa;
     }
-    .empty-state i { font-size: 3rem; margin-bottom: 16px; display: block; color: #ddd; }
-    .empty-state h4 { margin: 0 0 8px; font-size: 1rem; color: #999; }
-    .empty-state p  { font-size: 0.83rem; line-height: 1.6; max-width: 340px; margin: 0 auto; }
+    .empty-state i { font-size: 2.4rem; margin-bottom: 16px; display: block; color: #ddd; }
+    .empty-state h4 { margin: 0 0 8px; font-size: 0.72rem; color: #999; }
+    .empty-state p  { font-size: 0.664rem; line-height: 1.6; max-width: 340px; margin: 0 auto; }
 
     /* ── Spinner ── */
     .spinner-wrap {
       text-align: center;
       padding: 50px 20px;
       color: #999;
-      font-size: 0.85rem;
+      font-size: 0.68rem;
     }
     .spinner {
       width: 36px; height: 36px;
@@ -163,7 +164,7 @@
       margin-bottom: 16px;
     }
     .section-title {
-      font-size: 0.85rem;
+      font-size: 0.68rem;
       font-weight: 700;
       color: #0f2942;
       display: flex;
@@ -171,7 +172,7 @@
       gap: 8px;
     }
     .report-meta {
-      font-size: 0.72rem;
+      font-size: 0.576rem;
       color: #aaa;
       font-style: italic;
     }
@@ -179,7 +180,7 @@
     /* ── Tier cards ── */
     .tier-block { margin-bottom: 24px; }
     .tier-label {
-      font-size: 0.68rem;
+      font-size: 0.544rem;
       font-weight: 700;
       letter-spacing: 1.2px;
       text-transform: uppercase;
@@ -212,19 +213,19 @@
     .tier-spam       .email-card { border-left-color: #9ca3af; }
 
     .email-subject {
-      font-size: 0.87rem;
+      font-size: 0.696rem;
       font-weight: 600;
       color: #1a202c;
       margin-bottom: 3px;
       line-height: 1.4;
     }
     .email-sender {
-      font-size: 0.75rem;
+      font-size: 0.6rem;
       color: #6b7280;
       margin-bottom: 6px;
     }
     .email-summary {
-      font-size: 0.8rem;
+      font-size: 0.64rem;
       color: #555;
       line-height: 1.55;
       font-family: 'Roboto', sans-serif;
@@ -235,14 +236,14 @@
       background: #f0faff;
       border-left: 3px solid #17bcfe;
       border-radius: 6px;
-      font-size: 0.78rem;
+      font-size: 0.624rem;
       color: #1a3c5e;
       font-style: italic;
       line-height: 1.6;
       font-family: 'Roboto', sans-serif;
     }
     .draft-label {
-      font-size: 0.65rem;
+      font-size: 0.52rem;
       font-weight: 700;
       color: #17bcfe;
       text-transform: uppercase;
@@ -260,7 +261,7 @@
       border-radius: 8px;
       padding: 10px 14px;
       margin-bottom: 6px;
-      font-size: 0.82rem;
+      font-size: 0.656rem;
       display: flex;
       align-items: flex-start;
       gap: 8px;
@@ -289,13 +290,13 @@
       box-shadow: 0 1px 6px rgba(0,0,0,0.05);
     }
     .stat-value {
-      font-size: 1.6rem;
+      font-size: 1.28rem;
       font-weight: 700;
       color: #0f2942;
       line-height: 1;
     }
     .stat-label {
-      font-size: 0.68rem;
+      font-size: 0.544rem;
       color: #aaa;
       text-transform: uppercase;
       letter-spacing: 0.6px;
@@ -313,7 +314,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
+      font-size: 0.88rem;
       font-weight: 700;
       color: #fff;
       margin-bottom: 6px;
@@ -328,7 +329,7 @@
       border-radius: 10px;
       padding: 12px 16px;
       margin-bottom: 8px;
-      font-size: 0.82rem;
+      font-size: 0.656rem;
       color: #444;
       line-height: 1.6;
       box-shadow: 0 1px 4px rgba(0,0,0,0.04);
@@ -347,13 +348,13 @@
       border-radius: 8px;
       padding: 8px 14px;
       margin-bottom: 6px;
-      font-size: 0.8rem;
+      font-size: 0.64rem;
       box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     }
     .sender-name { font-weight: 600; color: #1a202c; }
-    .sender-email { font-size: 0.72rem; color: #6b7280; }
+    .sender-email { font-size: 0.576rem; color: #6b7280; }
     .sender-count {
-      font-size: 0.75rem;
+      font-size: 0.6rem;
       font-weight: 700;
       background: #e1f5fe;
       color: #0277bd;
@@ -370,7 +371,7 @@
     }
     .tab-btn {
       font-family: 'Montserrat', sans-serif;
-      font-size: 0.78rem;
+      font-size: 0.624rem;
       font-weight: 700;
       padding: 10px 18px;
       border: none;
@@ -877,7 +878,7 @@
         if (!emails.length) continue;
         html += `
           <div class="tier-block tier-${key}">
-            <div class="tier-label">${meta.emoji} ${meta.label} <span style="font-size:0.7rem;font-weight:400;color:#aaa;">(${emails.length})</span></div>
+            <div class="tier-label">${meta.emoji} ${meta.label} <span style="font-size:0.56rem;font-weight:400;color:#aaa;">(${emails.length})</span></div>
             ${emails.map(e => `
               <div class="email-card">
                 <div class="email-subject">${e.subject}</div>
@@ -960,7 +961,7 @@
               <div class="health-score-circle ${scoreClass}">${d.health_score}</div>
             </div>
             <div class="stat-label">Health Score</div>
-            <div style="font-size:0.72rem;color:#555;margin-top:4px;font-weight:700;">${d.health_label}</div>
+            <div style="font-size:0.576rem;color:#555;margin-top:4px;font-weight:700;">${d.health_label}</div>
           </div>
           <div class="stat-card">
             <div class="stat-value">${d.total_emails}</div>

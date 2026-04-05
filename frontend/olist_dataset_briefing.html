@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Olist Dataset — AI Tools Briefing</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f0e;
+    --bg2: #131614;
+    --bg3: #191c1a;
+    --border: #252a27;
+    --border2: #2e342f;
+    --text: #e8ede9;
+    --text2: #8fa490;
+    --text3: #5a6b5d;
+    --accent: #4ade80;
+    --accent2: #86efac;
+    --accent-dim: rgba(74,222,128,0.08);
+    --accent-border: rgba(74,222,128,0.2);
+    --purple: #a78bfa;
+    --blue: #60a5fa;
+    --amber: #fbbf24;
+    --coral: #fb923c;
+    --teal: #2dd4bf;
+    --red: #f87171;
+    --tag-bg: rgba(74,222,128,0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 32px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    padding: 64px 0 48px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 56px;
+  }
+
+  .header-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .header-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(36px, 6vw, 64px);
+    font-weight: 300;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent2);
+  }
+
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 28px;
+  }
+
+  .meta-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .meta-pill span {
+    color: var(--accent);
+  }
+
+  /* TOC */
+  .toc {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 56px;
+  }
+
+  .toc-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 16px;
+  }
+
+  .toc-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 32px;
+  }
+
+  .toc-list a {
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.2s;
+  }
+
+  .toc-list a:hover { color: var(--accent); }
+
+  .toc-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    min-width: 18px;
+  }
+
+  /* Sections */
+  .section {
+    margin-bottom: 64px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid var(--accent-border);
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 300;
+    color: var(--text);
+  }
+
+  h3 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    margin-top: 24px;
+  }
+
+  p {
+    font-size: 15px;
+    color: var(--text2);
+    margin-bottom: 14px;
+    max-width: 720px;
+  }
+
+  /* Dataset overview cards */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .stat-card .val {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--accent);
+    display: block;
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+
+  .stat-card .lbl {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* Tables */
+  .table-files {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    margin-bottom: 24px;
+  }
+
+  .table-files th {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    text-align: left;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+
+  .table-files td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .table-files tr:hover td { background: var(--bg2); }
+
+  .file-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+  }
+
+  .key-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    background: rgba(167,139,250,0.12);
+    color: var(--purple);
+    border: 1px solid rgba(167,139,250,0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .fk-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    background: rgba(96,165,250,0.12);
+    color: var(--blue);
+    border: 1px solid rgba(96,165,250,0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  /* Schema diagram */
+  .schema-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 28px;
+    overflow-x: auto;
+  }
+
+  /* Tool cards */
+  .tool-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .tool-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .tool-card:hover { border-color: var(--border2); }
+
+  .tool-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .tool-rank {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .tool-name-wrap { flex: 1; }
+
+  .tool-id {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent2);
+    margin-bottom: 2px;
+  }
+
+  .tool-subtitle {
+    font-size: 12px;
+    color: var(--text3);
+  }
+
+  .tool-fit {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .fit-ideal { background: rgba(74,222,128,0.12); color: var(--accent); border: 1px solid rgba(74,222,128,0.2); }
+  .fit-good { background: rgba(96,165,250,0.12); color: var(--blue); border: 1px solid rgba(96,165,250,0.2); }
+  .fit-indirect { background: rgba(251,191,36,0.12); color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
+
+  .chevron {
+    color: var(--text3);
+    font-size: 12px;
+    transition: transform 0.25s;
+    margin-left: 8px;
+  }
+
+  .tool-card.open .chevron { transform: rotate(180deg); }
+
+  .tool-body {
+    display: none;
+    padding: 0 24px 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .tool-card.open .tool-body { display: block; }
+
+  .tool-section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+
+  .bullet-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .bullet-list li {
+    font-size: 14px;
+    color: var(--text2);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .bullet-list li::before {
+    content: '›';
+    color: var(--accent);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .prompt-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .prompt-list li {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--teal);
+    background: rgba(45,212,191,0.06);
+    border: 1px solid rgba(45,212,191,0.15);
+    padding: 8px 12px;
+    border-radius: 6px;
+    line-height: 1.5;
+  }
+
+  .prompt-list li::before {
+    content: '"';
+    opacity: 0.5;
+  }
+
+  .prompt-list li::after {
+    content: '"';
+    opacity: 0.5;
+  }
+
+  .limitation-box {
+    background: rgba(248,113,113,0.06);
+    border: 1px solid rgba(248,113,113,0.15);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: rgba(248,113,113,0.8);
+    display: flex;
+    gap: 8px;
+  }
+
+  .limitation-box::before {
+    content: '⚠';
+    flex-shrink: 0;
+  }
+
+  /* Summary table */
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    margin-top: 8px;
+  }
+
+  .summary-table th {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    text-align: left;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+
+  .summary-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+    font-size: 14px;
+  }
+
+  .summary-table tr:hover td { background: var(--bg2); }
+
+  .td-tool {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+  }
+
+  /* Pro/con boxes */
+  .pro-con-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  .pro-box, .con-box {
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .pro-box {
+    background: rgba(74,222,128,0.05);
+    border: 1px solid rgba(74,222,128,0.15);
+  }
+
+  .con-box {
+    background: rgba(248,113,113,0.05);
+    border: 1px solid rgba(248,113,113,0.15);
+  }
+
+  .pro-box h4 {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .con-box h4 {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--red);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .pro-box li, .con-box li {
+    font-size: 13px;
+    color: var(--text2);
+    list-style: none;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    gap: 8px;
+  }
+
+  .pro-box li::before { content: '+'; color: var(--accent); }
+  .con-box li::before { content: '−'; color: var(--red); }
+
+  /* LLM tip box */
+  .llm-tip {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    padding: 20px 24px;
+    margin-top: 24px;
+  }
+
+  .llm-tip-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 10px;
+  }
+
+  .llm-tip p {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  code {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--amber);
+  }
+
+  pre {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    color: var(--amber);
+    overflow-x: auto;
+    margin: 12px 0;
+    line-height: 1.6;
+  }
+
+  /* Schema SVG */
+  .schema-svg-wrap {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin: 16px 0;
+    overflow-x: auto;
+  }
+
+  /* Footer */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding-top: 32px;
+    margin-top: 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .footer-left {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .footer-right a {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  @media (max-width: 640px) {
+    .container { padding: 0 16px 60px; }
+    .overview-grid { grid-template-columns: 1fr 1fr; }
+    .toc-list { grid-template-columns: 1fr; }
+    .pro-con-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-eyebrow">AI Tools Test Data Reference</div>
+    <h1>Brazilian <em>E-Commerce</em><br>Dataset by Olist</h1>
+    <p style="color: var(--text2); font-size: 15px; max-width: 600px;">A complete briefing on the Olist public dataset — what it is, how to use it, and exactly how it maps to each of the 6 AI tools you're testing.</p>
+    <div class="header-meta">
+      <div class="meta-pill">Orders: <span>~100K</span></div>
+      <div class="meta-pill">Tables: <span>9 CSV files</span></div>
+      <div class="meta-pill">Period: <span>2016 – 2018</span></div>
+      <div class="meta-pill">Source: <span>Kaggle / Olist</span></div>
+    </div>
+  </header>
+
+  <!-- TOC -->
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <ul class="toc-list">
+      <li><a href="#what"><span class="toc-num">01</span> What is this dataset?</a></li>
+      <li><a href="#schema"><span class="toc-num">02</span> Schema & table structure</a></li>
+      <li><a href="#utilize"><span class="toc-num">03</span> How to utilize it</a></li>
+      <li><a href="#tools"><span class="toc-num">04</span> Tool-by-tool mapping</a></li>
+      <li><a href="#summary"><span class="toc-num">05</span> Summary table</a></li>
+      <li><a href="#procon"><span class="toc-num">06</span> Advantages & limitations</a></li>
+    </ul>
+  </nav>
+
+  <!-- SECTION 1: WHAT -->
+  <section class="section" id="what">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2>What is this dataset?</h2>
+    </div>
+
+    <div class="overview-grid">
+      <div class="stat-card"><span class="val">100K</span><span class="lbl">Real Orders</span></div>
+      <div class="stat-card"><span class="val">9</span><span class="lbl">Linked Tables</span></div>
+      <div class="stat-card"><span class="val">3 yrs</span><span class="lbl">2016 – 2018</span></div>
+    </div>
+
+    <p>The <strong style="color:var(--text); font-weight:500;">Brazilian E-Commerce Public Dataset by Olist</strong> is a real-world, anonymized transactional dataset covering orders placed across multiple Brazilian marketplaces operated by Olist — the largest department store network in Brazil.</p>
+    <p>Olist connects small businesses across Brazil to channels through a single contract. After a customer purchases, the seller is notified to fulfill; after delivery (or estimated delivery date), the customer receives a satisfaction survey.</p>
+    <p>All company and partner references in review texts have been replaced with names of Game of Thrones great houses to preserve anonymity.</p>
+
+    <h3>Key characteristics</h3>
+    <ul class="bullet-list">
+      <li>Real commercial data — not synthetic, not sampled from a toy source</li>
+      <li>Multi-dimensional: view each order via status, price, payment, freight, location, product, and review</li>
+      <li>Relational: 9 CSV files linked by order and customer keys — natural SQL join practice</li>
+      <li>Geographic: includes a geolocation table mapping Brazilian zip codes to lat/lng</li>
+      <li>Joinable with the Olist Marketing Funnel dataset for end-to-end funnel analysis</li>
+      <li>Multilingual: product categories in Portuguese, with a translation reference table</li>
+    </ul>
+  </section>
+
+  <!-- SECTION 2: SCHEMA -->
+  <section class="section" id="schema">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2>Schema & table structure</h2>
+    </div>
+
+    <div class="schema-svg-wrap">
+      <svg width="100%" viewBox="0 0 820 420" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Mono',monospace;">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#4ade80" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+          <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#3d4a3e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Central: orders -->
+        <rect x="320" y="160" width="180" height="60" rx="8" fill="#1a2a1c" stroke="#4ade80" stroke-width="1"/>
+        <text x="410" y="185" text-anchor="middle" fill="#4ade80" font-size="13" font-weight="500">orders</text>
+        <text x="410" y="204" text-anchor="middle" fill="#5a6b5d" font-size="10">order_id (PK) · customer_id (FK)</text>
+
+        <!-- customers -->
+        <rect x="40" y="160" width="160" height="60" rx="8" fill="#161e1a" stroke="#2e342f" stroke-width="1"/>
+        <text x="120" y="185" text-anchor="middle" fill="#2dd4bf" font-size="12" font-weight="500">customers</text>
+        <text x="120" y="204" text-anchor="middle" fill="#5a6b5d" font-size="10">customer_id (PK)</text>
+
+        <!-- order_items -->
+        <rect x="590" y="60" width="180" height="60" rx="8" fill="#161e1a" stroke="#2e342f" stroke-width="1"/>
+        <text x="680" y="85" text-anchor="middle" fill="#60a5fa" font-size="12" font-weight="500">order_items</text>
+        <text x="680" y="104" text-anchor="middle" fill="#5a6b5d" font-size="10">order_id, product_id, seller_id</text>
+
+        <!-- order_payments -->
+        <rect x="590" y="155" width="180" height="60" rx="8" fill="#161e1a" stroke="#2e342f" stroke-width="1"/>
+        <text x="680" y="180" text-anchor="middle" fill="#60a5fa" font-size="12" font-weight="500">order_payments</text>
+        <text x="680" y="199" text-anchor="middle" fill="#5a6b5d" font-size="10">order_id (FK)</text>
+
+        <!-- order_reviews -->
+        <rect x="590" y="250" width="180" height="60" rx="8" fill="#161e1a" stroke="#2e342f" stroke-width="1"/>
+        <text x="680" y="275" text-anchor="middle" fill="#60a5fa" font-size="12" font-weight="500">order_reviews</text>
+        <text x="680" y="294" text-anchor="middle" fill="#5a6b5d" font-size="10">order_id (FK) · review text</text>
+
+        <!-- products -->
+        <rect x="320" y="330" width="180" height="60" rx="8" fill="#161e1a" stroke="#2e342f" stroke-width="1"/>
+        <text x="410" y="355" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="500">products</text>
+        <text x="410" y="374" text-anchor="middle" fill="#5a6b5d" font-size="10">product_id (PK)</text>
+
+        <!-- sellers -->
+        <rect x="320" y="20" width="180" height="60" rx="8" fill="#161e1a" stroke="#2e342f" stroke-width="1"/>
+        <text x="410" y="45" text-anchor="middle" fill="#fb923c" font-size="12" font-weight="500">sellers</text>
+        <text x="410" y="64" text-anchor="middle" fill="#5a6b5d" font-size="10">seller_id (PK)</text>
+
+        <!-- geolocation -->
+        <rect x="40" y="330" width="160" height="60" rx="8" fill="#161e1a" stroke="#2e342f" stroke-width="1"/>
+        <text x="120" y="355" text-anchor="middle" fill="#8fa490" font-size="12" font-weight="500">geolocation</text>
+        <text x="120" y="374" text-anchor="middle" fill="#5a6b5d" font-size="10">zip → lat/lng</text>
+
+        <!-- category_names -->
+        <rect x="40" y="20" width="160" height="60" rx="8" fill="#161e1a" stroke="#2e342f" stroke-width="1"/>
+        <text x="120" y="45" text-anchor="middle" fill="#8fa490" font-size="12" font-weight="500">category_names</text>
+        <text x="120" y="64" text-anchor="middle" fill="#5a6b5d" font-size="10">PT → EN translation</text>
+
+        <!-- Arrows: customers → orders -->
+        <line x1="200" y1="190" x2="318" y2="190" stroke="#4ade80" stroke-width="1" marker-end="url(#arr)"/>
+
+        <!-- orders → order_items -->
+        <path d="M500 178 L540 178 L540 90 L588 90" fill="none" stroke="#4ade80" stroke-width="1" marker-end="url(#arr)"/>
+
+        <!-- orders → order_payments -->
+        <line x1="500" y1="185" x2="588" y2="185" stroke="#4ade80" stroke-width="1" marker-end="url(#arr)"/>
+
+        <!-- orders → order_reviews -->
+        <path d="M500 195 L540 195 L540 280 L588 280" fill="none" stroke="#4ade80" stroke-width="1" marker-end="url(#arr)"/>
+
+        <!-- orders → sellers (via items) -->
+        <line x1="410" y1="160" x2="410" y2="82" stroke="#4ade80" stroke-width="1" marker-end="url(#arr)"/>
+
+        <!-- products → order_items -->
+        <path d="M410 330 L410 310 L680 310 L680 122" fill="none" stroke="#3d4a3e" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr2)"/>
+
+        <!-- geolocation dashed to customers -->
+        <path d="M120 330 L120 280 L120 222" fill="none" stroke="#3d4a3e" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr2)"/>
+
+        <!-- category to products -->
+        <path d="M200 50 L260 50 L260 360 L318 360" fill="none" stroke="#3d4a3e" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr2)"/>
+
+        <!-- Legend -->
+        <line x1="40" y1="408" x2="70" y2="408" stroke="#4ade80" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="78" y="412" fill="#5a6b5d" font-size="10">Primary joins</text>
+        <line x1="170" y1="408" x2="200" y2="408" stroke="#3d4a3e" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr2)"/>
+        <text x="208" y="412" fill="#5a6b5d" font-size="10">Enrichment joins</text>
+      </svg>
+    </div>
+
+    <table class="table-files">
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Key Fields</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="file-name">olist_orders_dataset</span></td>
+          <td><span class="key-badge">order_id PK</span> <span class="fk-badge">customer_id FK</span></td>
+          <td style="color:var(--text2); font-size:13px;">Order lifecycle: status, purchase/approval/delivery timestamps</td>
+        </tr>
+        <tr>
+          <td><span class="file-name">olist_order_items_dataset</span></td>
+          <td><span class="fk-badge">order_id FK</span> <span class="fk-badge">product_id FK</span></td>
+          <td style="color:var(--text2); font-size:13px;">Item-level: price, freight, seller, shipping limit date</td>
+        </tr>
+        <tr>
+          <td><span class="file-name">olist_order_payments_dataset</span></td>
+          <td><span class="fk-badge">order_id FK</span></td>
+          <td style="color:var(--text2); font-size:13px;">Payment type (card/boleto/voucher), installments, value</td>
+        </tr>
+        <tr>
+          <td><span class="file-name">olist_order_reviews_dataset</span></td>
+          <td><span class="fk-badge">order_id FK</span></td>
+          <td style="color:var(--text2); font-size:13px;">Review score (1–5), free-text comment, reply from seller</td>
+        </tr>
+        <tr>
+          <td><span class="file-name">olist_customers_dataset</span></td>
+          <td><span class="key-badge">customer_id PK</span></td>
+          <td style="color:var(--text2); font-size:13px;">Customer city, state, zip code</td>
+        </tr>
+        <tr>
+          <td><span class="file-name">olist_sellers_dataset</span></td>
+          <td><span class="key-badge">seller_id PK</span></td>
+          <td style="color:var(--text2); font-size:13px;">Seller city, state, zip code</td>
+        </tr>
+        <tr>
+          <td><span class="file-name">olist_products_dataset</span></td>
+          <td><span class="key-badge">product_id PK</span></td>
+          <td style="color:var(--text2); font-size:13px;">Category (PT), name length, description length, photos, dimensions, weight</td>
+        </tr>
+        <tr>
+          <td><span class="file-name">olist_geolocation_dataset</span></td>
+          <td>zip_code_prefix</td>
+          <td style="color:var(--text2); font-size:13px;">Lat/lng coordinates — links to customers and sellers via zip</td>
+        </tr>
+        <tr>
+          <td><span class="file-name">product_category_name_translation</span></td>
+          <td>product_category_name</td>
+          <td style="color:var(--text2); font-size:13px;">Portuguese → English category name lookup</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 3: UTILIZE -->
+  <section class="section" id="utilize">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2>How to utilize it</h2>
+    </div>
+
+    <h3>Getting started</h3>
+    <ul class="bullet-list">
+      <li>Download all 9 CSVs from <a href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce" style="color:var(--accent); text-decoration:none;">kaggle.com/datasets/olistbr/brazilian-ecommerce</a></li>
+      <li>The <code>orders</code> table is the spine — always load it first, join outward</li>
+      <li>Join <code>order_items</code> → <code>products</code> for product-level analysis</li>
+      <li>Join <code>customers</code> or <code>sellers</code> → <code>geolocation</code> via zip code for geo analysis</li>
+      <li>Join <code>category_name_translation</code> to <code>products</code> for readable English categories</li>
+    </ul>
+
+    <h3>Recommended loading order</h3>
+    <pre>1. olist_customers_dataset.csv        -- foundation
+2. olist_sellers_dataset.csv
+3. olist_products_dataset.csv
+4. product_category_name_translation.csv
+5. olist_orders_dataset.csv           -- spine
+6. olist_order_items_dataset.csv
+7. olist_order_payments_dataset.csv
+8. olist_order_reviews_dataset.csv
+9. olist_geolocation_dataset.csv      -- enrichment</pre>
+
+    <h3>Platforms you can load it into</h3>
+    <ul class="bullet-list">
+      <li><strong style="color:var(--text); font-weight:500;">DuckDB</strong> — fastest for local CSV analytics, zero setup</li>
+      <li><strong style="color:var(--text); font-weight:500;">PostgreSQL / MySQL</strong> — standard SQL engines for relational testing</li>
+      <li><strong style="color:var(--text); font-weight:500;">Apache Spark / Databricks</strong> — for PySpark and Delta Lake exercises</li>
+      <li><strong style="color:var(--text); font-weight:500;">BigQuery / Snowflake / Redshift</strong> — cloud warehouse testing</li>
+      <li><strong style="color:var(--text); font-weight:500;">Pandas / Polars</strong> — Python dataframe exercises</li>
+    </ul>
+
+    <div class="llm-tip">
+      <div class="llm-tip-label">LLM / Claude Code tip</div>
+      <p>Always pass the schema DDL (CREATE TABLE statements with column names and types) as system context when prompting any of the 6 tools. This alone dramatically improves join path inference and query generation quality.</p>
+      <p>Use <code>order_id</code> as your primary join anchor. Every fact table connects back to it. For Claude Code agents, a one-paragraph schema summary + the DDL is sufficient — no need to paste sample rows.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 4: TOOLS -->
+  <section class="section" id="tools">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2>Tool-by-tool mapping</h2>
+    </div>
+
+    <div class="tool-grid">
+
+      <!-- sql-agent -->
+      <div class="tool-card open" id="card-1">
+        <div class="tool-header" onclick="toggle('card-1')">
+          <div class="tool-rank">1</div>
+          <div class="tool-name-wrap">
+            <div class="tool-id">sql-agent</div>
+            <div class="tool-subtitle">SQL & PySpark Coding Agent</div>
+          </div>
+          <span class="tool-fit fit-ideal">Ideal fit</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="tool-body">
+          <div class="tool-section-label">Why it works</div>
+          <ul class="bullet-list">
+            <li>9 normalized tables = rich multi-join SQL exercises across a realistic schema</li>
+            <li>Aggregations: SUM(payment_value), AVG(review_score), COUNT(DISTINCT customer_id)</li>
+            <li>Time-series: order_purchase_timestamp spans 2016–2018 for trend queries</li>
+            <li>Geo-queries: lat/lng from geolocation table enables distance and region filtering</li>
+            <li>Filter/group combinations: by state, product category, payment type, seller, review score</li>
+          </ul>
+          <div class="tool-section-label">Sample prompts</div>
+          <ul class="prompt-list">
+            <li>What are the top 5 states by total revenue?</li>
+            <li>Which product categories have the worst average review scores?</li>
+            <li>Show monthly order volume trend for 2017</li>
+            <li>Find sellers with more than 100 orders and less than 3.5 avg review score</li>
+            <li>What percentage of orders were delivered late vs estimated date?</li>
+          </ul>
+          <div class="limitation-box">Purely analytical / read-only. No stored procedures, triggers, or live transactional writes to test.</div>
+        </div>
+      </div>
+
+      <!-- meeting-intelligence -->
+      <div class="tool-card" id="card-2">
+        <div class="tool-header" onclick="toggle('card-2')">
+          <div class="tool-rank">2</div>
+          <div class="tool-name-wrap">
+            <div class="tool-id">meeting-intelligence</div>
+            <div class="tool-subtitle">Meeting Intelligence Agent</div>
+          </div>
+          <span class="tool-fit fit-indirect">Indirect fit</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="tool-body">
+          <div class="tool-section-label">Why it works (indirectly)</div>
+          <ul class="bullet-list">
+            <li>order_reviews free-text comments are unstructured, sentiment-laden natural language — good NLP proxy</li>
+            <li>Reviews contain product complaints, delivery feedback, and praise — solid for entity extraction and sentiment testing</li>
+            <li>Portuguese text with English translation table = multilingual NLP capability testing</li>
+            <li>Review reply fields simulate a two-party dialogue (customer + seller response)</li>
+          </ul>
+          <div class="tool-section-label">How to frame it</div>
+          <ul class="bullet-list">
+            <li>Treat reviews as "customer feedback call transcripts"</li>
+            <li>Generate synthetic meeting notes derived from order data (e.g., weekly seller performance review)</li>
+            <li>Use seller + review + order data to simulate a sales call debrief</li>
+          </ul>
+          <div class="limitation-box">Not actual meeting transcripts. You'll need to reframe or generate synthetic meeting text from the dataset to properly exercise meeting intelligence features.</div>
+        </div>
+      </div>
+
+      <!-- architecture-advisor -->
+      <div class="tool-card" id="card-3">
+        <div class="tool-header" onclick="toggle('card-3')">
+          <div class="tool-rank">3</div>
+          <div class="tool-name-wrap">
+            <div class="tool-id">architecture-advisor</div>
+            <div class="tool-subtitle">Data Architecture Advisor</div>
+          </div>
+          <span class="tool-fit fit-good">Good fit</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="tool-body">
+          <div class="tool-section-label">Why it works</div>
+          <ul class="bullet-list">
+            <li>The 9-table schema is a realistic OLTP → analytics migration candidate</li>
+            <li>Forces decisions on star schema design, fact/dimension separation, slowly changing dimensions (seller locations)</li>
+            <li>Geolocation table = excellent indexing strategy and partitioning discussion</li>
+            <li>Marketing funnel join = multi-source data integration design scenario</li>
+            <li>Review text = case for unstructured storage alongside structured data</li>
+          </ul>
+          <div class="tool-section-label">Sample architecture questions</div>
+          <ul class="prompt-list">
+            <li>Design a data warehouse for this Olist schema</li>
+            <li>Should geolocation be a dimension or a lookup table?</li>
+            <li>How would you partition the orders table in Spark?</li>
+            <li>Propose a medallion architecture for this dataset</li>
+            <li>What are the SCD type 2 candidates in this schema?</li>
+          </ul>
+          <div class="limitation-box">Static dataset — no CDC (change data capture) or streaming scenarios to stress-test real-time architecture advice.</div>
+        </div>
+      </div>
+
+      <!-- pipeline-designer -->
+      <div class="tool-card" id="card-4">
+        <div class="tool-header" onclick="toggle('card-4')">
+          <div class="tool-rank">4</div>
+          <div class="tool-name-wrap">
+            <div class="tool-id">pipeline-designer</div>
+            <div class="tool-subtitle">Multi-Agent Pipeline Designer</div>
+          </div>
+          <span class="tool-fit fit-good">Good fit</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="tool-body">
+          <div class="tool-section-label">Why it works</div>
+          <ul class="bullet-list">
+            <li>Natural ETL pipeline: raw CSVs → cleaned → joined → aggregated → dashboard-ready</li>
+            <li>Multiple transformation stages: deduplication of geolocation, currency normalization, category translation</li>
+            <li>Tests multi-step orchestration: ingest → validate → transform → load → serve</li>
+            <li>Data quality checks: null delivery dates, duplicate zip codes, missing review scores</li>
+          </ul>
+          <div class="tool-section-label">Sample pipeline prompts</div>
+          <ul class="prompt-list">
+            <li>Design a pipeline to ingest all 9 CSVs, join them, and produce a daily sales summary</li>
+            <li>Add data quality checks for null order_delivered_customer_date values</li>
+            <li>Build a pipeline that flags orders with review_score below 2 for a support team</li>
+            <li>How would you handle late-arriving payment records in this schema?</li>
+          </ul>
+          <div class="limitation-box">All batch data — no real-time or event-driven records. Won't stress-test streaming pipeline design well without simulating micro-batches.</div>
+        </div>
+      </div>
+
+      <!-- databricks-agent -->
+      <div class="tool-card" id="card-5">
+        <div class="tool-header" onclick="toggle('card-5')">
+          <div class="tool-rank">5</div>
+          <div class="tool-name-wrap">
+            <div class="tool-id">databricks-agent</div>
+            <div class="tool-subtitle">Databricks Intelligence Agent</div>
+          </div>
+          <span class="tool-fit fit-ideal">Strong fit</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="tool-body">
+          <div class="tool-section-label">Why it works</div>
+          <ul class="bullet-list">
+            <li>100K rows = fast iteration in notebooks, but schema complexity simulates production workloads</li>
+            <li>PySpark exercises: joins, window functions, UDFs for geo-distance calculation</li>
+            <li>Delta Lake medallion: bronze (raw CSVs) → silver (cleaned joins) → gold (aggregated KPIs)</li>
+            <li>MLflow angle: train a delivery delay predictor or review score sentiment classifier</li>
+            <li>Unity Catalog testing: table ACLs, lineage tracking across the 9-table schema</li>
+          </ul>
+          <div class="tool-section-label">Sample Databricks prompts</div>
+          <ul class="prompt-list">
+            <li>Write PySpark to compute average delivery time by seller state</li>
+            <li>Create a Delta table from the orders CSV with schema enforcement</li>
+            <li>Build a window function to rank sellers by monthly revenue</li>
+            <li>Set up an Auto Loader job to ingest new CSVs from ADLS</li>
+            <li>Train a logistic regression model to predict late delivery</li>
+          </ul>
+          <div class="limitation-box">No Delta Live Tables streaming demo possible with static CSVs unless you simulate micro-batches or use Databricks Auto Loader with rate limiting.</div>
+        </div>
+      </div>
+
+      <!-- orchestrator -->
+      <div class="tool-card" id="card-6">
+        <div class="tool-header" onclick="toggle('card-6')">
+          <div class="tool-rank">6</div>
+          <div class="tool-name-wrap">
+            <div class="tool-id">orchestrator</div>
+            <div class="tool-subtitle">Personal AI Orchestrator</div>
+          </div>
+          <span class="tool-fit fit-ideal">Rich stress test</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="tool-body">
+          <div class="tool-section-label">Why it's the best multi-agent scenario</div>
+          <ul class="bullet-list">
+            <li>Multiple specialist agents can each own one domain: SQL agent queries orders, NLP agent processes reviews, geo agent maps delivery routes, ML agent scores churn risk</li>
+            <li>Cross-agent data passing: SQL agent extracts seller KPIs → orchestrator routes low performers to an alert agent</li>
+            <li>Human-in-the-loop: orchestrator can pause and prompt "should we flag this seller?" based on review thresholds</li>
+            <li>Tool routing: orchestrator decides whether to call SQL agent or NLP agent based on query intent</li>
+          </ul>
+          <div class="tool-section-label">Sample orchestration scenario</div>
+          <ul class="bullet-list">
+            <li>Agent 1 queries top 50 sellers by order volume via SQL</li>
+            <li>Agent 2 computes their average review score from reviews table</li>
+            <li>Agent 3 geo-maps their delivery coverage using geolocation</li>
+            <li>Orchestrator synthesizes: "Seller X has high volume but low reviews in São Paulo — escalate"</li>
+          </ul>
+          <div class="tool-section-label">Sample orchestrator prompts</div>
+          <ul class="prompt-list">
+            <li>Find our worst-performing sellers and summarize why customers are unhappy</li>
+            <li>Build a weekly seller health report: volume, revenue, avg review, delivery rate</li>
+            <li>Alert me when any seller's 7-day review average drops below 3.0</li>
+          </ul>
+          <div class="limitation-box">Orchestrator complexity may outpace what static data can reveal. You may need to simulate external API calls or tool responses alongside it for a fully rigorous orchestration test.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 5: SUMMARY TABLE -->
+  <section class="section" id="summary">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2>Summary table</h2>
+    </div>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Tool</th>
+          <th>Fit</th>
+          <th>Primary use from dataset</th>
+          <th>Key limitation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--text3); font-family:'DM Mono',monospace; font-size:12px;">1 (easiest)</td>
+          <td class="td-tool">sql-agent</td>
+          <td><span class="tool-fit fit-ideal" style="font-size:10px;">Ideal</span></td>
+          <td style="color:var(--text2); font-size:13px;">Multi-join SQL, aggregations, time-series, geo queries</td>
+          <td style="color:var(--text3); font-size:12px;">Read-only batch data</td>
+        </tr>
+        <tr>
+          <td style="color:var(--text3); font-family:'DM Mono',monospace; font-size:12px;">2</td>
+          <td class="td-tool">meeting-intelligence</td>
+          <td><span class="tool-fit fit-indirect" style="font-size:10px;">Indirect</span></td>
+          <td style="color:var(--text2); font-size:13px;">Review free text as NLP proxy, sentiment, entity extraction</td>
+          <td style="color:var(--text3); font-size:12px;">Needs reframing as transcripts</td>
+        </tr>
+        <tr>
+          <td style="color:var(--text3); font-family:'DM Mono',monospace; font-size:12px;">3</td>
+          <td class="td-tool">architecture-advisor</td>
+          <td><span class="tool-fit fit-good" style="font-size:10px;">Good</span></td>
+          <td style="color:var(--text2); font-size:13px;">Star schema design, SCD decisions, partitioning strategy</td>
+          <td style="color:var(--text3); font-size:12px;">No streaming / CDC scenarios</td>
+        </tr>
+        <tr>
+          <td style="color:var(--text3); font-family:'DM Mono',monospace; font-size:12px;">4</td>
+          <td class="td-tool">pipeline-designer</td>
+          <td><span class="tool-fit fit-good" style="font-size:10px;">Good</span></td>
+          <td style="color:var(--text2); font-size:13px;">ETL pipeline, data quality checks, multi-stage transforms</td>
+          <td style="color:var(--text3); font-size:12px;">All batch, no streaming events</td>
+        </tr>
+        <tr>
+          <td style="color:var(--text3); font-family:'DM Mono',monospace; font-size:12px;">5</td>
+          <td class="td-tool">databricks-agent</td>
+          <td><span class="tool-fit fit-ideal" style="font-size:10px;">Strong</span></td>
+          <td style="color:var(--text2); font-size:13px;">PySpark, Delta Lake medallion, MLflow, window functions</td>
+          <td style="color:var(--text3); font-size:12px;">No DLT streaming without simulation</td>
+        </tr>
+        <tr>
+          <td style="color:var(--text3); font-family:'DM Mono',monospace; font-size:12px;">6 (hardest)</td>
+          <td class="td-tool">orchestrator</td>
+          <td><span class="tool-fit fit-ideal" style="font-size:10px;">Rich test</span></td>
+          <td style="color:var(--text2); font-size:13px;">Multi-agent orchestration, tool routing, human-in-the-loop</td>
+          <td style="color:var(--text3); font-size:12px;">May need synthetic API calls alongside</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 6: PRO/CON -->
+  <section class="section" id="procon">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2>Advantages & limitations</h2>
+    </div>
+
+    <div class="pro-con-grid">
+      <div class="pro-box">
+        <h4>Advantages</h4>
+        <ul>
+          <li>Real commercial data — not synthetic</li>
+          <li>Multi-table relational schema (9 tables)</li>
+          <li>Rich join paths via order_id and customer_id</li>
+          <li>Natural language text in review field</li>
+          <li>Time-series built in (2016–2018)</li>
+          <li>Lat/lng geo coordinates included</li>
+          <li>Mixed data types across tables</li>
+          <li>Category translation table (PT → EN)</li>
+          <li>Free — publicly available on Kaggle</li>
+          <li>Joinable with Marketing Funnel dataset</li>
+        </ul>
+      </div>
+      <div class="con-box">
+        <h4>Limitations</h4>
+        <ul>
+          <li>Static batch — no streaming events</li>
+          <li>Portuguese reviews need translation for some NLP tools</li>
+          <li>No auth / RBAC simulation possible</li>
+          <li>No schema evolution over time</li>
+          <li>100K rows — won't surface performance bottlenecks</li>
+          <li>No CDC / change data capture support</li>
+          <li>Geolocation has duplicate zip entries (needs dedup)</li>
+          <li>Anonymized data — can't cross-reference externally</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="llm-tip" style="margin-top:28px;">
+      <div class="llm-tip-label">Bottom line for Claude Code</div>
+      <p>This dataset is a self-contained mini data platform. It covers SQL, NLP, geo, ETL, ML, and orchestration — all from one Kaggle download. That makes it an excellent regression harness for all 6 tools in sequence, from easiest (<code>sql-agent</code>) to hardest (<code>orchestrator</code>).</p>
+      <p>Always provide the schema DDL as context. Load <code>orders</code> first. Join outward. For the orchestrator, consider scripting a lightweight "seller health report" scenario that chains all 6 table domains — it'll exercise every tool capability in a single workflow.</p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-left">Generated for AI Tools Testing · Olist Dataset Reference · 2026</div>
+    <div class="footer-right"><a href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce" target="_blank">↗ View on Kaggle</a></div>
+  </footer>
+
+</div>
+
+<script>
+  function toggle(id) {
+    const card = document.getElementById(id);
+    card.classList.toggle('open');
+  }
+</script>
+</body>
+</html>
