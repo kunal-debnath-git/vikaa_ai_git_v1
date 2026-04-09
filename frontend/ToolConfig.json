@@ -1,5 +1,5 @@
 {
-  "_comment": "Tools ordered: LIVE first (most ready → least ready), then COMING SOON (easy → hardest), then PARKED. Each tool has \"group\": \"personalized\" | \"enterprise\" | \"experimental\" (sidebar column in ToolIndex). Unknown/missing group defaults to experimental.",
+  "_comment": "Tools ordered: LIVE first, then IN DEVELOPMENT dashboards (RAG, FnO PaperTrade, AI Branding), then COMING SOON, then disabled. _status is shown in ToolIndex info popup — use it as the build tracker string. group = sidebar column: personalized | enterprise | experimental.",
   "tools": [
 
     {
@@ -38,20 +38,10 @@
       "default": false
     },
 
-    {
-      "_status": "PARKED — replaced by Document Intelligence concept inside agent tools",
-      "id": "rag-config",
-      "group": "experimental",
-      "name": "RAG Configurator",
-      "icon": "fas fa-database",
-      "emoji": "⚙️",
-      "page": "Tool_RAGConfigurator.html",
-      "enabled": true,
-      "default": false
-    },
+
 
     {
-      "_status": "EXPERIMENTAL — tool shell only (no page wired yet)",
+      "_status": "IN DEVELOPMENT — dashboard UI + illustrative data; LangGraph session + market feeds not wired. Track: Phase 1–3 (config, logger, holidays) → pipeline modules in Build Status tab.",
       "id": "autonomous-fno-papertrade",
       "group": "experimental",
       "name": "Autonomous FnO PaperTrade",
@@ -109,7 +99,17 @@
       "enabled": true,
       "default": false
     },
-
+    {
+      "_status": "IN DEVELOPMENT — full configurator UI + local draft (localStorage); Databricks ingest/retrieve/CRAG not wired. Track: tabs 1–6 = build order; Summary tab = export contract for backend.",
+      "id": "rag-config",
+      "group": "enterprise",
+      "name": "RAG Configurator (Databricks AI)",
+      "icon": "fas fa-database",
+      "emoji": "⚙️",
+      "page": "Tool_RAGConfigurator.html",
+      "enabled": true,
+      "default": false
+    },
     {
       "_status": "COMING SOON — Build Slot 9 | Needs Databricks MCP server",
       "id": "databricks-agent",
@@ -164,20 +164,16 @@
       "enabled": false,
       "default": false
     },
-
     {
-      "_status": "PARKED — not in v2.0 top-10, re-enable if needed later",
+      "_status": "IN DEVELOPMENT — dashboard UI + illustrative data; FastAPI agents + DB not wired. Track: Week 1 foundation (see Overview + Build Status tab).",
       "id": "linkedin",
       "group": "experimental",
-      "name": "LinkedIn Assistant",
-      "icon": "fab fa-linkedin",
+      "name": "AI for Personal Branding as a Service",
+      "icon": "fas fa-user-tie",
       "emoji": "💼",
-      "page": "Tool_LinkedInAssistant.html",
+      "page": "Tool_AI_Branding_Service.html",
       "enabled": true,
       "default": false
     }
-
-    
-
   ]
 }

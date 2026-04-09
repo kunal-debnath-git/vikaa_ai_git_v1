@@ -10,7 +10,65 @@ let _lastUserQuery = "";
 let _lastModelType = "gemini";
 let _lastStyleType = "balanced";
 
+// RAG mode toggle
+let ragEnabled = false;
+function toggleRagMode() {
+  ragEnabled = !ragEnabled;
+  const el = document.getElementById('ragToggle');
+  if (el) {
+    el.classList.toggle('rag-on', ragEnabled);
+    el.setAttribute('aria-checked', String(ragEnabled));
+  }
+  const sel = document.getElementById('ragModelSelect');
+  if (sel) sel.style.display = ragEnabled ? 'inline-block' : 'none';
+}
+
+function setRagModel(model) {
+  try {
+    const cfg = JSON.parse(localStorage.getItem('vikaa_rag_config_v1') || '{}');
+    cfg.generation = cfg.generation || {};
+    cfg.generation.llm_model = model;
+    localStorage.setItem('vikaa_rag_config_v1', JSON.stringify(cfg));
+  } catch(_) {}
+}
+
+// Initialise model selector from saved config on load
+window.addEventListener('load', () => {
+  try {
+    const cfg = JSON.parse(localStorage.getItem('vikaa_rag_config_v1') || '{}');
+    const saved = cfg.generation?.llm_model;
+    const sel = document.getElementById('ragModelSelect');
+    if (sel && saved) {
+      // Add option if not in list, then select it
+      if (![...sel.options].some(o => o.value === saved)) {
+        const opt = document.createElement('option');
+        opt.value = opt.textContent = saved;
+        sel.appendChild(opt);
+      }
+      sel.value = saved;
+    }
+  } catch(_) {}
+});
+
 async function fetchAccessMode() {
+  const isTourGuest = (() => {
+    if (localStorage.getItem("vikaa_tour_mode") === "1") return true;
+    try {
+      const info = JSON.parse(localStorage.getItem("userInfo") || "null");
+      return (info?.email || "").trim().toLowerCase() === "guest@vikaa.ai";
+    } catch (_) {
+      return false;
+    }
+  })();
+  if (isTourGuest) {
+    return {
+      email: "guest@vikaa.ai",
+      can_execute: false,
+      mode: "read-only",
+      acl_status: "guest-tour",
+    };
+  }
+
   const raw = localStorage.getItem("authData");
   let token = null;
   try { token = raw ? JSON.parse(raw)?.accessToken : null; } catch (_) { token = null; }
@@ -178,6 +236,9 @@ function startNewChat() {
 
 // ----------------------- MESSAGE SENDING -----------------------
 async function sendMessage() {
+  if (localStorage.getItem("vikaa_tour_mode") === "1") {
+    canExecute = false;
+  }
   if (!canExecute) {
     appendMessage("Vikaa.AI", "🚫 Cannot Run/Execute. Contact ADMIN for Permission", "agent");
     return;
@@ -232,7 +293,8 @@ async function sendMessage() {
   const apiUrl = (typeof CONFIG !== 'undefined' ? CONFIG.API_BASE_URL : "https://app-wtiw.onrender.com") + "/agent/message";
   const tokenDataRaw = localStorage.getItem("authData");
   const accessToken = tokenDataRaw ? JSON.parse(tokenDataRaw)?.accessToken : null;
-  if (!accessToken) {
+  const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  if (!accessToken && !isLocal) {
     appendMessage("Vikaa.AI", "⚠️ Please login first. Execution requires an authenticated account.", "agent");
     return;
   }
@@ -244,6 +306,12 @@ async function sendMessage() {
   const attachmentsToSend = [...pendingAttachments];
   pendingAttachments = [];
   renderPendingAttachments();
+
+  // ── RAG mode: bypass agent, go straight to CRAG pipeline ────────────────
+  if (ragEnabled) {
+    await _sendRagMessage(message, accessToken, msgDiv);
+    return;
+  }
 
   try {
     const res = await fetch(apiUrl, {
@@ -539,6 +607,7 @@ async function doLogout() {
   localStorage.removeItem("authData");
   localStorage.removeItem("session_id");
   localStorage.removeItem("userEmail");
+  localStorage.removeItem("vikaa_tour_mode");
 
   const currentPath = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
   window.location.href = currentPath + "/index.html";
@@ -903,6 +972,46 @@ function _showTypingIndicator() {
 
 function _removeTypingIndicator(div) {
   if (div && div.parentNode) div.parentNode.removeChild(div);
+}
+
+// ── RAG pipeline send ─────────────────────────────────────────────
+async function _sendRagMessage(message, accessToken, msgDiv) {
+  const apiBase = (typeof CONFIG !== 'undefined' ? CONFIG.API_BASE_URL : 'https://app-wtiw.onrender.com');
+  const ragCfg = (() => {
+    try { return JSON.parse(localStorage.getItem('vikaa_rag_config_v1') || '{}'); } catch(_) { return {}; }
+  })();
+
+  const typingDiv = _showTypingIndicator();
+  try {
+    const authHeader = accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {};
+    const res = await fetch(`${apiBase}/tools/rag-configurator/crag/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeader },
+      body: JSON.stringify({
+        query:          message,
+        crag:           ragCfg.crag      || {},
+        retrieval:      ragCfg.retrieval || {},
+        ingestion:      ragCfg.ingestion || {},
+        synthesize:     true,
+        synthesis_model: ragCfg.generation?.llm_model || 'gemini-2.0-flash',
+      }),
+    });
+    _removeTypingIndicator(typingDiv);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const errMsg = typeof data.detail === 'string' ? data.detail : `RAG failed (${res.status})`;
+      appendMessage('Vikaa.AI', `⚠️ ${errMsg}`, 'agent');
+      return;
+    }
+    const answer   = data.answer || 'No answer returned from RAG pipeline.';
+    const decision = data.decision || 'pass';
+    const grade    = data.grade_score != null ? ` · grade ${parseFloat(data.grade_score).toFixed(2)}` : '';
+    const iters    = data.iterations  > 0     ? ` · ${data.iterations} retr${data.iterations === 1 ? 'y' : 'ies'}` : '';
+    _deliverAgentReply(answer, 'rag', `${decision}${grade}${iters}`, msgDiv);
+  } catch(err) {
+    _removeTypingIndicator(typingDiv);
+    appendMessage('Vikaa.AI', '⚠️ RAG pipeline unreachable. Ensure the index is ONLINE.', 'agent');
+  }
 }
 
 // ── Deliver agent reply + save to session ────────────────────────

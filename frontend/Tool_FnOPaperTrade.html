@@ -18,80 +18,1399 @@
       background: #f4f6f9; color: #333;
       display: flex; flex-direction: column;
     }
+
+    /* ── Action bar ── */
     .action-bar {
       padding: 12px 20px;
       background: #fff;
       border-bottom: 1px solid #e5e7eb;
-      display: flex; align-items: center; gap: 10px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      flex-shrink: 0;
     }
     .action-bar h3 {
       margin: 0; font-size: 0.81rem; font-weight: 700; color: #0f2942;
       flex: 1; display: flex; align-items: center; gap: 8px;
     }
-    .status-badge {
-      font-size: 0.62rem; font-weight: 700; border-radius: 10px;
+    .badge {
+      font-size: 0.58rem; font-weight: 700; border-radius: 10px;
       padding: 2px 8px; letter-spacing: 0.5px;
-      background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;
     }
-    .coming-soon-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      padding: 40px;
-      text-align: center;
+    .badge-dev   { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .badge-live  { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .badge-warn  { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+    .badge-info  { background: #e0f2fe; color: #0277bd; border: 1px solid #bae6fd; }
+    .badge-purple { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+
+    .btn {
+      font-family: 'Montserrat', sans-serif; font-size: 0.72rem; font-weight: 700;
+      padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s;
     }
-    .coming-soon-icon {
-      font-size: 4rem;
-      color: #17bcfe;
-      opacity: 0.7;
+    .btn-primary   { background: #0f2942; color: #fff; }
+    .btn-primary:hover  { background: #17bcfe; }
+    .btn-secondary { background: #e1f5fe; color: #0277bd; }
+    .btn-secondary:hover { background: #17bcfe; color: #fff; }
+    .btn-ghost { background: #f3f4f6; color: #6b7280; }
+    .btn-ghost:hover { background: #e5e7eb; color: #374151; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+
+    /* ── Tab nav ── */
+    .tab-nav {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex; align-items: center;
+      padding: 0 20px; gap: 2px;
+      flex-shrink: 0; overflow-x: auto;
     }
-    .coming-soon-title {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #0f2942;
-      margin: 0;
+    .tab-nav::-webkit-scrollbar { height: 3px; }
+    .tab-nav::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
+    .tab-btn {
+      font-family: 'Montserrat', sans-serif; font-size: 0.72rem; font-weight: 600;
+      color: #6b7280; background: none; border: none; cursor: pointer;
+      padding: 10px 14px; border-bottom: 2px solid transparent;
+      display: flex; align-items: center; gap: 6px;
+      white-space: nowrap; transition: all 0.15s;
     }
-    .coming-soon-subtitle {
+    .tab-btn:hover { color: #0f2942; }
+    .tab-btn.active { color: #0f2942; border-bottom-color: #17bcfe; }
+
+    /* ── Main content ── */
+    .main-content {
+      flex: 1; overflow-y: auto; padding: 20px 24px 40px;
+      min-height: 0;
+    }
+
+    /* ── Tab panels ── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Section header ── */
+    .section-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 16px;
+    }
+    .section-icon {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: #e0f2fe; color: #0284c7;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; flex-shrink: 0;
+    }
+    .section-icon.green  { background: #d1fae5; color: #059669; }
+    .section-icon.amber  { background: #fef3c7; color: #d97706; }
+    .section-icon.purple { background: #ede9fe; color: #7c3aed; }
+    .section-icon.red    { background: #fee2e2; color: #dc2626; }
+    .section-header-text h4 {
+      margin: 0 0 2px; font-size: 0.86rem; font-weight: 700; color: #0f2942;
+    }
+    .section-header-text p {
+      margin: 0; font-family: 'Roboto', sans-serif;
+      font-size: 0.73rem; color: #6b7280; line-height: 1.4;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: #fff; border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      padding: 18px 20px; margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: 0.74rem; font-weight: 700; color: #0f2942;
+      display: flex; align-items: center; gap: 7px;
+      margin-bottom: 14px; padding-bottom: 10px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .card-title i { color: #17bcfe; font-size: 0.8rem; }
+    .card-title .card-title-right {
+      margin-left: auto; display: flex; align-items: center; gap: 6px;
+    }
+
+    /* ── Dev overlay ── */
+    .dev-overlay {
+      position: relative; overflow: hidden;
+    }
+    .dev-overlay::after {
+      content: 'IN DEVELOPMENT';
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.72);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px;
+      color: #92400e; border-radius: 12px;
+    }
+
+    /* ── Stat grid ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px; margin-bottom: 14px;
+    }
+    .stat-card {
+      background: #fff; border-radius: 12px;
+      border: 1px solid #e5e7eb; padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .stat-label {
+      font-size: 0.62rem; font-weight: 700; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .stat-value {
+      font-size: 1.4rem; font-weight: 700; color: #0f2942; line-height: 1;
+    }
+    .stat-value.positive { color: #059669; }
+    .stat-value.negative { color: #dc2626; }
+    .stat-value.muted    { color: #9ca3af; font-size: 1rem; }
+    .stat-sub {
       font-family: 'Roboto', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 400;
-      color: #666;
-      max-width: 420px;
-      line-height: 1.6;
-      margin: 0;
+      font-size: 0.67rem; color: #6b7280;
     }
-    .back-link {
-      margin-top: 10px;
-      font-size: 0.82rem;
-      color: #17bcfe;
-      text-decoration: none;
-      font-weight: 600;
+
+    /* ── State machine ── */
+    .state-machine {
+      display: flex; align-items: center; gap: 0;
+      background: #fff; border-radius: 12px;
+      border: 1px solid #e5e7eb; padding: 16px 20px;
+      margin-bottom: 14px; overflow-x: auto;
     }
-    .back-link:hover { color: #0891b2; }
+    .state-step {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 6px; flex: 1; min-width: 90px;
+    }
+    .state-dot {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; border: 2px solid #e5e7eb;
+      background: #f9fafb; color: #9ca3af;
+      position: relative; z-index: 1;
+    }
+    .state-dot.done   { background: #d1fae5; border-color: #34d399; color: #059669; }
+    .state-dot.active { background: #0f2942; border-color: #0f2942; color: #fff; box-shadow: 0 0 0 4px #e0f2fe; }
+    .state-dot.pending { background: #f9fafb; border-color: #e5e7eb; color: #d1d5db; }
+    .state-label {
+      font-size: 0.59rem; font-weight: 700; color: #6b7280;
+      text-align: center; white-space: nowrap;
+    }
+    .state-label.active { color: #0f2942; }
+    .state-time {
+      font-family: 'Roboto', sans-serif;
+      font-size: 0.57rem; color: #9ca3af; text-align: center;
+    }
+    .state-connector {
+      flex: 1; height: 2px; background: #e5e7eb;
+      margin-bottom: 22px; min-width: 20px;
+    }
+    .state-connector.done { background: #34d399; }
+
+    /* ── Signal panel ── */
+    .signal-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px; margin-bottom: 14px;
+    }
+    @media (max-width: 640px) { .signal-row { grid-template-columns: 1fr; } }
+
+    .signal-card {
+      background: #fff; border-radius: 12px;
+      border: 1px solid #e5e7eb; padding: 16px 18px;
+    }
+    .signal-header {
+      font-size: 0.62rem; font-weight: 700; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+    }
+    .signal-value {
+      font-size: 1.5rem; font-weight: 700; color: #0f2942; margin-bottom: 4px;
+    }
+    .signal-value.bull { color: #059669; }
+    .signal-value.bear { color: #dc2626; }
+    .signal-value.neutral { color: #d97706; }
+    .signal-meta {
+      font-family: 'Roboto', sans-serif;
+      font-size: 0.7rem; color: #6b7280; line-height: 1.4;
+    }
+    .progress-bar-wrap { margin-top: 8px; }
+    .progress-bar-label {
+      display: flex; justify-content: space-between;
+      font-size: 0.6rem; font-weight: 700; color: #9ca3af; margin-bottom: 4px;
+    }
+    .progress-bar {
+      height: 6px; border-radius: 3px; background: #e5e7eb; overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%; border-radius: 3px; background: #17bcfe;
+      transition: width 0.4s ease;
+    }
+    .progress-bar-fill.bull { background: #34d399; }
+    .progress-bar-fill.bear { background: #f87171; }
+
+    /* ── Option chain table ── */
+    .oc-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+    .oc-table th {
+      font-size: 0.6rem; font-weight: 700; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: 0.4px;
+      padding: 6px 10px; text-align: right; border-bottom: 1px solid #f3f4f6;
+    }
+    .oc-table th.center { text-align: center; }
+    .oc-table th.left   { text-align: left; }
+    .oc-table td {
+      padding: 7px 10px; text-align: right;
+      font-family: 'Roboto', sans-serif; color: #374151;
+      border-bottom: 1px solid #f9fafb;
+    }
+    .oc-table td.center { text-align: center; }
+    .oc-table td.strike {
+      font-weight: 700; color: #0f2942; text-align: center; background: #f0f9ff;
+    }
+    .oc-table tr.atm td { background: #fefce8; }
+    .oc-table tr.atm td.strike { background: #fef08a; color: #713f12; }
+    .oc-table td.bull { color: #059669; font-weight: 600; }
+    .oc-table td.bear { color: #dc2626; font-weight: 600; }
+
+    /* ── Trade rows ── */
+    .trade-table { width: 100%; border-collapse: collapse; font-size: 0.71rem; }
+    .trade-table th {
+      font-size: 0.6rem; font-weight: 700; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: 0.4px;
+      padding: 7px 12px; text-align: left; border-bottom: 2px solid #f3f4f6;
+      white-space: nowrap;
+    }
+    .trade-table td {
+      padding: 9px 12px; font-family: 'Roboto', sans-serif; color: #374151;
+      border-bottom: 1px solid #f9fafb; vertical-align: middle;
+    }
+    .trade-table tr:hover td { background: #f9fafb; }
+    .dir-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 10px;
+      font-size: 0.63rem; font-weight: 700;
+    }
+    .dir-pill.long  { background: #d1fae5; color: #065f46; }
+    .dir-pill.short { background: #fee2e2; color: #991b1b; }
+    .pnl-positive { color: #059669; font-weight: 700; }
+    .pnl-negative { color: #dc2626; font-weight: 700; }
+    .exit-pill {
+      font-size: 0.6rem; font-weight: 700; padding: 2px 7px;
+      border-radius: 8px; background: #f3f4f6; color: #6b7280;
+    }
+    .exit-pill.target  { background: #d1fae5; color: #065f46; }
+    .exit-pill.sl      { background: #fee2e2; color: #991b1b; }
+    .exit-pill.eod     { background: #e0f2fe; color: #0277bd; }
+    .exit-pill.open    { background: #fef3c7; color: #92400e; }
+
+    /* ── Circuit breaker status ── */
+    .cb-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .cb-item {
+      background: #f9fafb; border-radius: 10px;
+      border: 1.5px solid #e5e7eb; padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .cb-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .cb-dot.ok     { background: #34d399; }
+    .cb-dot.warn   { background: #f59e0b; }
+    .cb-dot.open   { background: #f87171; }
+    .cb-dot.na     { background: #d1d5db; }
+    .cb-label { font-size: 0.7rem; font-weight: 700; color: #0f2942; }
+    .cb-sub   { font-family: 'Roboto', sans-serif; font-size: 0.62rem; color: #9ca3af; }
+
+    /* ── Build phases ── */
+    .phase-list { display: flex; flex-direction: column; gap: 6px; }
+    .phase-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 8px;
+      background: #f9fafb; border: 1px solid #e5e7eb;
+    }
+    .phase-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      font-size: 0.6rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .phase-num.done    { background: #d1fae5; color: #059669; }
+    .phase-num.active  { background: #0f2942; color: #fff; }
+    .phase-num.pending { background: #e5e7eb; color: #9ca3af; }
+    .phase-text { flex: 1; font-size: 0.7rem; font-weight: 600; color: #374151; }
+    .phase-text .phase-files {
+      display: block; font-family: 'Roboto', sans-serif;
+      font-size: 0.62rem; color: #9ca3af; font-weight: 400; margin-top: 1px;
+    }
+    .phase-status { font-size: 0.62rem; font-weight: 700; }
+    .phase-status.done    { color: #059669; }
+    .phase-status.active  { color: #d97706; }
+    .phase-status.pending { color: #9ca3af; }
+
+    /* ── Log stream ── */
+    .log-stream {
+      background: #0f2942; border-radius: 10px;
+      padding: 14px; font-family: 'Roboto Mono', 'Courier New', monospace;
+      font-size: 0.68rem; line-height: 1.7; color: #94a3b8;
+      max-height: 260px; overflow-y: auto;
+    }
+    .log-stream::-webkit-scrollbar { width: 4px; }
+    .log-stream::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+    .log-line.info     { color: #7dd3fc; }
+    .log-line.warn     { color: #fcd34d; }
+    .log-line.error    { color: #f87171; }
+    .log-line.critical { color: #fb923c; font-weight: 700; }
+    .log-line.success  { color: #34d399; }
+    .log-ts { color: #475569; }
+
+    /* ── Dev note banner ── */
+    .dev-note {
+      background: #fefce8; border: 1px solid #fde68a; border-radius: 10px;
+      padding: 10px 14px; margin-bottom: 16px;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .dev-note i { color: #d97706; font-size: 0.85rem; margin-top: 1px; flex-shrink: 0; }
+    .dev-note p {
+      margin: 0; font-family: 'Roboto', sans-serif;
+      font-size: 0.72rem; color: #78350f; line-height: 1.5;
+    }
+    .dev-note p strong { font-family: 'Montserrat', sans-serif; }
+
+    /* ── Event log ── */
+    .event-list { display: flex; flex-direction: column; gap: 6px; }
+    .event-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 8px 12px; border-radius: 8px; border: 1px solid #e5e7eb;
+      background: #fff;
+    }
+    .event-icon {
+      width: 26px; height: 26px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; flex-shrink: 0; margin-top: 1px;
+    }
+    .event-icon.info     { background: #e0f2fe; color: #0277bd; }
+    .event-icon.warn     { background: #fef3c7; color: #d97706; }
+    .event-icon.critical { background: #fee2e2; color: #dc2626; }
+    .event-icon.success  { background: #d1fae5; color: #059669; }
+    .event-body { flex: 1; }
+    .event-title { font-size: 0.72rem; font-weight: 700; color: #0f2942; }
+    .event-desc  {
+      font-family: 'Roboto', sans-serif; font-size: 0.67rem; color: #6b7280;
+      margin-top: 1px; line-height: 1.4;
+    }
+    .event-time  {
+      font-family: 'Roboto', sans-serif; font-size: 0.6rem; color: #9ca3af;
+      white-space: nowrap; margin-top: 3px;
+    }
+
+    /* ── Two-col layout ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+    @media (max-width: 800px) { .three-col { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 520px) { .three-col { grid-template-columns: 1fr; } }
+
+    /* ── Perf bar ── */
+    .perf-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 0; border-bottom: 1px solid #f3f4f6;
+    }
+    .perf-row:last-child { border-bottom: none; }
+    .perf-label { font-size: 0.68rem; font-weight: 600; color: #374151; width: 100px; flex-shrink: 0; }
+    .perf-bar-wrap { flex: 1; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+    .perf-bar-fill { height: 100%; border-radius: 3px; }
+    .perf-val { font-family: 'Roboto', sans-serif; font-size: 0.68rem; font-weight: 700; color: #0f2942; width: 44px; text-align: right; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center; padding: 40px 20px;
+    }
+    .empty-state i { font-size: 2.2rem; color: #d1d5db; display: block; margin-bottom: 12px; }
+    .empty-state p {
+      font-family: 'Roboto', sans-serif; font-size: 0.8rem; color: #9ca3af;
+      margin: 0; line-height: 1.5;
+    }
   </style>
 </head>
 <body>
 
+  <!-- ── Action bar ── -->
   <div class="action-bar">
     <h3>
       <i class="fas fa-chart-line"></i>
       Autonomous FnO PaperTrade
-      <span class="status-badge">Coming Soon</span>
+      <span class="badge badge-dev">In Development</span>
     </h3>
+    <span style="font-family:'Roboto',sans-serif;font-size:0.68rem;color:#9ca3af;">
+      <i class="fas fa-clock" style="margin-right:4px;"></i>
+      <span id="ist-clock">--:--:-- IST</span>
+    </span>
+    <button class="btn btn-ghost" disabled title="Backend not yet connected">
+      <i class="fas fa-play"></i> Start Session
+    </button>
+    <button class="btn btn-ghost" disabled>
+      <i class="fas fa-stop"></i> Stop
+    </button>
   </div>
 
-  <div class="coming-soon-container">
-    <div class="coming-soon-icon">
-      <i class="fas fa-chart-line"></i>
-    </div>
-    <p class="coming-soon-title">Coming Soon</p>
-    <p class="coming-soon-subtitle">
-      Autonomous FnO PaperTrade is under active development. Simulate Futures &amp; Options trading strategies with AI-driven signals, risk controls, and performance analytics — no real capital at stake.
-    </p>
-  </div>
+  <!-- ── Tab nav ── -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="overview">
+      <i class="fas fa-tachometer-alt"></i> Overview
+    </button>
+    <button class="tab-btn" data-tab="signals">
+      <i class="fas fa-bolt"></i> Live Signals
+    </button>
+    <button class="tab-btn" data-tab="trades">
+      <i class="fas fa-list-alt"></i> Positions &amp; Trades
+    </button>
+    <button class="tab-btn" data-tab="performance">
+      <i class="fas fa-chart-bar"></i> Performance
+    </button>
+    <button class="tab-btn" data-tab="system">
+      <i class="fas fa-cogs"></i> System &amp; Logs
+    </button>
+    <button class="tab-btn" data-tab="build">
+      <i class="fas fa-hammer"></i> Build Status
+    </button>
+  </nav>
+
+  <!-- ── Main content ── -->
+  <div class="main-content">
+
+    <!-- ══════════════════════════════════════════
+         TAB 1 — OVERVIEW
+    ══════════════════════════════════════════ -->
+    <div class="tab-panel active" id="tab-overview">
+
+      <div class="dev-note">
+        <i class="fas fa-tools"></i>
+        <p><strong>In Development —</strong> This dashboard reflects the target architecture from the build brief. All data shown is illustrative. Backend components are being built phase-by-phase. Active build: <strong>Phase 1–3</strong> (config, logger, holidays). Use the <strong>Build Status</strong> tab for the full checklist; use the <strong>ℹ</strong> button next to the tool in the sidebar for the latest status blurb from <code>ToolConfig.json</code>.</p>
+      </div>
+
+      <!-- State machine -->
+      <div class="section-header">
+        <div class="section-icon"><i class="fas fa-sitemap"></i></div>
+        <div class="section-header-text">
+          <h4>Daily Session State Machine</h4>
+          <p>LangGraph-driven lifecycle — SLEEPING → PRE_MARKET → TRADING → SQUARE_OFF → FEEDBACK</p>
+        </div>
+      </div>
+
+      <div class="state-machine">
+        <div class="state-step">
+          <div class="state-dot active"><i class="fas fa-moon"></i></div>
+          <div class="state-label active">SLEEPING</div>
+          <div class="state-time">Current</div>
+        </div>
+        <div class="state-connector"></div>
+        <div class="state-step">
+          <div class="state-dot pending"><i class="fas fa-sun"></i></div>
+          <div class="state-label">PRE_MARKET</div>
+          <div class="state-time">09:00 AM IST</div>
+        </div>
+        <div class="state-connector"></div>
+        <div class="state-step">
+          <div class="state-dot pending"><i class="fas fa-chart-line"></i></div>
+          <div class="state-label">TRADING</div>
+          <div class="state-time">09:15 AM IST</div>
+        </div>
+        <div class="state-connector"></div>
+        <div class="state-step">
+          <div class="state-dot pending"><i class="fas fa-flag-checkered"></i></div>
+          <div class="state-label">SQUARE_OFF</div>
+          <div class="state-time">03:00 PM IST</div>
+        </div>
+        <div class="state-connector"></div>
+        <div class="state-step">
+          <div class="state-dot pending"><i class="fas fa-book-open"></i></div>
+          <div class="state-label">FEEDBACK</div>
+          <div class="state-time">03:30 PM IST</div>
+        </div>
+      </div>
+
+      <!-- Quick stats -->
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Today's P&amp;L</div>
+          <div class="stat-value muted">—</div>
+          <div class="stat-sub">Session not started</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Open Positions</div>
+          <div class="stat-value muted">0</div>
+          <div class="stat-sub">NIFTY + BANKNIFTY</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Trades Today</div>
+          <div class="stat-value muted">0</div>
+          <div class="stat-sub">Paper trades</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Win Rate</div>
+          <div class="stat-value muted">—</div>
+          <div class="stat-sub">Pending data</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">India VIX</div>
+          <div class="stat-value muted">—</div>
+          <div class="stat-sub">Market closed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">LLM Provider</div>
+          <div class="stat-value muted" style="font-size:0.85rem;">Gemini</div>
+          <div class="stat-sub">Flash 1.5 (default)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Fetch Interval</div>
+          <div class="stat-value muted" style="font-size:1rem;">15 min</div>
+          <div class="stat-sub">Configurable</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Market Status</div>
+          <div class="stat-value muted" style="font-size:0.85rem;">CLOSED</div>
+          <div class="stat-sub" id="next-open-label">Next open: loading...</div>
+        </div>
+      </div>
+
+      <!-- Components overview -->
+      <div class="two-col">
+        <div>
+          <div class="section-header" style="margin-bottom:10px;">
+            <div class="section-icon amber"><i class="fas fa-robot"></i></div>
+            <div class="section-header-text">
+              <h4>Agent Components</h4>
+              <p>Backend modules — build status</p>
+            </div>
+          </div>
+          <div class="card" style="padding:12px 14px;">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="cb-item">
+                <div class="cb-dot na"></div>
+                <div>
+                  <div class="cb-label">orchestrator.py</div>
+                  <div class="cb-sub">LangGraph state machine — Phase 12</div>
+                </div>
+              </div>
+              <div class="cb-item">
+                <div class="cb-dot na"></div>
+                <div>
+                  <div class="cb-label">agent.py</div>
+                  <div class="cb-sub">LLM reasoning — Gemini / Anthropic — Phase 11</div>
+                </div>
+              </div>
+              <div class="cb-item">
+                <div class="cb-dot na"></div>
+                <div>
+                  <div class="cb-label">predictor.py</div>
+                  <div class="cb-sub">XGBoost — train, infer, retrain — Phase 10</div>
+                </div>
+              </div>
+              <div class="cb-item">
+                <div class="cb-dot na"></div>
+                <div>
+                  <div class="cb-label">data_fetcher.py</div>
+                  <div class="cb-sub">Live OHLCV + option chain — Phase 6</div>
+                </div>
+              </div>
+              <div class="cb-item">
+                <div class="cb-dot na"></div>
+                <div>
+                  <div class="cb-label">news_fetcher.py</div>
+                  <div class="cb-sub">Morning RSS sentiment — Phase 7</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-header" style="margin-bottom:10px;">
+            <div class="section-icon green"><i class="fas fa-shield-alt"></i></div>
+            <div class="section-header-text">
+              <h4>Safety &amp; Storage</h4>
+              <p>Circuit breaker, events, Databricks</p>
+            </div>
+          </div>
+          <div class="card" style="padding:12px 14px;">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="cb-item">
+                <div class="cb-dot na"></div>
+                <div>
+                  <div class="cb-label">circuit_breaker.py</div>
+                  <div class="cb-sub">Per-source failure tracking — Phase 5</div>
+                </div>
+              </div>
+              <div class="cb-item">
+                <div class="cb-dot na"></div>
+                <div>
+                  <div class="cb-label">global_event_monitor.py</div>
+                  <div class="cb-sub">High-impact macro detection — Phase 8</div>
+                </div>
+              </div>
+              <div class="cb-item">
+                <div class="cb-dot na"></div>
+                <div>
+                  <div class="cb-label">option_chain_monitor.py</div>
+                  <div class="cb-sub">OI/PCR/MaxPain + smart money — Phase 9</div>
+                </div>
+              </div>
+              <div class="cb-item">
+                <div class="cb-dot na"></div>
+                <div>
+                  <div class="cb-label">storage.py</div>
+                  <div class="cb-sub">Databricks Delta Tables — Phase 4</div>
+                </div>
+              </div>
+              <div class="cb-item">
+                <div class="cb-dot na"></div>
+                <div>
+                  <div class="cb-label">holidays.py</div>
+                  <div class="cb-sub">NSE holiday calendar — Phase 3</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /tab-overview -->
+
+
+    <!-- ══════════════════════════════════════════
+         TAB 2 — LIVE SIGNALS
+    ══════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-signals">
+
+      <div class="dev-note">
+        <i class="fas fa-tools"></i>
+        <p><strong>Live Signals</strong> will show real-time ML inference (XGBoost p_up), LLM decision (BUY_LONG / SELL_SHORT / HOLD), option chain snapshot, and morning sentiment — all during market hours. Backend not yet connected.</p>
+      </div>
+
+      <!-- ML + LLM row -->
+      <div class="signal-row">
+        <div class="signal-card dev-overlay">
+          <div class="signal-header"><i class="fas fa-brain" style="color:#7c3aed;"></i> XGBoost Signal — NIFTY</div>
+          <div class="signal-value neutral">NEUTRAL</div>
+          <div class="signal-meta">p_up: 0.51 &nbsp;|&nbsp; Confidence: LOW</div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-label"><span>Bearish</span><span>Bullish</span></div>
+            <div class="progress-bar"><div class="progress-bar-fill" style="width:51%;"></div></div>
+          </div>
+        </div>
+        <div class="signal-card dev-overlay">
+          <div class="signal-header"><i class="fas fa-brain" style="color:#7c3aed;"></i> XGBoost Signal — BANKNIFTY</div>
+          <div class="signal-value neutral">NEUTRAL</div>
+          <div class="signal-meta">p_up: 0.49 &nbsp;|&nbsp; Confidence: LOW</div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-label"><span>Bearish</span><span>Bullish</span></div>
+            <div class="progress-bar"><div class="progress-bar-fill" style="width:49%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LLM Decision -->
+      <div class="signal-row">
+        <div class="signal-card dev-overlay">
+          <div class="signal-header"><i class="fas fa-robot" style="color:#0284c7;"></i> LLM Decision — NIFTY</div>
+          <div class="signal-value" style="color:#9ca3af;">HOLD</div>
+          <div class="signal-meta" style="margin-top:6px;font-style:italic;color:#9ca3af;">
+            "Market session not active. No signals to act on."
+          </div>
+          <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="badge badge-info">Gemini Flash</span>
+            <span class="badge badge-dev">Confidence: —</span>
+          </div>
+        </div>
+        <div class="signal-card dev-overlay">
+          <div class="signal-header"><i class="fas fa-robot" style="color:#0284c7;"></i> LLM Decision — BANKNIFTY</div>
+          <div class="signal-value" style="color:#9ca3af;">HOLD</div>
+          <div class="signal-meta" style="margin-top:6px;font-style:italic;color:#9ca3af;">
+            "Market session not active. No signals to act on."
+          </div>
+          <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="badge badge-info">Gemini Flash</span>
+            <span class="badge badge-dev">Confidence: —</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Morning Sentiment -->
+      <div class="card">
+        <div class="card-title">
+          <i class="fas fa-newspaper"></i> Morning Sentiment
+          <div class="card-title-right">
+            <span class="badge badge-dev">Pending data_fetcher.py</span>
+          </div>
+        </div>
+        <div class="two-col">
+          <div>
+            <div style="font-size:0.62rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Macro Sentiment</div>
+            <div style="font-size:1.2rem;font-weight:700;color:#d1d5db;">—</div>
+            <div style="font-family:'Roboto',sans-serif;font-size:0.7rem;color:#9ca3af;margin-top:4px;">Awaiting RSS fetch (ET Markets, Moneycontrol, RBI)</div>
+            <div style="margin-top:8px;">
+              <span class="badge badge-dev">Gift Nifty Proxy: —</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:0.62rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Macro Calendar — Today</div>
+            <div class="event-item" style="background:#fefce8;border-color:#fde68a;">
+              <div class="event-icon warn"><i class="fas fa-calendar-exclamation"></i></div>
+              <div class="event-body">
+                <div class="event-title">RBI MPC Decision Q1</div>
+                <div class="event-desc">Scheduled: 2026-04-09 — High-impact active from market open</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option Chain snapshot -->
+      <div class="card">
+        <div class="card-title">
+          <i class="fas fa-table"></i> Option Chain Snapshot — NIFTY
+          <div class="card-title-right">
+            <span class="badge badge-dev">Pending option_chain_monitor.py</span>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="oc-table">
+            <thead>
+              <tr>
+                <th style="text-align:left;">CE OI</th>
+                <th>CE IV</th>
+                <th>CE LTP</th>
+                <th class="center">STRIKE</th>
+                <th>PE LTP</th>
+                <th>PE IV</th>
+                <th>PE OI</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>—</td><td>—</td><td>—</td><td class="strike">22,500</td><td>—</td><td>—</td><td>—</td></tr>
+              <tr><td>—</td><td>—</td><td>—</td><td class="strike">22,600</td><td>—</td><td>—</td><td>—</td></tr>
+              <tr class="atm"><td class="bull">—</td><td>—</td><td>—</td><td class="strike">22,700 ◆ ATM</td><td>—</td><td>—</td><td class="bull">—</td></tr>
+              <tr><td>—</td><td>—</td><td>—</td><td class="strike">22,800</td><td>—</td><td>—</td><td>—</td></tr>
+              <tr><td>—</td><td>—</td><td>—</td><td class="strike">22,900</td><td>—</td><td>—</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:14px;flex-wrap:wrap;">
+          <div><span style="font-size:0.62rem;font-weight:700;color:#9ca3af;">PCR</span><br><span style="font-size:0.9rem;font-weight:700;color:#d1d5db;">—</span></div>
+          <div><span style="font-size:0.62rem;font-weight:700;color:#9ca3af;">Max Pain</span><br><span style="font-size:0.9rem;font-weight:700;color:#d1d5db;">—</span></div>
+          <div><span style="font-size:0.62rem;font-weight:700;color:#9ca3af;">IV Skew</span><br><span style="font-size:0.9rem;font-weight:700;color:#d1d5db;">—</span></div>
+          <div><span style="font-size:0.62rem;font-weight:700;color:#9ca3af;">Smart Money</span><br><span style="font-size:0.9rem;font-weight:700;color:#d1d5db;">None</span></div>
+        </div>
+      </div>
+
+    </div><!-- /tab-signals -->
+
+
+    <!-- ══════════════════════════════════════════
+         TAB 3 — POSITIONS & TRADES
+    ══════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-trades">
+
+      <div class="dev-note">
+        <i class="fas fa-tools"></i>
+        <p><strong>Positions &amp; Trades</strong> will show live open positions with entry price, current P&amp;L, and stop-loss level — plus today's closed trades. Data comes from the <code>trades</code> Delta Table via storage.py. Backend not yet connected.</p>
+      </div>
+
+      <!-- Open positions -->
+      <div class="section-header">
+        <div class="section-icon amber"><i class="fas fa-lock-open"></i></div>
+        <div class="section-header-text">
+          <h4>Open Positions</h4>
+          <p>Active paper trades — monitored every fetch interval for SL / target breach</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="empty-state">
+          <i class="fas fa-inbox"></i>
+          <p>No open positions.<br>Session not active — market closed.</p>
+        </div>
+      </div>
+
+      <!-- Trade history -->
+      <div class="section-header">
+        <div class="section-icon"><i class="fas fa-history"></i></div>
+        <div class="section-header-text">
+          <h4>Today's Closed Trades</h4>
+          <p>All paper trades exited today — from <code>trades</code> Delta Table</p>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="overflow-x:auto;">
+          <table class="trade-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Instrument</th>
+                <th>Direction</th>
+                <th>Entry</th>
+                <th>Exit</th>
+                <th>P&amp;L (pts)</th>
+                <th>Exit Reason</th>
+                <th>ML Score</th>
+                <th>Sentiment</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="9">
+                  <div class="empty-state" style="padding:30px 20px;">
+                    <i class="fas fa-chart-line"></i>
+                    <p>No trades recorded today.<br>Data will appear here once the trading session starts.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Sample row (illustrative, marked clearly) -->
+      <div class="section-header" style="margin-top:8px;">
+        <div class="section-icon purple"><i class="fas fa-eye"></i></div>
+        <div class="section-header-text">
+          <h4>Sample Row (Illustrative)</h4>
+          <p>How a completed trade will appear in the table above</p>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="overflow-x:auto;">
+          <table class="trade-table">
+            <thead>
+              <tr>
+                <th>Time</th><th>Instrument</th><th>Direction</th>
+                <th>Entry</th><th>Exit</th><th>P&amp;L (pts)</th>
+                <th>Exit Reason</th><th>ML Score</th><th>Sentiment</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-size:0.67rem;">09:30 → 10:45</td>
+                <td><strong>NIFTY</strong></td>
+                <td><span class="dir-pill long"><i class="fas fa-arrow-up"></i> LONG</span></td>
+                <td>22,410.50</td>
+                <td>22,855.20</td>
+                <td class="pnl-positive">+44.70</td>
+                <td><span class="exit-pill target">TARGET</span></td>
+                <td>0.73</td>
+                <td><span class="badge badge-live" style="font-size:0.58rem;">Bullish</span></td>
+              </tr>
+              <tr>
+                <td style="font-size:0.67rem;">11:15 → 12:30</td>
+                <td><strong>BANKNIFTY</strong></td>
+                <td><span class="dir-pill short"><i class="fas fa-arrow-down"></i> SHORT</span></td>
+                <td>48,120.00</td>
+                <td>47,400.75</td>
+                <td class="pnl-positive">+719.25</td>
+                <td><span class="exit-pill sl">STOPLOSS</span></td>
+                <td>0.31</td>
+                <td><span class="badge badge-warn" style="font-size:0.58rem;">Bearish</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /tab-trades -->
+
+
+    <!-- ══════════════════════════════════════════
+         TAB 4 — PERFORMANCE
+    ══════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-performance">
+
+      <div class="dev-note">
+        <i class="fas fa-tools"></i>
+        <p><strong>Performance Analytics</strong> will show session P&amp;L, win rates, ML model accuracy, feature importances, and the feedback loop lessons — sourced from <code>ml_performance</code> and <code>feedback_log</code> Delta Tables. Backend not yet connected.</p>
+      </div>
+
+      <!-- Cumulative stats row -->
+      <div class="stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));">
+        <div class="stat-card">
+          <div class="stat-label">Total Trades</div>
+          <div class="stat-value muted">—</div>
+          <div class="stat-sub">All sessions</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Win Rate</div>
+          <div class="stat-value muted">—</div>
+          <div class="stat-sub">Winning / total</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg P&amp;L / Trade</div>
+          <div class="stat-value muted">—</div>
+          <div class="stat-sub">Points</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">ML Accuracy</div>
+          <div class="stat-value muted">—</div>
+          <div class="stat-sub">XGBoost latest model</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Model Version</div>
+          <div class="stat-value muted" style="font-size:0.8rem;">—</div>
+          <div class="stat-sub">Bootstrap pending</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Last Retrain</div>
+          <div class="stat-value muted" style="font-size:0.75rem;">—</div>
+          <div class="stat-sub">Weekly Sundays 06:00</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <!-- Feature importances -->
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-sort-amount-down"></i> XGBoost Feature Importances
+            <div class="card-title-right">
+              <span class="badge badge-dev">No model yet</span>
+            </div>
+          </div>
+          <div class="phase-list">
+            <div class="perf-row">
+              <div class="perf-label">pcr</div>
+              <div class="perf-bar-wrap"><div class="perf-bar-fill" style="width:0%;background:#17bcfe;"></div></div>
+              <div class="perf-val">—</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-label">price_chg_30m</div>
+              <div class="perf-bar-wrap"><div class="perf-bar-fill" style="width:0%;background:#17bcfe;"></div></div>
+              <div class="perf-val">—</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-label">vix_level</div>
+              <div class="perf-bar-wrap"><div class="perf-bar-fill" style="width:0%;background:#17bcfe;"></div></div>
+              <div class="perf-val">—</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-label">oi_delta_pe_pct</div>
+              <div class="perf-bar-wrap"><div class="perf-bar-fill" style="width:0%;background:#17bcfe;"></div></div>
+              <div class="perf-val">—</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-label">sentiment_score</div>
+              <div class="perf-bar-wrap"><div class="perf-bar-fill" style="width:0%;background:#17bcfe;"></div></div>
+              <div class="perf-val">—</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-label">iv_skew</div>
+              <div class="perf-bar-wrap"><div class="perf-bar-fill" style="width:0%;background:#17bcfe;"></div></div>
+              <div class="perf-val">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Exit reason breakdown -->
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-pie-chart"></i> Exit Reason Breakdown
+            <div class="card-title-right">
+              <span class="badge badge-dev">No trades yet</span>
+            </div>
+          </div>
+          <div class="phase-list">
+            <div class="perf-row">
+              <div class="perf-label" style="color:#059669;">TARGET</div>
+              <div class="perf-bar-wrap"><div class="perf-bar-fill" style="width:0%;background:#34d399;"></div></div>
+              <div class="perf-val">0</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-label" style="color:#dc2626;">STOPLOSS</div>
+              <div class="perf-bar-wrap"><div class="perf-bar-fill" style="width:0%;background:#f87171;"></div></div>
+              <div class="perf-val">0</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-label" style="color:#c2410c;">HI_IMPACT SL</div>
+              <div class="perf-bar-wrap"><div class="perf-bar-fill" style="width:0%;background:#fb923c;"></div></div>
+              <div class="perf-val">0</div>
+            </div>
+            <div class="perf-row">
+              <div class="perf-label" style="color:#0277bd;">EOD SQUAREOFF</div>
+              <div class="perf-bar-wrap"><div class="perf-bar-fill" style="width:0%;background:#7dd3fc;"></div></div>
+              <div class="perf-val">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Yesterday's lessons -->
+      <div class="card">
+        <div class="card-title">
+          <i class="fas fa-book-open"></i> Yesterday's Feedback — lessons_YYYYMMDD.md
+          <div class="card-title-right">
+            <span class="badge badge-dev">Pending feedback phase</span>
+          </div>
+        </div>
+        <div class="empty-state" style="padding:28px;">
+          <i class="fas fa-file-alt"></i>
+          <p>No lessons file found.<br>Generated by the LLM at 03:30 PM IST after each trading session.<br>Stored in Databricks Volume: <code>/Volumes/vikaa/fno_papertrade/artifacts/feedback/</code></p>
+        </div>
+      </div>
+
+    </div><!-- /tab-performance -->
+
+
+    <!-- ══════════════════════════════════════════
+         TAB 5 — SYSTEM & LOGS
+    ══════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-system">
+
+      <div class="dev-note">
+        <i class="fas fa-tools"></i>
+        <p><strong>System &amp; Logs</strong> shows circuit breaker state, active event flags, config snapshot, and the structured JSON log stream from <code>agent_YYYYMMDD.log</code>. Real-time feed requires backend connection.</p>
+      </div>
+
+      <!-- Circuit breaker status -->
+      <div class="section-header">
+        <div class="section-icon red"><i class="fas fa-shield-virus"></i></div>
+        <div class="section-header-text">
+          <h4>Circuit Breaker Status</h4>
+          <p>Per-source failure tracking — resets each PRE_MARKET. Open = HOLD forced on affected source.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="cb-grid">
+          <div class="cb-item">
+            <div class="cb-dot na"></div>
+            <div>
+              <div class="cb-label">yfinance</div>
+              <div class="cb-sub">Failures: 0 / 3 &nbsp;|&nbsp; Status: Not initialized</div>
+            </div>
+          </div>
+          <div class="cb-item">
+            <div class="cb-dot na"></div>
+            <div>
+              <div class="cb-label">nse_option_chain</div>
+              <div class="cb-sub">Failures: 0 / 3 &nbsp;|&nbsp; Status: Not initialized</div>
+            </div>
+          </div>
+          <div class="cb-item">
+            <div class="cb-dot na"></div>
+            <div>
+              <div class="cb-label">llm</div>
+              <div class="cb-sub">Failures: 0 / 3 &nbsp;|&nbsp; Status: Not initialized</div>
+            </div>
+          </div>
+          <div class="cb-item">
+            <div class="cb-dot na"></div>
+            <div>
+              <div class="cb-label">databricks</div>
+              <div class="cb-sub">Failures: 0 / 3 &nbsp;|&nbsp; Status: Not initialized</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active flags -->
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title"><i class="fas fa-flag"></i> Active Event Flags</div>
+          <div class="event-list">
+            <div class="event-item">
+              <div class="event-icon warn"><i class="fas fa-bolt"></i></div>
+              <div class="event-body">
+                <div class="event-title">high_impact_active</div>
+                <div class="event-desc">FALSE — No confirmed high-impact event active</div>
+              </div>
+            </div>
+            <div class="event-item">
+              <div class="event-icon info"><i class="fas fa-eye"></i></div>
+              <div class="event-body">
+                <div class="event-title">smart_money_signal</div>
+                <div class="event-desc">None — No OI delta threshold breached</div>
+              </div>
+            </div>
+            <div class="event-item">
+              <div class="event-icon success"><i class="fas fa-calendar-check"></i></div>
+              <div class="event-body">
+                <div class="event-title">is_market_open (today)</div>
+                <div class="event-desc" id="market-open-status">Checking...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="fas fa-sliders-h"></i> Active Config Snapshot</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div class="toggle-row" style="padding:5px 0;">
+              <div><div style="font-size:0.68rem;font-weight:700;color:#374151;">LLM_PROVIDER</div></div>
+              <span class="badge badge-info">gemini</span>
+            </div>
+            <div class="toggle-row" style="padding:5px 0;">
+              <div><div style="font-size:0.68rem;font-weight:700;color:#374151;">FETCH_INTERVAL_MINUTES</div></div>
+              <span class="badge badge-purple">15 min</span>
+            </div>
+            <div class="toggle-row" style="padding:5px 0;">
+              <div><div style="font-size:0.68rem;font-weight:700;color:#374151;">TRADE_STOP_LOSS_PCT</div></div>
+              <span class="badge badge-warn">1.5%</span>
+            </div>
+            <div class="toggle-row" style="padding:5px 0;">
+              <div><div style="font-size:0.68rem;font-weight:700;color:#374151;">TRADE_TARGET_PCT</div></div>
+              <span class="badge badge-live">2.0%</span>
+            </div>
+            <div class="toggle-row" style="padding:5px 0;">
+              <div><div style="font-size:0.68rem;font-weight:700;color:#374151;">HIGH_IMPACT_STOP_LOSS_PCT</div></div>
+              <span class="badge badge-warn">0.8%</span>
+            </div>
+            <div class="toggle-row" style="padding:5px 0;border:none;">
+              <div><div style="font-size:0.68rem;font-weight:700;color:#374151;">MAX_CONSECUTIVE_FAILURES</div></div>
+              <span class="badge badge-dev">3</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log stream -->
+      <div class="section-header">
+        <div class="section-icon"><i class="fas fa-terminal"></i></div>
+        <div class="section-header-text">
+          <h4>Structured JSON Log Stream</h4>
+          <p>Live feed from <code>agent_YYYYMMDD.log</code> — all events with level, module, event, data, failure_reason</p>
+        </div>
+      </div>
+      <div class="log-stream" id="log-stream">
+        <div class="log-line" style="color:#334155;">// Log stream not connected — backend pending</div>
+        <div class="log-line" style="color:#334155;">// Sample entries shown below for reference:</div>
+        <div class="log-line" style="color:#334155;">// ─────────────────────────────────────────────────────</div>
+        <div class="log-line success"><span class="log-ts">2026-04-07T09:00:01+05:30</span> INFO  [orchestrator] PRE_MARKET_START {"date":"2026-04-07"}</div>
+        <div class="log-line info"><span class="log-ts">2026-04-07T09:00:03+05:30</span> INFO  [holidays] MARKET_OPEN_CHECK {"date":"2026-04-07","is_open":true}</div>
+        <div class="log-line info"><span class="log-ts">2026-04-07T09:00:05+05:30</span> INFO  [news_fetcher] HEADLINES_FETCHED {"count":8,"sentiment":"Bullish"}</div>
+        <div class="log-line info"><span class="log-ts">2026-04-07T09:00:08+05:30</span> INFO  [predictor] MODEL_LOAD_SUCCESS {"model":"xgb_nifty_20260405.pkl"}</div>
+        <div class="log-line info"><span class="log-ts">2026-04-07T09:15:00+05:30</span> INFO  [data_fetcher] PRICE_FETCH_SUCCESS {"instrument":"NIFTY","ltp":22710.5}</div>
+        <div class="log-line info"><span class="log-ts">2026-04-07T09:15:01+05:30</span> INFO  [predictor] MODEL_INFERENCE {"p_up":0.73,"direction":"LONG","confidence":"HIGH"}</div>
+        <div class="log-line success"><span class="log-ts">2026-04-07T09:15:03+05:30</span> INFO  [agent] LLM_DECISION {"action":"BUY_LONG","instrument":"NIFTY","reasoning":"Strong ML signal + bullish open"}</div>
+        <div class="log-line success"><span class="log-ts">2026-04-07T09:15:04+05:30</span> INFO  [orchestrator] TRADE_ENTERED {"instrument":"NIFTY","direction":"LONG","entry_price":22710.5}</div>
+        <div class="log-line warn"><span class="log-ts">2026-04-07T11:32:10+05:30</span> WARN  [option_chain_monitor] SMART_MONEY_ALERT {"side":"PE","direction":"BUILD","delta_pct":18.4,"implication":"BEARISH_SIGNAL"}</div>
+        <div class="log-line info"><span class="log-ts">2026-04-07T15:00:00+05:30</span> INFO  [orchestrator] TRADE_EXITED {"instrument":"NIFTY","exit_reason":"EOD_SQUAREOFF","pnl_points":44.7}</div>
+        <div class="log-line info"><span class="log-ts">2026-04-07T15:30:00+05:30</span> INFO  [orchestrator] FEEDBACK_START {"session_pnl":44.7,"total_trades":3,"win_rate":0.67}</div>
+      </div>
+
+    </div><!-- /tab-system -->
+
+
+    <!-- ══════════════════════════════════════════
+         TAB 6 — BUILD STATUS
+    ══════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-build">
+
+      <div class="section-header">
+        <div class="section-icon purple"><i class="fas fa-hammer"></i></div>
+        <div class="section-header-text">
+          <h4>Build Phases — 13-Phase Plan</h4>
+          <p>Each phase must be independently testable before proceeding to the next</p>
+        </div>
+      </div>
+
+      <div class="phase-list">
+        <div class="phase-item">
+          <div class="phase-num pending">1</div>
+          <div class="phase-text">
+            config.py (root)
+            <span class="phase-files">Test: python config.py prints all env var values without error</span>
+          </div>
+          <span class="phase-status pending">Pending</span>
+        </div>
+        <div class="phase-item">
+          <div class="phase-num pending">2</div>
+          <div class="phase-text">
+            FnO_PaperTrade/__init__.py + logger.py
+            <span class="phase-files">Test: Log one INFO entry, verify JSON output</span>
+          </div>
+          <span class="phase-status pending">Pending</span>
+        </div>
+        <div class="phase-item">
+          <div class="phase-num pending">3</div>
+          <div class="phase-text">
+            holidays.py
+            <span class="phase-files">Test: is_market_open(date(2026,1,26)) → False; weekday → True</span>
+          </div>
+          <span class="phase-status pending">Pending</span>
+        </div>
+        <div class="phase-item">
+          <div class="phase-num pending">4</div>
+          <div class="phase-text">
+            storage.py — Databricks Delta Tables
+            <span class="phase-files">Test: Write one row to trades, read it back, delete it</span>
+          </div>
+          <span class="phase-status pending">Pending</span>
+        </div>
+        <div class="phase-item">
+          <div class="phase-num pending">5</div>
+          <div class="phase-text">
+            circuit_breaker.py
+            <span class="phase-files">Test: 3 failures opens circuit; success resets; any_critical_open() works</span>
+          </div>
+          <span class="phase-status pending">Pending</span>
+        </div>
+        <div class="phase-item">
+          <div class="phase-num pending">6</div>
+          <div class="phase-text">
+            data_fetcher.py — Live OHLCV + NSE option chain
+            <span class="phase-files">Test: Fetch live NIFTY price + option chain; print PCR, OI delta, IV skew</span>
+          </div>
+          <span class="phase-status pending">Pending</span>
+        </div>
+        <div class="phase-item">
+          <div class="phase-num pending">7</div>
+          <div class="phase-text">
+            news_fetcher.py — RSS + macro calendar
+            <span class="phase-files">Test: Fetch RSS; print 5 headlines; verify macro calendar check</span>
+          </div>
+          <span class="phase-status pending">Pending</span>
+        </div>
+        <div class="phase-item">
+          <div class="phase-num pending">8</div>
+          <div class="phase-text">
+            global_event_monitor.py — High-impact event detection
+            <span class="phase-files">Test: Simulate keyword match; verify LLM confirmation; verify event protocol</span>
+          </div>
+          <span class="phase-status pending">Pending</span>
+        </div>
+        <div class="phase-item">
+          <div class="phase-num pending">9</div>
+          <div class="phase-text">
+            option_chain_monitor.py — Smart money alert
+            <span class="phase-files">Test: Simulate OI delta > threshold; verify SmartMoneySignal returned</span>
+          </div>
+          <span class="phase-status pending">Pending</span>
+        </div>
+        <div class="phase-item">
+          <div class="phase-num pending">10</div>
+          <div class="phase-text">
+            predictor.py — XGBoost bootstrap, train, infer
+            <span class="phase-files">Test: Bootstrap train on 6m historical; save to Databricks Volume; run inference</span>
+          </div>
+          <span class="phase-status pending">Pending</span>
+        </div>
+        <div class="phase-item">
+          <div class="phase-num pending">11</div>
+          <div class="phase-text">
+            agent.py — LLM reasoning layer (Gemini + Anthropic)
+            <span class="phase-files">Test: Send one full context; verify JSON response parses; test fallback provider</span>
+          </div>
+          <span class="phase-status pending">Pending</span>
+        </div>
+        <div class="phase-item">
+          <div class="phase-num pending">12</div>
+          <div class="phase-text">
+            orchestrator.py — LangGraph state machine (wire all)
+            <span class="phase-files">Test: Run one simulated day with mocked time</span>
+          </div>
+          <span class="phase-status pending">Pending</span>
+        </div>
+        <div class="phase-item">
+          <div class="phase-num pending">13</div>
+          <div class="phase-text">
+            main.py (append) + render.yaml (append) — Deploy to Render
+            <span class="phase-files">Test: Deploy; verify scheduler starts; heartbeat appears in logs</span>
+          </div>
+          <span class="phase-status pending">Pending</span>
+        </div>
+      </div>
+
+      <!-- Known limitations -->
+      <div class="section-header" style="margin-top:20px;">
+        <div class="section-icon amber"><i class="fas fa-info-circle"></i></div>
+        <div class="section-header-text">
+          <h4>v1 Known Limitations (Accepted)</h4>
+          <p>Noted for v2 — not blocking current build</p>
+        </div>
+      </div>
+      <div class="card" style="padding:14px 18px;">
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <i class="fas fa-minus-circle" style="color:#d97706;font-size:0.7rem;margin-top:3px;flex-shrink:0;"></i>
+            <span style="font-family:'Roboto',sans-serif;font-size:0.72rem;color:#374151;">No intraday regime detection — trending vs range-bound treated equally by XGBoost</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <i class="fas fa-minus-circle" style="color:#d97706;font-size:0.7rem;margin-top:3px;flex-shrink:0;"></i>
+            <span style="font-family:'Roboto',sans-serif;font-size:0.72rem;color:#374151;">Global macro (Fed, ECB, US crash) out of scope — Indian macro only</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <i class="fas fa-minus-circle" style="color:#d97706;font-size:0.7rem;margin-top:3px;flex-shrink:0;"></i>
+            <span style="font-family:'Roboto',sans-serif;font-size:0.72rem;color:#374151;">No position sizing — all paper trades are fixed 1 lot equivalent</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <i class="fas fa-minus-circle" style="color:#d97706;font-size:0.7rem;margin-top:3px;flex-shrink:0;"></i>
+            <span style="font-family:'Roboto',sans-serif;font-size:0.72rem;color:#374151;">No correlation filter between Nifty and BankNifty trades</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <i class="fas fa-minus-circle" style="color:#d97706;font-size:0.7rem;margin-top:3px;flex-shrink:0;"></i>
+            <span style="font-family:'Roboto',sans-serif;font-size:0.72rem;color:#374151;">Weekly retrain carries survivorship bias until ~3 months of trade data accumulates</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <i class="fas fa-minus-circle" style="color:#d97706;font-size:0.7rem;margin-top:3px;flex-shrink:0;"></i>
+            <span style="font-family:'Roboto',sans-serif;font-size:0.72rem;color:#374151;">Feedback loop improves LLM context but does not auto-tune XGBoost hyperparameters</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /tab-build -->
+
+  </div><!-- /main-content -->
+
+  <script>
+    // ── Tab switching ──
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ── IST clock ──
+    function updateClock() {
+      const now = new Date();
+      const ist = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      const h = String(ist.getHours()).padStart(2, '0');
+      const m = String(ist.getMinutes()).padStart(2, '0');
+      const s = String(ist.getSeconds()).padStart(2, '0');
+      document.getElementById('ist-clock').textContent = `${h}:${m}:${s} IST`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ── Market open check ──
+    function checkMarketStatus() {
+      const now = new Date();
+      const ist = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      const day = ist.getDay(); // 0=Sun, 6=Sat
+      const hour = ist.getHours();
+      const min = ist.getMinutes();
+      const totalMin = hour * 60 + min;
+      const open = 9 * 60 + 15;  // 09:15
+      const close = 15 * 60 + 30; // 15:30
+
+      const isWeekday = day >= 1 && day <= 5;
+      const isDuringHours = totalMin >= open && totalMin <= close;
+      const isMarketOpen = isWeekday && isDuringHours;
+
+      const el = document.getElementById('market-open-status');
+      if (el) {
+        el.textContent = isMarketOpen
+          ? 'TRUE — Market is currently open (09:15–15:30 IST)'
+          : 'FALSE — Market is closed';
+      }
+
+      // Next open label
+      const nextEl = document.getElementById('next-open-label');
+      if (nextEl) {
+        if (isMarketOpen) {
+          nextEl.textContent = 'Market is OPEN now';
+        } else {
+          const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+          let nextDay = day;
+          let daysAhead = 0;
+          do { nextDay = (nextDay + 1) % 7; daysAhead++; } while (nextDay === 0 || nextDay === 6);
+          nextEl.textContent = `Opens ${days[nextDay]} at 09:15 IST`;
+        }
+      }
+    }
+    checkMarketStatus();
+    setInterval(checkMarketStatus, 30000);
+  </script>
 
 </body>
 </html>

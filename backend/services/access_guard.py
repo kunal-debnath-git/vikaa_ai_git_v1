@@ -7,6 +7,7 @@
 
 import logging
 import ipaddress
+import os
 import time
 from typing import Literal
 from urllib.parse import urlparse
@@ -50,6 +51,14 @@ def is_trusted_dev_execution_context(request: Request | None) -> bool:
     Uses the API server's host (same-machine calls) and Origin/Referer from the browser
     (frontend on loopback, RFC1918 LAN, or Cursor-style dev hosts). This matches deployed
     APIs where request.url.hostname is not localhost but the SPA is served from LAN or Cursor.
+    """
+    ...
+
+
+def enforce_synth_enterprise_auth(request: Request) -> None:
+    """
+    When ``VIKAA_SYNTH_ENFORCE_ENTERPRISE_AUTH=1``, reject trusted-dev / localhost bypass so
+    synthetic data runs require a real Supabase JWT (no ``local-dev`` identity).
     """
     ...
 

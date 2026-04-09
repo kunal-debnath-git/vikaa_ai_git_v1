@@ -10,88 +10,1173 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="icon" type="image/png" href="image/Logo4.jpeg">
 
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body {
-      margin: 0; padding: 0; height: 100%;
-      font-family: 'Montserrat', sans-serif;
-      background: #f4f6f9; color: #333;
-      display: flex; flex-direction: column;
-    }
-    .action-bar {
-      padding: 12px 20px;
-      background: #fff;
-      border-bottom: 1px solid #e5e7eb;
-      display: flex; align-items: center; gap: 10px;
-    }
-    .action-bar h3 {
-      margin: 0; font-size: 0.81rem; font-weight: 700; color: #0f2942;
-      flex: 1; display: flex; align-items: center; gap: 8px;
-    }
-    .status-badge {
-      font-size: 0.62rem; font-weight: 700; border-radius: 10px;
-      padding: 2px 8px; letter-spacing: 0.5px;
-      background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;
-    }
-    .coming-soon-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      padding: 40px;
-      text-align: center;
-    }
-    .coming-soon-icon {
-      font-size: 4rem;
-      color: #17bcfe;
-      opacity: 0.7;
-    }
-    .coming-soon-title {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #0f2942;
-      margin: 0;
-    }
-    .coming-soon-subtitle {
-      font-family: 'Roboto', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 400;
-      color: #666;
-      max-width: 420px;
-      line-height: 1.6;
-      margin: 0;
-    }
-    .back-link {
-      margin-top: 10px;
-      font-size: 0.82rem;
-      color: #17bcfe;
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .back-link:hover { color: #0891b2; }
-  </style>
+  <link rel="stylesheet" href="Tool_RAGConfigurator.css">
 </head>
 <body>
 
+  <!-- Action bar -->
   <div class="action-bar">
     <h3>
       <i class="fas fa-database"></i>
       RAG Configurator
-      <span class="status-badge">Coming Soon</span>
+      <span class="badge badge-dev">In Development</span>
     </h3>
+    <button type="button" class="btn btn-secondary btn-tool-manual" onclick="openToolManualModal()"
+            aria-haspopup="dialog" aria-controls="toolManualModal">
+      <i class="fas fa-book"></i> Tool Manual
+    </button>
   </div>
 
-  <div class="coming-soon-container">
-    <div class="coming-soon-icon">
-      <i class="fas fa-database"></i>
+  <dialog class="tool-manual-dialog" id="toolManualModal" aria-labelledby="toolManualModalTitle">
+    <div class="tool-manual-dialog-inner">
+      <div class="tool-manual-dialog-header">
+        <h4 id="toolManualModalTitle"><i class="fas fa-book"></i> Tool Manual</h4>
+        <form method="dialog">
+          <button type="submit" class="btn-dialog-close" aria-label="Close">
+            <i class="fas fa-xmark"></i>
+          </button>
+        </form>
+      </div>
+      <iframe src="tool_rag_user_guide.html"
+              class="tool-manual-iframe"
+              title="RAG Configurator Tool Manual"
+              loading="lazy"></iframe>
     </div>
-    <p class="coming-soon-title">Coming Soon</p>
-    <p class="coming-soon-subtitle">
-      RAG Configurator is under active development. Configure retrieval-augmented generation pipelines, manage vector stores, and fine-tune context injection — all from one interface.
-    </p>
+  </dialog>
+
+  <!-- Tab nav -->
+  <div class="tab-nav">
+    <div class="tab-nav-steps">
+      <button type="button" class="tab-btn active" data-tab="ingestion" onclick="switchTab('ingestion', this)">
+        <span class="tab-num" id="tnum-ingestion">1</span>
+        <i class="fas fa-upload"></i> Ingestion
+      </button>
+      <button type="button" class="tab-btn" data-tab="retrieval" onclick="switchTab('retrieval', this)">
+        <span class="tab-num" id="tnum-retrieval">2</span>
+        <i class="fas fa-magnifying-glass"></i> Retrieval
+      </button>
+      <button type="button" class="tab-btn" data-tab="crag" onclick="switchTab('crag', this)">
+        <span class="tab-num" id="tnum-crag">3</span>
+        <i class="fas fa-arrows-rotate"></i> CRAG Loop
+      </button>
+      <button type="button" class="tab-btn" data-tab="generation" onclick="switchTab('generation', this)">
+        <span class="tab-num" id="tnum-generation">4</span>
+        <i class="fas fa-wand-magic-sparkles"></i> Generation
+      </button>
+      <button type="button" class="tab-btn" data-tab="observability" onclick="switchTab('observability', this)">
+        <span class="tab-num" id="tnum-observability">5</span>
+        <i class="fas fa-chart-line"></i> Observability
+      </button>
+      <button type="button" class="tab-btn" data-tab="summary" onclick="switchTab('summary', this)">
+        <span class="tab-num" id="tnum-summary">6</span>
+        <i class="fas fa-check-double"></i> Summary
+      </button>
+    </div>
+    <button type="button" class="btn-nav-reset" onclick="resetConfig()" title="Reset all fields to defaults">
+      <i class="fas fa-rotate-left"></i> Reset
+    </button>
+    <div class="tab-nav-actions">
+      <button type="button" class="btn-nav-step" id="btn-tab-back" onclick="goTabStep(-1)" aria-label="Previous step">
+        <i class="fas fa-chevron-left"></i> Back
+      </button>
+      <button type="button" class="btn-nav-step" id="btn-tab-next" onclick="goTabStep(1)" aria-label="Next step">
+        Next <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
   </div>
+
+  <div class="main-content">
+
+    <!-- ===== TAB 1: INGESTION ===== -->
+    <div class="tab-panel active" id="panel-ingestion">
+      <div class="section-header">
+        <div class="section-icon"><i class="fas fa-upload"></i></div>
+        <div class="section-header-text">
+          <h4>Ingestion Pipeline</h4>
+          <p>Load documents, split into chunks, embed, and store in Databricks Vector Search.</p>
+        </div>
+      </div>
+
+      <div class="config-card">
+        <div class="config-card-title"><i class="fas fa-gears"></i> Pipeline configuration</div>
+
+        <div class="settings-group settings-group--accent-a">
+          <div class="settings-group-title"><i class="fas fa-file-import"></i> Document source &amp; chunking</div>
+          <p class="settings-group-hint">How inputs are loaded, split, and embedded before storage.</p>
+          <div class="form-grid form-grid--inline-3">
+            <div class="form-group">
+              <label>Source Type</label>
+              <select class="form-control" id="sourceType">
+                <option value="pdf">PDF</option>
+                <option value="html">HTML</option>
+                <option value="json">JSON / JSONL</option>
+                <option value="multi">Text / Markdown (TXT · MD)</option>
+                <option value="csv">CSV</option>
+                <option value="xml">XML</option>
+                <option value="excel">Excel (XLSX · XLS)</option>
+                <option value="word">Word (DOCX · DOC)</option>
+                <option value="ppt">PowerPoint (PPTX · PPT)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Chunking Strategy</label>
+              <select class="form-control" id="chunkStrategy">
+                <option value="semantic">Semantic (SemanticChunker) ✓ Recommended</option>
+                <option value="recursive">Recursive Character</option>
+                <option value="fixed">Fixed Size</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Dense Embedding Model</label>
+              <select class="form-control" id="denseModel">
+                <option value="databricks-bge-large-en">Databricks BGE Large (managed) ✓ Default [Best default on DB]...</option>
+                <option value="BAAI/bge-large-en-v1.5">BAAI/bge-large-en-v1.5 (self-hosted) [Highest retrieval quality]...</option>
+                <option value="models/text-embedding-004">Gemini text-embedding-004 [Very strong quality]...</option>
+                <option value="BAAI/bge-base-en-v1.5">BAAI/bge-base-en-v1.5 (self-hosted) [Good quality/speed balance]...</option>
+                <option value="models/embedding-001">Gemini embedding-001 [Budget API]...</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group settings-group--accent-b">
+          <div class="settings-group-title"><i class="fas fa-database"></i> Unity Catalog &amp; Vector Search</div>
+          <p class="settings-group-hint">Where chunked text and vectors live in Databricks.</p>
+          <div class="form-grid cols-3">
+            <div class="form-group">
+              <label>Catalog</label>
+              <input type="text" class="form-control" id="dbCatalog" value="workspace" placeholder="e.g. workspace">
+            </div>
+            <div class="form-group">
+              <label>Schema</label>
+              <input type="text" class="form-control" id="dbSchema" value="agentic_rag" placeholder="e.g. agentic_rag">
+            </div>
+            <div class="form-group">
+              <label>Delta Table</label>
+              <input type="text" class="form-control" id="dbTable" value="documents" placeholder="e.g. documents">
+            </div>
+            <div class="form-group">
+              <label>VS Endpoint</label>
+              <input type="text" class="form-control" id="vsEndpoint" value="rag_endpoint" placeholder="e.g. rag_endpoint">
+            </div>
+            <div class="form-group">
+              <label>Index Name</label>
+              <input type="text" class="form-control" id="vsIndex" value="rag_index" placeholder="e.g. rag_index">
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced accordion -->
+        <div class="adv-trigger" id="trig-ing" onclick="toggleAdv('adv-ing', 'trig-ing')">
+          <i class="fas fa-sliders"></i> Advanced Settings
+          <i class="fas fa-chevron-down adv-chevron"></i>
+        </div>
+        <div class="adv-body" id="adv-ing">
+          <div class="adv-inner">
+
+            <div class="adv-advanced-layout">
+            <div class="settings-group settings-group--sub settings-group--accent-sub-1">
+              <div class="settings-group-title"><i class="fas fa-file-lines"></i> Document loader</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Metadata Enrichment <span class="hint">auto-tagged on ingest</span></label>
+                  <select class="form-control" id="metadataEnrich">
+                    <option value="basic">Basic (source_type, ingested_at)</option>
+                    <option value="extended">Extended (+ page, section, author)</option>
+                    <option value="custom">Custom fields</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-group settings-group--sub settings-group--accent-sub-2">
+              <div class="settings-group-title"><i class="fas fa-scissors"></i> Chunker</div>
+              <div class="form-grid adv-chunker-form">
+                <div class="form-group">
+                  <label>Breakpoint Type</label>
+                  <select class="form-control" id="breakpointType">
+                    <option value="percentile">Percentile (preserves boundaries)</option>
+                    <option value="std_deviation">Std Deviation</option>
+                    <option value="interquartile">Interquartile</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Breakpoint Threshold <span class="hint">percentile</span></label>
+                  <div class="slider-wrap">
+                    <input type="range" min="50" max="99" value="95" id="breakpointAmt"
+                           oninput="document.getElementById('bpAmtVal').textContent=this.value">
+                    <span class="slider-val" id="bpAmtVal">95</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Fallback Chunk Size <span class="hint">chars — max 1,600</span></label>
+                  <input type="number" class="form-control" id="chunkSize" value="1200" min="200" max="1600">
+                </div>
+                <div class="form-group">
+                  <label>Chunk Overlap <span class="hint">chars — max 400</span></label>
+                  <input type="number" class="form-control" id="chunkOverlap" value="300" min="0" max="400">
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-group settings-group--sub settings-group--accent-sub-3">
+              <div class="settings-group-title"><i class="fas fa-vector-square"></i> Embeddings</div>
+              <div class="form-grid form-grid--embedding-adv">
+                <div class="form-group">
+                  <label>Databricks Embedding Endpoint</label>
+                  <input type="text" class="form-control" id="embeddingEndpoint" value="databricks-bge-large-en" placeholder="e.g. databricks-bge-large-en">
+                </div>
+                <div class="form-group">
+                  <label>Normalize Embeddings</label>
+                  <div style="display:flex;gap:10px;margin-top:4px;">
+                    <label class="radio-pill"><input type="radio" name="normEmbed" value="true" checked> Yes</label>
+                    <label class="radio-pill"><input type="radio" name="normEmbed" value="false"> No</label>
+                  </div>
+                </div>
+              </div>
+              <div class="embed-sparse-row">
+                <div class="toggle-row">
+                  <div class="toggle-label">
+                    <span>Sparse (BM25) Embedding</span>
+                    <small>SPLADE — enables hybrid search</small>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" id="sparseEnabled" checked onchange="toggleSparseModel()">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div id="sparseModelWrap">
+                  <div class="form-group">
+                    <label>Sparse Model</label>
+                    <select class="form-control" id="sparseModel">
+                      <option value="naver/splade-cocondenser-ensemble-distil">naver/splade-cocondenser-ensemble-distil</option>
+                      <option value="naver/splade-v3">naver/splade-v3</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-group settings-group--sub settings-group--accent-sub-4">
+              <div class="settings-group-title"><i class="fas fa-table-columns"></i> Index &amp; sync</div>
+              <div class="form-grid cols-3 adv-index-sync-grid">
+                <div class="form-group">
+                  <label>Primary Key Column <span class="hint-lock"><i class="fas fa-lock"></i> fixed</span></label>
+                  <input type="text" class="form-control form-control--locked" id="primaryKey" value="chunk_id" readonly>
+                </div>
+                <div class="form-group">
+                  <label>Content Column <span class="hint-lock"><i class="fas fa-lock"></i> fixed</span></label>
+                  <input type="text" class="form-control form-control--locked" id="contentCol" value="content" readonly>
+                </div>
+                <div class="form-group">
+                  <label>Pipeline Sync Type</label>
+                  <div class="radio-group" style="margin-top:4px;">
+                    <label class="radio-pill"><input type="radio" name="pipelineType" value="TRIGGERED" checked> TRIGGERED</label>
+                    <label class="radio-pill"><input type="radio" name="pipelineType" value="CONTINUOUS"> CONTINUOUS</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Run Pipeline: steps 1–3 in one row (upload → provision → ingest) ── -->
+      <div class="config-card config-card--accent-blue">
+        <div class="config-card-title"><i class="fas fa-play"></i> Run Pipeline</div>
+
+        <div class="pipeline-actions">
+          <!-- Step 1: Document Upload -->
+          <div class="action-step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <div class="step-title">Document Upload</div>
+              <div class="step-desc">Add one or more files (same type) before provision or ingest.</div>
+              <div class="drop-zone" id="dropZone"
+                   ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)"
+                   onclick="document.getElementById('fileInput').click()">
+                <input type="file" id="fileInput" style="display:none" multiple
+                       accept=".pdf,.html,.htm,.json,.jsonl,.txt,.md,.csv,.xml,.xlsx,.xls,.docx,.doc,.pptx,.ppt"
+                       onchange="onFileSelect(event)">
+
+                <div id="dropZoneIdle">
+                  <i class="fas fa-cloud-arrow-up dz-icon"></i>
+                  <span class="dz-label">Drop files here or <strong>click to browse</strong></span>
+                  <span class="dz-hint">PDF · HTML · JSON · TXT · MD · CSV · XML · Excel · Word · PPT — combined max 20 MB</span>
+                </div>
+              </div>
+              <div id="ingestFileListWrap" class="ingest-file-list-wrap" hidden>
+                <div class="ingest-file-list-head">
+                  <div class="ingest-file-list-label">Selected files <span class="ingest-total" id="ingestTotalHint"></span></div>
+                  <button type="button" class="btn btn-ghost fi-clear-all" onclick="clearIngestFile()">
+                    <i class="fas fa-xmark"></i> Clear all
+                  </button>
+                </div>
+                <ul class="ingest-file-list" id="ingestFileList"></ul>
+              </div>
+            </div>
+          </div>
+          <!-- Step 2 -->
+          <div class="action-step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <div class="step-title">Provision Infrastructure</div>
+              <div class="step-desc">Create Delta table &amp; Vector Search index using the config above</div>
+              <button class="btn btn-secondary" id="btnProvision" onclick="provisionPipeline()">
+                <i class="fas fa-layer-group"></i> Provision
+              </button>
+            </div>
+          </div>
+          <!-- Step 3 -->
+          <div class="action-step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <div class="step-title">Upload &amp; Ingest Document</div>
+              <div class="step-desc">Chunk selected file(s), insert chunks to Delta, trigger VS sync</div>
+              <button class="btn btn-primary" id="btnIngest" onclick="runIngest()" disabled>
+                <i class="fas fa-upload"></i> Upload &amp; Ingest
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="ingestionLog" class="ing-log" style="display:none;"></div>
+
+        <!-- Duplicate decision card (shown only when backend detects a duplicate) -->
+        <div id="dupCard" style="display:none; margin-top:12px;
+             background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #f59e0b;
+             border-radius:10px; padding:14px 16px;">
+          <div style="font-size:0.73rem;font-weight:700;color:#92400e;margin-bottom:6px;display:flex;align-items:center;gap:7px;">
+            <i class="fas fa-triangle-exclamation"></i>
+            <span id="dupTitle">Duplicate detected</span>
+          </div>
+          <p id="dupMsg" style="margin:0 0 12px;font-family:'Roboto',sans-serif;font-size:0.72rem;color:#78350f;line-height:1.5;"></p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-ghost" onclick="resolveIngest('skip')">
+              <i class="fas fa-ban"></i> Skip
+            </button>
+            <button class="btn btn-secondary" onclick="resolveIngest('replace')" id="dupBtnReplace">
+              <i class="fas fa-arrows-rotate"></i> Replace
+            </button>
+            <button class="btn btn-ghost" onclick="resolveIngest('append')"
+                    style="color:#6b7280;" title="Insert new chunks alongside existing ones">
+              <i class="fas fa-plus"></i> Append Anyway
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Index Status card ── -->
+      <div class="config-card" id="indexStatusCard" style="display:none;">
+        <div class="config-card-title" style="margin-bottom:10px;">
+          <i class="fas fa-circle-nodes"></i> Vector Search Index Status
+          <button class="btn btn-ghost"
+                  style="margin-left:auto;padding:4px 10px;font-size:0.67rem;"
+                  onclick="refreshIndexStatus()">
+            <i class="fas fa-rotate"></i> Refresh
+          </button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:4px 0;">
+          <span id="indexStatusBadge" class="idx-badge idx-badge--loading">…</span>
+          <div>
+            <div id="indexStatusDetail"
+                 style="font-size:0.73rem;font-weight:600;color:#0f2942;font-family:'Roboto',sans-serif;"></div>
+            <div id="indexStatusMsg"
+                 style="font-size:0.67rem;color:#9ca3af;font-family:'Roboto',sans-serif;margin-top:2px;"></div>
+          </div>
+        </div>
+        <div class="idx-progress-wrap" id="idxProgressWrap">
+          <div class="idx-progress-bar" id="idxProgressBar" style="width:0%"></div>
+        </div>
+        <div class="idx-poll-hint" id="idxPollHint" style="display:none;"></div>
+      </div>
+
+    </div><!-- /panel-ingestion -->
+
+    <!-- ===== TAB 2: RETRIEVAL ===== -->
+    <div class="tab-panel" id="panel-retrieval">
+      <div class="section-header">
+        <div class="section-icon" style="background:#f0fdf4;color:#16a34a;"><i class="fas fa-magnifying-glass"></i></div>
+        <div class="section-header-text">
+          <h4>Adaptive Retrieval</h4>
+          <p>Hybrid search, HyDE query expansion, and cross-encoder re-ranking.</p>
+        </div>
+      </div>
+
+      <div class="config-card">
+        <div class="config-card-title"><i class="fas fa-gears"></i> Retrieval configuration</div>
+
+        <div class="settings-group settings-group--accent-a">
+          <div class="settings-group-title"><i class="fas fa-filter"></i> Search scope</div>
+          <p class="settings-group-hint">How many chunks to pull and whether to combine keyword and dense search.</p>
+          <div class="form-grid form-grid--retrieval-scope">
+            <div class="form-group">
+              <label>Top K <span class="hint">docs to retrieve</span></label>
+              <input type="number" class="form-control" id="topK" value="10" min="1" max="50">
+            </div>
+            <div class="form-group">
+              <label>Query Type</label>
+              <div class="radio-group radio-group--nowrap" style="margin-top:4px;">
+                <label class="radio-pill"><input type="radio" name="queryType" value="hybrid" checked> Hybrid (BM25 + Dense)</label>
+                <label class="radio-pill"><input type="radio" name="queryType" value="similarity"> Semantic only</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group settings-group--accent-b">
+          <div class="settings-group-title"><i class="fas fa-wand-magic-sparkles"></i> Retrieval enhancements</div>
+          <p class="settings-group-hint">Optional stages that run after the initial vector search.</p>
+          <div class="ret-enhancements-grid">
+            <div class="toggle-row">
+              <div class="toggle-label">
+                <span>HyDE — Hypothetical Document Expansion</span>
+                <small>Rewrites query as a hypothetical answer for better embedding alignment</small>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="hydeEnabled" checked onchange="toggleHydeModel()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-label">
+                <span>Cross-Encoder Re-Ranking</span>
+                <small>Re-scores top K chunks as query+chunk pairs for better ordering</small>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="rerankerEnabled" checked onchange="toggleRerankerModel()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced -->
+        <div class="adv-trigger" id="trig-ret" onclick="toggleAdv('adv-ret', 'trig-ret')">
+          <i class="fas fa-sliders"></i> Advanced Settings
+          <i class="fas fa-chevron-down adv-chevron"></i>
+        </div>
+        <div class="adv-body" id="adv-ret">
+          <div class="adv-inner">
+            <div class="adv-retrieval-layout">
+              <div class="settings-group settings-group--sub settings-group--accent-sub-1">
+                <div class="settings-group-title"><i class="fas fa-list-ol"></i> Result shaping</div>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Re-rank Top N <span class="hint">docs passed to LLM</span></label>
+                    <input type="number" class="form-control" id="topN" value="5" min="1" max="20">
+                  </div>
+                  <div class="form-group">
+                    <label>Columns to Retrieve <span class="hint-lock"><i class="fas fa-lock"></i> fixed</span></label>
+                    <input type="text" class="form-control form-control--locked" id="retrieveCols" value="chunk_id,source,page,content" readonly>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-group settings-group--sub settings-group--accent-sub-2">
+                <div class="settings-group-title"><i class="fas fa-pen-fancy"></i> HyDE</div>
+                <div id="hydeWrap">
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label>HyDE LLM Model</label>
+                      <div class="form-control form-control--locked" style="color:#6b7280;font-size:0.72rem;display:flex;align-items:center;gap:6px;">
+                        <i class="fas fa-arrow-right-to-bracket" style="color:#17bcfe;"></i> Follows Generation LLM (Tab 4)
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Apply HyDE On</label>
+                      <select class="form-control" id="hydeApplyOn">
+                        <option value="retry">Retry only (CRAG re-query)</option>
+                        <option value="always">Always</option>
+                        <option value="low_confidence">Low confidence queries only</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-group settings-group--sub settings-group--accent-sub-3">
+                <div class="settings-group-title"><i class="fas fa-ranking-star"></i> Re-ranker</div>
+                <div id="rerankerWrap">
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label>Re-Ranker Model</label>
+                      <select class="form-control" id="rerankerModel">
+                        <option value="BAAI/bge-reranker-large">BAAI/bge-reranker-large ✓ Default</option>
+                        <option value="BAAI/bge-reranker-base">BAAI/bge-reranker-base</option>
+                        <option value="cross-encoder/ms-marco-MiniLM-L-6-v2">ms-marco-MiniLM-L-6-v2</option>
+                        <option value="cross-encoder/ms-marco-TinyBERT-L-2-v2">ms-marco-TinyBERT-L-2-v2 (fast)</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>Batch Size <span class="hint-lock"><i class="fas fa-lock"></i> fixed</span></label>
+                      <input type="number" class="form-control form-control--locked" id="rerankerBatch" value="32" readonly>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Retrieval Test Panel ── -->
+      <div class="config-card config-card--accent-teal" style="margin-top:4px;">
+        <div class="config-card-title"><i class="fas fa-flask"></i> Test Retrieval</div>
+
+        <!-- Query input -->
+        <div class="ret-query-wrap">
+          <textarea class="form-control ret-query-wrap textarea"
+                    id="retQuery" rows="2"
+                    placeholder="Enter a test query e.g. What is the company's leave policy?"></textarea>
+          <button class="btn btn-primary" id="btnRetrieve" onclick="runRetrieval()">
+            <i class="fas fa-magnifying-glass"></i> Search
+          </button>
+        </div>
+
+        <!-- Pipeline override flags -->
+        <div class="ret-flags">
+          <label><input type="checkbox" id="retSynthesize" checked> Synthesize answer</label>
+          <label><input type="checkbox" id="retOverrideHyde"> Force HyDE</label>
+          <label><input type="checkbox" id="retOverrideRerank" checked> Re-rank</label>
+          <label><input type="checkbox" id="retIsRetry"> Mark as retry (CRAG)</label>
+        </div>
+
+        <!-- Status log -->
+        <div id="retLog" class="ing-log" style="display:none;margin-bottom:10px;"></div>
+
+        <!-- Pipeline tags (shown after run) -->
+        <div id="retPipelineTags" style="display:none;margin-bottom:10px;"></div>
+
+        <!-- Results -->
+        <div id="retResults" class="ret-results"></div>
+      </div>
+
+    </div><!-- /panel-retrieval -->
+
+    <!-- ===== TAB 3: CRAG ===== -->
+    <div class="tab-panel" id="panel-crag">
+      <div class="section-header">
+        <div class="section-icon" style="background:#fef9c3;color:#a16207;"><i class="fas fa-arrows-rotate"></i></div>
+        <div class="section-header-text">
+          <h4>CRAG — Corrective RAG Loop</h4>
+          <p>Grade retrieved doc relevance, retry if weak, fall back to web search.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <i class="fas fa-triangle-exclamation"></i>
+        Keep <strong>Max Iterations ≤ 3</strong>. Keep <strong>Web Fallback Trigger &lt; Relevance Threshold</strong> to preserve the retry window.
+      </div>
+
+      <div class="config-card">
+        <div class="config-card-title"><i class="fas fa-gears"></i> CRAG loop configuration</div>
+
+        <div class="crag-primary-grid">
+          <div class="settings-group settings-group--accent-a">
+            <div class="settings-group-title"><i class="fas fa-gauge-high"></i> Grading &amp; retry</div>
+            <p class="settings-group-hint">When retrieved chunks are weak, the loop can re-query before giving up.</p>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Relevance Threshold <span class="hint">0 – 1, score to pass grader</span></label>
+                <div class="slider-wrap">
+                  <input type="range" min="0" max="1" step="0.05" value="0.65" id="relevanceThreshold"
+                         oninput="document.getElementById('relThreshVal').textContent=parseFloat(this.value).toFixed(2)">
+                  <span class="slider-val" id="relThreshVal">0.65</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Max Re-Query Iterations <span class="hint">hard cap: 2</span></label>
+                <input type="number" class="form-control" id="maxIterations" value="2" min="0" max="5">
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group settings-group--accent-b">
+            <div class="settings-group-title"><i class="fas fa-globe"></i> Web fallback</div>
+            <p class="settings-group-hint">Optional live web search when retrieval stays below threshold.</p>
+            <div class="crag-web-split">
+              <div id="webFallbackWrap">
+                <div class="form-group">
+                  <label>Web Search Provider</label>
+                  <select class="form-control" id="webProvider">
+                    <option value="tavily">Tavily (recommended)</option>
+                    <option value="serpapi">SerpAPI</option>
+                    <option value="duckduckgo">DuckDuckGo (no key)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-label">
+                  <span>Web Fallback Search</span>
+                  <small>Last resort when all retries fail — searches the live web</small>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="webFallbackEnabled" checked onchange="toggleWebFallback()">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced -->
+        <div class="adv-trigger" id="trig-crag" onclick="toggleAdv('adv-crag', 'trig-crag')">
+          <i class="fas fa-sliders"></i> Advanced Settings
+          <i class="fas fa-chevron-down adv-chevron"></i>
+        </div>
+        <div class="adv-body" id="adv-crag">
+          <div class="adv-inner">
+            <div class="crag-adv-grid">
+            <div class="settings-group settings-group--sub settings-group--accent-sub-1">
+              <div class="settings-group-title"><i class="fas fa-check-double"></i> Relevance grader</div>
+              <div class="form-grid crag-grader-grid">
+                <div class="form-group">
+                  <label>Grader LLM Model</label>
+                  <div class="form-control form-control--locked" style="color:#6b7280;font-size:0.72rem;display:flex;align-items:center;gap:6px;">
+                    <i class="fas fa-arrow-right-to-bracket" style="color:#17bcfe;"></i> Follows Generation LLM (Tab 4)
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Docs Graded per Run <span class="hint">top N chunks</span></label>
+                  <input type="number" class="form-control" id="graderTopDocs" value="3" min="1" max="10">
+                </div>
+                <div class="form-group">
+                  <label>Grader Temperature <span class="hint">keep at 0</span></label>
+                  <div class="slider-wrap">
+                    <input type="range" min="0" max="1" step="0.05" value="0" id="graderTemp"
+                           oninput="document.getElementById('graderTempVal').textContent=parseFloat(this.value).toFixed(2)">
+                    <span class="slider-val" id="graderTempVal">0.00</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-group settings-group--sub settings-group--accent-sub-2">
+              <div class="settings-group-title"><i class="fas fa-rotate"></i> Re-query loop</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Re-query Strategy</label>
+                  <select class="form-control" id="requeueStrategy">
+                    <option value="hyde">HyDE expansion (recommended)</option>
+                    <option value="decompose">Sub-question decomposition</option>
+                    <option value="rephrase">Simple rephrase</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-group settings-group--sub settings-group--accent-sub-3">
+              <div class="settings-group-title"><i class="fas fa-cloud-arrow-down"></i> Web fallback — details</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Max Web Results</label>
+                  <input type="number" class="form-control" id="webMaxResults" value="5" min="1" max="20">
+                </div>
+                <div class="form-group">
+                  <label>Web Fallback Trigger Score <span class="hint">must be &lt; Relevance Threshold</span></label>
+                  <div class="slider-wrap">
+                    <input type="range" min="0" max="1" step="0.05" value="0.4" id="webFallbackScore"
+                           oninput="document.getElementById('wfScoreVal').textContent=parseFloat(this.value).toFixed(2)">
+                    <span class="slider-val" id="wfScoreVal">0.40</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Agent tools — hidden until backend implementation is ready -->
+            <div style="display:none;">
+              <input type="checkbox" id="toolPython">
+              <input type="checkbox" id="toolSQL">
+              <input type="checkbox" id="toolCalc">
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CRAG Test Panel ── -->
+      <div class="config-card config-card--accent-teal" style="margin-top:4px;">
+        <div class="config-card-title"><i class="fas fa-flask"></i> Test CRAG Loop</div>
+
+        <div class="ret-query-wrap">
+          <textarea class="form-control ret-query-wrap textarea"
+                    id="cragQuery" rows="2"
+                    placeholder="Enter a test query — CRAG will grade relevance and retry or web-search if needed"></textarea>
+          <button class="btn btn-primary" id="btnCrag" onclick="runCrag()">
+            <i class="fas fa-arrows-rotate"></i> Run CRAG
+          </button>
+        </div>
+
+        <div class="ret-flags">
+          <label><input type="checkbox" id="cragSynthesize" checked> Synthesize answer</label>
+        </div>
+
+        <div id="cragLog" class="ing-log" style="display:none;margin-bottom:10px;"></div>
+        <div id="cragPipelineTags" style="display:none;margin-bottom:10px;"></div>
+        <div id="cragResults" class="ret-results"></div>
+      </div>
+
+    </div><!-- /panel-crag -->
+
+    <!-- ===== TAB 4: GENERATION ===== -->
+    <div class="tab-panel" id="panel-generation">
+      <div class="section-header">
+        <div class="section-icon" style="background:#fdf4ff;color:#9333ea;"><i class="fas fa-wand-magic-sparkles"></i></div>
+        <div class="section-header-text">
+          <h4>Generation + Guardrails</h4>
+          <p>LLM synthesis with citation injection, faithfulness validation, and output guardrails.</p>
+        </div>
+      </div>
+
+      <div class="config-card">
+        <div class="config-card-title"><i class="fas fa-gears"></i> Generation configuration</div>
+
+        <div class="gen-primary-grid">
+          <div class="settings-group settings-group--accent-a">
+            <div class="settings-group-title"><i class="fas fa-robot"></i> LLM</div>
+            <p class="settings-group-hint">Provider, model, and sampling for the answer synthesizer.</p>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>LLM Provider</label>
+                <select class="form-control" id="llmProvider" onchange="updateModelPlaceholder()">
+                  <option value="gemini" selected>Gemini (recommended)</option>
+                  <option value="databricks">Databricks (DBRX / LLAMA)</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="anthropic">Anthropic</option>
+                  <option value="azure_openai">Azure OpenAI</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Model ID</label>
+                <input type="text" class="form-control" id="llmModel" value="gemini-2.0-flash" placeholder="e.g. gemini-2.0-flash">
+              </div>
+              <div class="form-group">
+                <label>Temperature <span class="hint">keep ≤ 0.30 for factual Q&A</span></label>
+                <div class="slider-wrap">
+                  <input type="range" min="0" max="1" step="0.05" value="0.2" id="llmTemp"
+                         oninput="document.getElementById('llmTempVal').textContent=parseFloat(this.value).toFixed(2)">
+                  <span class="slider-val" id="llmTempVal">0.20</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group settings-group--accent-b">
+            <div class="settings-group-title"><i class="fas fa-shield-halved"></i> Answer quality gate</div>
+            <p class="settings-group-hint">NLI check before the user sees the final answer.</p>
+            <div class="toggle-row">
+              <div class="toggle-label">
+                <span>NLI Faithfulness Check</span>
+                <small>DeBERTa-v3 entailment — rejects hallucinated responses before returning</small>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="faithfulnessEnabled" checked onchange="toggleFaithfulness()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div id="faithfulnessWrap" style="margin-top:10px;">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Faithfulness Threshold <span class="hint">fail → regenerate</span></label>
+                  <div class="slider-wrap">
+                    <input type="range" min="0" max="1" step="0.05" value="0.7" id="faithfulnessThreshold"
+                           oninput="document.getElementById('faithThreshVal').textContent=parseFloat(this.value).toFixed(2)">
+                    <span class="slider-val" id="faithThreshVal">0.70</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced -->
+        <div class="adv-trigger" id="trig-gen" onclick="toggleAdv('adv-gen', 'trig-gen')">
+          <i class="fas fa-sliders"></i> Advanced Settings
+          <i class="fas fa-chevron-down adv-chevron"></i>
+        </div>
+        <div class="adv-body" id="adv-gen">
+          <div class="adv-inner">
+            <div class="gen-adv-grid">
+              <div class="settings-group settings-group--sub settings-group--accent-sub-1">
+              <div class="settings-group-title"><i class="fas fa-message"></i> LLM — advanced</div>
+              <div class="form-grid gen-llm-adv-grid">
+                <div class="form-group">
+                  <label>Max Output Tokens</label>
+                  <input type="number" class="form-control" id="llmMaxTokens" value="2048" min="256" max="16384">
+                </div>
+                <div class="form-group">
+                  <label>System Prompt <span class="hint">injected before synthesis</span></label>
+                  <textarea class="form-control" id="systemPrompt" rows="4">You are an expert assistant. Answer using ONLY the provided context. Cite sources using [filename] labels. Be concise and precise.</textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-group settings-group--sub settings-group--accent-sub-2">
+              <div class="settings-group-title"><i class="fas fa-bookmark"></i> Citations</div>
+              <div class="gen-citations-pair">
+                <div class="toggle-row">
+                  <div class="toggle-label">
+                    <span>Citation Injection</span>
+                    <small>Appends [filename] source labels to every synthesized answer</small>
+                  </div>
+                  <label class="toggle"><input type="checkbox" id="citationsEnabled" checked><span class="toggle-slider"></span></label>
+                </div>
+                <!-- Citation ID Resolution — hidden, not wired to backend -->
+                <div style="display:none;"><input type="checkbox" id="citationResolve" checked></div>
+              </div>
+            </div>
+
+            <div class="settings-group settings-group--sub settings-group--accent-sub-3">
+              <div class="settings-group-title"><i class="fas fa-shield-heart"></i> Faithfulness — NLI</div>
+              <div id="faithfulnessAdvWrap">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>NLI Model</label>
+                    <select class="form-control" id="nliModel">
+                      <option value="cross-encoder/nli-deberta-v3-base">cross-encoder/nli-deberta-v3-base ✓ Default</option>
+                      <option value="cross-encoder/nli-deberta-v3-large">cross-encoder/nli-deberta-v3-large (slower)</option>
+                      <option value="cross-encoder/nli-MiniLM2-L6-H768">nli-MiniLM2-L6-H768 (fast)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Max Regeneration Attempts</label>
+                    <input type="number" class="form-control" id="maxRegen" value="2" min="1" max="5">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Guardrails AI — hidden until backend implementation is ready -->
+            <div style="display:none;"><input type="checkbox" id="guardrailsEnabled"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Generation Test Panel ── -->
+      <div class="config-card config-card--accent-teal" style="margin-top:4px;">
+        <div class="config-card-title"><i class="fas fa-flask"></i> Test Generation</div>
+
+        <div class="ret-query-wrap">
+          <textarea class="form-control ret-query-wrap textarea"
+                    id="genQuery" rows="2"
+                    placeholder="Enter a question — the full pipeline (retrieve → generate → faithfulness check) will run"></textarea>
+          <button class="btn btn-primary" id="btnGenerate" onclick="runGeneration()">
+            <i class="fas fa-wand-magic-sparkles"></i> Generate
+          </button>
+        </div>
+
+        <div id="genLog" class="ing-log" style="display:none;margin-bottom:10px;"></div>
+        <div id="genPipelineTags" style="display:none;margin-bottom:10px;"></div>
+        <div id="genResults" class="ret-results"></div>
+      </div>
+
+    </div><!-- /panel-generation -->
+
+    <!-- ===== TAB 5: OBSERVABILITY ===== -->
+    <div class="tab-panel" id="panel-observability">
+      <div class="section-header">
+        <div class="section-icon" style="background:#fff7ed;color:#ea580c;"><i class="fas fa-chart-line"></i></div>
+        <div class="section-header-text">
+          <h4>Observability + Evaluation</h4>
+          <p>MLflow tracing, LangSmith execution graphs, and automated Ragas quality evaluation.</p>
+        </div>
+      </div>
+
+      <div class="config-card">
+        <div class="config-card-title"><i class="fas fa-gears"></i> Observability configuration</div>
+
+        <div class="obs-primary-grid">
+          <div class="settings-group settings-group--accent-a">
+            <div class="settings-group-title"><i class="fas fa-chart-gantt"></i> Tracing</div>
+            <p class="settings-group-hint">Capture runs and latency for debugging and dashboards.</p>
+            <div class="toggle-row">
+              <div class="toggle-label">
+                <span>MLflow Tracing</span>
+                <small>Per-node latency, relevance scores, and query traces — keep on in production</small>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="mlflowEnabled" checked onchange="toggleMLflow()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-group settings-group--accent-b">
+            <div class="settings-group-title"><i class="fas fa-flask"></i> Evaluation</div>
+            <p class="settings-group-hint">Automated quality metrics on a held-out set.</p>
+            <div class="toggle-row">
+              <div class="toggle-label">
+                <span>Ragas Evaluation</span>
+                <small>Automated faithfulness / recall / precision scores against a test set</small>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="ragasEnabled" checked onchange="toggleRagas()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div id="ragasWrap" style="margin-top:12px;">
+              <div class="form-group">
+                <label>Metrics to Evaluate</label>
+                <div class="checkbox-group" style="margin-top:6px;">
+                  <label class="check-pill"><input type="checkbox" id="metricFaithfulness" checked> Faithfulness</label>
+                  <label class="check-pill"><input type="checkbox" id="metricAnswerRel" checked> Answer Relevancy</label>
+                  <label class="check-pill"><input type="checkbox" id="metricContextRecall" checked> Context Recall</label>
+                  <label class="check-pill"><input type="checkbox" id="metricContextPrec" checked> Context Precision</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced -->
+        <div class="adv-trigger" id="trig-obs" onclick="toggleAdv('adv-obs', 'trig-obs')">
+          <i class="fas fa-sliders"></i> Advanced Settings
+          <i class="fas fa-chevron-down adv-chevron"></i>
+        </div>
+        <div class="adv-body" id="adv-obs">
+          <div class="adv-inner">
+            <div class="obs-adv-grid">
+              <div class="settings-group settings-group--sub settings-group--accent-sub-1">
+              <div class="settings-group-title"><i class="fas fa-chart-line"></i> MLflow</div>
+              <div id="mlflowWrap">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Tracking URI</label>
+                    <input type="text" class="form-control" id="mlflowURI" value="databricks" placeholder="databricks or http://...">
+                  </div>
+                  <div class="form-group">
+                    <label>Experiment Name</label>
+                    <input type="text" class="form-control" id="mlflowExperiment" value="agentic-rag-prod">
+                  </div>
+                  <div class="form-group">
+                    <label>Latency Alert <span class="hint">ms</span></label>
+                    <input type="number" class="form-control" id="mlflowLatencyAlert" value="5000" min="100">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- LangSmith — hidden, backend uses MLflow only -->
+            <div style="display:none;">
+              <input type="checkbox" id="langsmithEnabled">
+              <input type="text" id="langsmithProject" value="agentic-rag-prod">
+            </div>
+
+            <div class="settings-group settings-group--sub settings-group--accent-sub-3">
+              <div class="settings-group-title"><i class="fas fa-bullseye"></i> Ragas targets</div>
+              <div id="ragasAdvWrap">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Min Faithfulness Score <span class="hint">target</span></label>
+                    <div class="slider-wrap">
+                      <input type="range" min="0" max="1" step="0.05" value="0.7" id="ragasFaithThresh"
+                             oninput="document.getElementById('ragasFaithVal').textContent=parseFloat(this.value).toFixed(2)">
+                      <span class="slider-val" id="ragasFaithVal">0.70</span>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Min Answer Relevancy Score</label>
+                    <div class="slider-wrap">
+                      <input type="range" min="0" max="1" step="0.05" value="0.75" id="ragasRelThresh"
+                             oninput="document.getElementById('ragasRelVal').textContent=parseFloat(this.value).toFixed(2)">
+                      <span class="slider-val" id="ragasRelVal">0.75</span>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Log Ragas to MLflow</label>
+                    <div style="display:flex;gap:10px;margin-top:4px;">
+                      <label class="radio-pill"><input type="radio" name="ragasMLflow" value="yes" checked> Yes</label>
+                      <label class="radio-pill"><input type="radio" name="ragasMLflow" value="no"> No</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-group settings-group--sub settings-group--accent-sub-4">
+              <div class="settings-group-title"><i class="fas fa-key"></i> Required environment</div>
+              <div class="callout callout-warn" style="margin-bottom:0;">
+                <i class="fas fa-triangle-exclamation"></i>
+                <div>
+                  Set these in your runtime env — never commit to source control.<br>
+                  <code style="font-size:0.69rem;display:block;margin-top:7px;line-height:1.9;color:#92400e;">
+                    DATABRICKS_HOST &nbsp; DATABRICKS_TOKEN &nbsp; DATABRICKS_WAREHOUSE_ID<br>
+                    OPENAI_API_KEY &nbsp; (or) ANTHROPIC_API_KEY<br>
+                    TAVILY_API_KEY &nbsp; MLFLOW_TRACKING_URI &nbsp; LANGSMITH_API_KEY
+                  </code>
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Observability Test Panel ── -->
+      <div class="config-card config-card--accent-teal" style="margin-top:4px;">
+        <div class="config-card-title"><i class="fas fa-flask"></i> Evaluate Pipeline</div>
+
+        <p style="font-size:13px;color:#6b7280;margin-bottom:12px;">
+          Paste Q&amp;A pairs (one per line: <code>question | answer | context</code>) to run Ragas scoring.
+          Ground truth is optional: <code>question | answer | context | ground_truth</code>.
+        </p>
+
+        <div class="form-group">
+          <label>Evaluation Samples <span class="hint">pipe-separated, one per line</span></label>
+          <textarea class="form-control" id="evalSamples" rows="5"
+            placeholder="What is RAG? | RAG stands for Retrieval Augmented Generation. | RAG is a technique that combines retrieval with generation to improve LLM answers."></textarea>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+          <button class="btn btn-primary" id="btnEval" onclick="runEvaluation()">
+            <i class="fas fa-chart-bar"></i> Run Ragas Evaluation
+          </button>
+          <button class="btn btn-secondary" onclick="checkObsHealth()">
+            <i class="fas fa-stethoscope"></i> Check Backends
+          </button>
+        </div>
+
+        <div id="obsLog" class="ing-log" style="display:none;margin:10px 0;"></div>
+        <div id="obsResults"></div>
+      </div>
+
+    </div><!-- /panel-observability -->
+
+    <!-- ===== TAB 6: SUMMARY ===== -->
+    <div class="tab-panel" id="panel-summary">
+      <div class="section-header">
+        <div class="section-icon" style="background:#f0fdf4;color:#16a34a;"><i class="fas fa-check-double"></i></div>
+        <div class="section-header-text">
+          <h4>Pipeline Summary</h4>
+          <p>Visual flow, production readiness checklist, and JSON export for deployment.</p>
+        </div>
+      </div>
+
+      <div class="pipeline-flow-wrap">
+        <button type="button" class="pipeline-flow-trigger open" id="trigPipelineFlow"
+                onclick="togglePipelineFlow()" aria-expanded="true" aria-controls="pipelineFlowBody">
+          <span class="pipeline-flow-trigger-actions">
+            <i class="fas fa-chevron-down pipeline-flow-chevron" aria-hidden="true"></i>
+          </span>
+          <span class="pipeline-flow-trigger-main">
+            <i class="fas fa-layer-group pipeline-flow-trigger-icon" aria-hidden="true"></i>
+            <span class="pipeline-flow-trigger-copy">
+              <span class="pipeline-flow-trigger-title">Pipeline flow</span>
+              <span class="pipeline-flow-trigger-sub">Click to show or hide the diagram</span>
+            </span>
+          </span>
+        </button>
+        <div class="adv-body open pipeline-flow-body" id="pipelineFlowBody">
+          <div class="pipeline-flow" id="pipelineFlow">
+            <div class="flow-node">
+              <i class="fas fa-upload"></i>
+              <span>Ingest</span>
+              <small>SemanticChunker</small>
+            </div>
+            <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="flow-node">
+              <i class="fas fa-vector-square"></i>
+              <span>Embed</span>
+              <small id="flowEmbedLabel">BGE-large</small>
+            </div>
+            <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="flow-node">
+              <i class="fas fa-layer-group"></i>
+              <span>Index</span>
+              <small>Databricks VS</small>
+            </div>
+            <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="flow-node">
+              <i class="fas fa-magnifying-glass"></i>
+              <span>Retrieve</span>
+              <small id="flowRetrieveLabel">Hybrid k=10</small>
+            </div>
+            <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="flow-node">
+              <i class="fas fa-scale-balanced"></i>
+              <span>Grade</span>
+              <small id="flowGradeLabel">CRAG ≥0.65</small>
+            </div>
+            <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="flow-node">
+              <i class="fas fa-wand-magic-sparkles"></i>
+              <span>Generate</span>
+              <small id="flowGenLabel">gemini-2.0-flash</small>
+            </div>
+            <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="flow-node">
+              <i class="fas fa-shield-halved"></i>
+              <span>Guardrail</span>
+              <small id="flowGuardLabel">NLI ≥0.70</small>
+            </div>
+            <div class="flow-crag">
+              <div class="crag-loop">
+                <i class="fas fa-arrows-rotate"></i>
+                CRAG re-query — max <span id="flowMaxIter">2</span> retries → web fallback if score &lt; <span id="flowWebScore">0.40</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-card config-card--accent-teal">
+        <div class="checklist-card-head">
+          <button type="button" class="checklist-panel-trigger open" id="trigChecklistPanel"
+                  onclick="toggleChecklistPanel()" aria-expanded="true" aria-controls="checklistBody">
+            <i class="fas fa-chevron-down checklist-panel-chevron" aria-hidden="true"></i>
+            <span><i class="fas fa-clipboard-check"></i> Pre-Production Checklist</span>
+          </button>
+          <button type="button" class="btn btn-secondary" style="font-size:12px;padding:4px 12px;" onclick="runValidate()">
+            <i class="fas fa-rotate"></i> Validate
+          </button>
+        </div>
+        <div class="adv-body open" id="checklistBody">
+          <div id="checklistLog" class="ing-log" style="display:none;margin-bottom:10px;"></div>
+          <ul class="eval-list" id="checklist">
+            <li style="color:#9ca3af;font-size:13px;"><i class="fas fa-circle-info"></i> Click Validate to check your config against live state.</li>
+          </ul>
+          <div id="checklistSummary" style="display:none;margin-top:10px;font-size:13px;font-weight:600;"></div>
+        </div>
+      </div>
+
+      <div class="config-card config-card--accent-blue">
+        <div class="checklist-card-head">
+          <button type="button" class="checklist-panel-trigger open" id="trigJsonPanel"
+                  onclick="toggleJsonPanel()" aria-expanded="true" aria-controls="jsonPanelBody">
+            <i class="fas fa-chevron-down checklist-panel-chevron" aria-hidden="true"></i>
+            <span><i class="fas fa-code"></i> Full Pipeline Configuration (JSON)</span>
+          </button>
+        </div>
+        <div class="adv-body open" id="jsonPanelBody">
+          <div class="json-block-wrap">
+            <pre class="json-block" id="jsonOutput">Click "Refresh JSON" to generate.</pre>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-ghost" onclick="refreshJSON()">
+              <i class="fas fa-rotate"></i> Refresh JSON
+            </button>
+            <button class="btn btn-primary" onclick="downloadJSON()">
+              <i class="fas fa-download"></i> Download .json
+            </button>
+          </div>
+          <div id="summaryLog" class="ing-log" style="display:none;margin-top:8px;"></div>
+        </div>
+      </div>
+    </div><!-- /panel-summary -->
+
+  </div><!-- /main-content -->
+
+  <div class="toast" id="toast">
+    <i class="fas fa-circle-check"></i>
+    <span id="toastMsg">Config saved.</span>
+  </div>
+
+  <script src="Tool_RAGConfigurator.js"></script>
+
 
 </body>
 </html>

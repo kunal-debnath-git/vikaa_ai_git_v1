@@ -27,7 +27,16 @@ from backend.integrations.databricks.dbfs_io import read_json_from_dbfs_uri, wri
 from backend.integrations.databricks.read_unity_catalog import _resolve_host, _resolve_token
 from backend.integrations.databricks.sql_statements import execute_sql_statement
 from backend.integrations.databricks.warehouse_errors import classify_warehouse_error
-from backend.services.access_guard import require_whitelisted_user
+from backend.services.access_guard import enforce_synth_enterprise_auth, require_whitelisted_user
+from backend.services.synth_enterprise import (
+    build_manifest,
+    llm_export_plan,
+    log_synth_event,
+    order_tables_for_export,
+    repeatable_seed_for_run,
+    run_optional_source_rowcount_qa,
+    workflow_spec_template,
+)
 from backend.services.unity_catalog_client import require_unity_catalog_client
 
 
@@ -44,6 +53,7 @@ _SAMPLE_PERCENT_MAX = 100
 _SAMPLE_PERCENT_PRESETS = (1, 5)
 _ALLOWED_SAMPLE_ANCHORS = {"initial", "delta"}
 _ALLOWED_FREQUENCY = {"one-time", "interval"}
+_ALLOWED_SYNTHETIC_MODES = frozenset({"sample", "generative"})
 _MAX_TABLES_PER_RUN = 30
 _DELTA_SAMPLE_MULTIPLIER = 5
 _SAFE_IDENTIFIER = re.compile(r"^[A-Za-z0-9_]+$")
@@ -329,6 +339,10 @@ class SynthDataRunRequest(BaseModel):
         default=None,
         description="Databricks workspace model endpoint, e.g. databricks-sonnet-4-5.",
     )
+    synthetic_mode: str = Field(
+        default="sample",
+        description="'sample' = user-driven SQL TABLESAMPLE only; 'generative' = LLM planner for table order (execution still deterministic SQL).",
+    )
     warehouse_id: str | None = Field(
         default=None,
         description="Databricks SQL Warehouse ID override. Defaults to configured warehouse.",
@@ -352,6 +366,9 @@ async def _synth_health() -> dict[str, Any]:
             "/tools/databricks-synth-data/health",
             "/api/tools/databricks-synth-data/health",
             "/databricks-synth-data/health",
+            "/tools/databricks-synth-data/workflow-spec",
+            "/api/tools/databricks-synth-data/workflow-spec",
+            "/databricks-synth-data/workflow-spec",
         ],
         "defaults": {
             "output_format": "csv",
@@ -379,6 +396,12 @@ async def _synth_health() -> dict[str, Any]:
         # Lets you confirm the running process picked up the latest code (see _build_copy_sql).
         "run_export_sql": "insert_overwrite_directory_v2_options",
         "run_summary_storage": "dbfs_volume_root",
+        "synthetic_modes": sorted(_ALLOWED_SYNTHETIC_MODES),
+        "enterprise_auth_enforced": (os.getenv("VIKAA_SYNTH_ENFORCE_ENTERPRISE_AUTH") or "").strip().lower()
+        in {"1", "true", "yes"},
+        "synth_qa_source_rowcount": (os.getenv("SYNTH_QA_SOURCE_ROWCOUNT") or "").strip().lower()
+        in {"1", "true", "yes"},
+        "workflow_spec_path": "/tools/databricks-synth-data/workflow-spec",
     }
 
 
@@ -676,6 +699,7 @@ def _build_copy_sql(
     delta_lookback_minutes: int | None,
     max_rows_cap: int | None,
     delta_column: str | None,
+    repeatable_seed: int | None = None,
 ) -> tuple[str, str]:
     q_catalog = _quote_ident(catalog_name)
     q_schema = _quote_ident(schema_name)
@@ -702,10 +726,10 @@ def _build_copy_sql(
     if max_rows_cap:
         limit_clause = f" LIMIT {int(max_rows_cap)}"
 
-    source_query = (
-        f"SELECT * FROM {source_ref} TABLESAMPLE ({int(sample_percent)} PERCENT)"
-        f"{where_clause}{limit_clause}"
-    )
+    tsample = f"TABLESAMPLE ({int(sample_percent)} PERCENT)"
+    if repeatable_seed is not None:
+        tsample += f" REPEATABLE ({int(repeatable_seed) & 0x7FFFFFFF})"
+    source_query = f"SELECT * FROM {source_ref} {tsample}{where_clause}{limit_clause}"
 
     # Land under chosen volume/DBFS root only: root/<table>/<timestamp_stamp>/ (no extra catalog/schema path).
     table_folder = f"{output_root.rstrip('/')}/{table_name}/{export_folder}/"
@@ -724,6 +748,7 @@ async def _synth_run(
     body: SynthDataRunRequest,
     _acl: dict = Depends(require_whitelisted_user),
 ) -> dict[str, Any]:
+    enforce_synth_enterprise_auth(request)
     catalog_name = _safe_ident(body.catalog_name, "catalog_name")
     schema_name = _safe_ident(body.schema_name, "schema_name")
 
@@ -781,6 +806,12 @@ async def _synth_run(
         )
 
     llm_model_name = _normalize_model_name(body.llm_model_name)
+    synthetic_mode = (body.synthetic_mode or "sample").strip().lower()
+    if synthetic_mode not in _ALLOWED_SYNTHETIC_MODES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"synthetic_mode must be one of {sorted(_ALLOWED_SYNTHETIC_MODES)}.",
+        )
     warehouse_id = _warehouse_id(body.warehouse_id)
 
     client = require_unity_catalog_client(pat_detail="Databricks PAT not configured.")
@@ -842,6 +873,7 @@ async def _synth_run(
         "sample_anchor": sample_anchor,
         "delta_lookback_minutes": body.delta_lookback_minutes,
         "llm_model_name": llm_model_name,
+        "synthetic_mode": synthetic_mode,
         "warehouse_id": warehouse_id,
         "seed": body.seed,
         "max_rows_cap": body.max_rows_cap,
@@ -876,6 +908,7 @@ async def _synth_run(
                     "delta_lookback_minutes": body.delta_lookback_minutes,
                 },
                 "model": llm_model_name,
+                "synthetic_mode": synthetic_mode,
                 "output_path": output_path,
             }
         )
@@ -886,6 +919,7 @@ async def _synth_run(
             "submitted_at_utc": submitted_at,
             "request_validated": True,
             "databricks_only_enforced": True,
+            "synthetic_mode": synthetic_mode,
             "resolved_request": resolved_request,
             "schedule": {
                 **schedule,
@@ -907,8 +941,67 @@ async def _synth_run(
             detail="Databricks host/token are not configured.",
         )
 
+    log_synth_event(
+        "synth_run_start",
+        run_id=run_id,
+        synthetic_mode=synthetic_mode,
+        table_count=len(safe_tables),
+        export_folder=export_folder,
+    )
+
+    llm_plan: dict[str, Any] | None = None
+    if synthetic_mode == "generative":
+        try:
+            llm_plan = llm_export_plan(
+                host=host,
+                token=token,
+                endpoint_name=llm_model_name,
+                catalog_name=catalog_name,
+                schema_name=schema_name,
+                tables=sorted(safe_tables),
+                sample_percent=int(effective_sample_percent),
+                sample_anchor=sample_anchor,
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    f"Generative planner (LLM) failed: {exc}. "
+                    "Check Databricks model serving endpoint name, availability, and token scopes."
+                ),
+            ) from exc
+
+    repeatable_seed = repeatable_seed_for_run(run_id, body.seed)
+    ordered_tables, order_meta = order_tables_for_export(
+        list(safe_tables),
+        synthetic_mode=synthetic_mode,
+        llm_order=(llm_plan.get("table_execution_order") if llm_plan else None),
+    )
+
+    qa_report = run_optional_source_rowcount_qa(
+        host=host,
+        token=token,
+        warehouse_id=warehouse_id,
+        catalog_name=catalog_name,
+        schema_name=schema_name,
+        tables=ordered_tables,
+    )
+    if qa_report.get("gate") == "fail":
+        log_synth_event(
+            "synth_run_end",
+            run_id=run_id,
+            synthetic_mode=synthetic_mode,
+            status="qa_blocked",
+            qa_gate="fail",
+        )
+        raise HTTPException(
+            status_code=400,
+            detail={"message": "Source pre-export QA failed.", "qa_report": qa_report},
+        )
+
+    execution_sql_map: dict[str, str] = {}
     executions: list[dict[str, Any]] = []
-    for table_name in safe_tables:
+    for table_name in ordered_tables:
         full_name = f"{catalog_name}.{schema_name}.{table_name}"
         table_detail = client.get_table(full_name)
         delta_column = _choose_delta_column({"detail": table_detail})
@@ -924,7 +1017,9 @@ async def _synth_run(
             delta_lookback_minutes=body.delta_lookback_minutes,
             max_rows_cap=body.max_rows_cap,
             delta_column=delta_column,
+            repeatable_seed=repeatable_seed,
         )
+        execution_sql_map[table_name] = copy_sql
         exec_result = execute_sql_statement(
             host,
             token,
@@ -959,6 +1054,18 @@ async def _synth_run(
             }
         )
 
+    manifest = build_manifest(
+        run_id=run_id,
+        synthetic_mode=synthetic_mode,
+        resolved_request=resolved_request,
+        export_folder=export_folder,
+        table_order_meta=order_meta,
+        llm_plan=llm_plan,
+        execution_sql_map=execution_sql_map,
+        repeatable_seed=repeatable_seed,
+        qa_report=qa_report,
+    )
+
     summary_payload: dict[str, Any] = {
         "run_id": run_id,
         "submitted_at_utc": submitted_at,
@@ -971,6 +1078,13 @@ async def _synth_run(
         "duration_ms": sum(int(e.get("elapsed_ms") or 0) for e in executions),
         "tables_succeeded": len(executions),
         "tables_failed": 0,
+        "synthetic_mode": synthetic_mode,
+        "repeatable_seed": repeatable_seed,
+        "table_execution_order": ordered_tables,
+        "manifest": manifest,
+        "qa_report": qa_report,
+        "qa_gate": qa_report.get("gate"),
+        "llm_plan": llm_plan,
         "export_layout_note": (
             "Spark writes part-00000-* files under each table folder; filenames have no .csv/.parquet suffix. "
             "Content matches output_format (CSV text, NDJSON lines, or Parquet binary)."
@@ -996,6 +1110,14 @@ async def _synth_run(
         "resolved_request": resolved_request,
         "schedule": schedule,
         "executions": executions,
+        "synthetic_mode": synthetic_mode,
+        "repeatable_seed": repeatable_seed,
+        "table_execution_order": ordered_tables,
+        "manifest": manifest,
+        "qa_report": qa_report,
+        "qa_gate": qa_report.get("gate"),
+        "llm_plan": llm_plan,
+        "workflow_spec_hint": "GET /tools/databricks-synth-data/workflow-spec",
     }
     if summary_err:
         result["summary_write_error"] = summary_err
@@ -1009,7 +1131,7 @@ async def _synth_run(
             "source": {
                 "catalog": catalog_name,
                 "schema": schema_name,
-                "tables": safe_tables,
+                "tables": ordered_tables,
             },
             "sampling": {
                 "anchor": sample_anchor,
@@ -1018,6 +1140,9 @@ async def _synth_run(
                 "delta_lookback_minutes": body.delta_lookback_minutes,
             },
             "model": llm_model_name,
+            "synthetic_mode": synthetic_mode,
+            "repeatable_seed": repeatable_seed,
+            "qa_gate": qa_report.get("gate"),
             "output_path": output_path,
             "rows_in_source_estimate": None,
             "rows_out_synthetic": None,
@@ -1028,6 +1153,15 @@ async def _synth_run(
             "summary_uri": summary_uri,
             "summary_write_error": summary_err,
         }
+    )
+    log_synth_event(
+        "synth_run_end",
+        run_id=run_id,
+        synthetic_mode=synthetic_mode,
+        status="completed",
+        tables=len(executions),
+        duration_ms=summary_payload["duration_ms"],
+        qa_gate=qa_report.get("gate"),
     )
     return result
 
@@ -1130,6 +1264,13 @@ async def _synth_preflight(
     body: SynthDataPreflightRequest,
     _acl: dict = Depends(require_whitelisted_user),
 ) -> dict[str, Any]:
+    enforce_synth_enterprise_auth(request)
+    synthetic_mode = (body.synthetic_mode or "sample").strip().lower()
+    if synthetic_mode not in _ALLOWED_SYNTHETIC_MODES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"synthetic_mode must be one of {sorted(_ALLOWED_SYNTHETIC_MODES)}.",
+        )
     catalog_name = _safe_ident(body.catalog_name, "catalog_name")
     schema_name = _safe_ident(body.schema_name, "schema_name")
     output_fmt = (body.output_format or "csv").strip().lower()
@@ -1193,6 +1334,20 @@ async def _synth_preflight(
         "status": "warn" if conflict else "pass",
         "hint": "Potential overlapping interval schedule detected." if conflict else "No conflict detected.",
     })
+    if synthetic_mode == "generative":
+        checks.append({
+            "id": "synthetic_mode",
+            "label": "Synthetic mode (generative)",
+            "status": "pass",
+            "hint": "At Run, a Databricks serving endpoint (llm_model_name) plans FK-aware table order; exports remain deterministic SQL.",
+        })
+    else:
+        checks.append({
+            "id": "synthetic_mode",
+            "label": "Synthetic mode (sample)",
+            "status": "pass",
+            "hint": "Alphabetical table order; TABLESAMPLE REPEATABLE uses body.seed or a hash of run_id for coherence across tables.",
+        })
 
     # simple estimate
     pct = int(body.sample_percent)
@@ -1331,6 +1486,15 @@ async def _synth_run_summary(
     return _load_summary_from_audit_record(rec)
 
 
+async def _synth_workflow_spec(
+    request: Request,
+    _acl: dict = Depends(require_whitelisted_user),
+) -> dict[str, Any]:
+    """Return a portable workflow/orchestration template (Jobs, Airflow, etc.)."""
+    enforce_synth_enterprise_auth(request)
+    return workflow_spec_template()
+
+
 async def _synth_validate_output_path(
     output_path: str = "",
     _acl: dict = Depends(require_whitelisted_user),
@@ -1359,6 +1523,11 @@ for _r in _ALL_ROUTERS:
     _r.add_api_route(
         "/databricks-synth-data/volumes",
         _synth_volumes,
+        methods=["GET"],
+    )
+    _r.add_api_route(
+        "/databricks-synth-data/workflow-spec",
+        _synth_workflow_spec,
         methods=["GET"],
     )
     _r.add_api_route(

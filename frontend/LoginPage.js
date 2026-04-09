@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", function() {
 window.loginWithProvider = async function(provider) {
     console.log(`🚀 Attempting login with provider: ${provider}`);
     try {
+        localStorage.removeItem("vikaa_tour_mode");
         if (!window.supabaseClientInstance && window.supabase) {
             window.supabaseClientInstance = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         }

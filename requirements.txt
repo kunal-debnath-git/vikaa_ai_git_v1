@@ -70,6 +70,7 @@ langchain-community==0.3.25
 langchain-openai==0.2.8
 langchain-mongodb==0.7.0
 langchain-google-genai==2.1.8
+langchain-experimental==0.3.4
 google-genai==1.7.0
 
 # Chat with Your Files / RAG Dependencies
@@ -77,3 +78,7 @@ sentence-transformers==2.2.2
 pinecone-client==3.0.0
 beautifulsoup4==4.13.4
 pandas==2.3.1
+duckduckgo-search>=6.3.0
+mlflow>=2.14.0
+ragas>=0.1.21
+langsmith>=0.1.0

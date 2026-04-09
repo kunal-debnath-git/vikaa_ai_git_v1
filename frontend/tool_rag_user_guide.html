@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RAG Configurator — User Guide</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      font-family: 'Montserrat', sans-serif;
+      background: #e9eef5; color: #333;
+    }
+
+    /* ── Page header ── */
+    .guide-header {
+      background: linear-gradient(135deg, #0f2942 0%, #1a4068 100%);
+      padding: 28px 32px 22px;
+      color: #fff;
+    }
+    .guide-header h1 {
+      margin: 0 0 6px;
+      font-size: 1.1rem; font-weight: 700; letter-spacing: 0.02em;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .guide-header h1 i { color: #17bcfe; }
+    .guide-header p {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      font-size: 0.78rem; color: rgba(255,255,255,0.72); line-height: 1.5;
+    }
+    .guide-header-meta {
+      display: flex; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap;
+    }
+    .guide-pill {
+      font-size: 0.60rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.1); color: #fff;
+    }
+    .guide-pill.cyan { background: rgba(23,188,254,0.2); border-color: rgba(23,188,254,0.5); color: #7de8fe; }
+
+    /* ── Main body ── */
+    .guide-body {
+      max-width: 1100px; margin: 0 auto;
+      padding: 24px 24px 48px;
+    }
+
+    /* ── Section accordion ── */
+    .section-block { margin-bottom: 14px; }
+
+    .section-trigger {
+      width: 100%; display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px;
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+      cursor: pointer; text-align: left;
+      font-family: 'Montserrat', sans-serif; font-size: 0.78rem; font-weight: 700;
+      color: #0f2942;
+      transition: box-shadow 0.15s, background 0.15s;
+      box-shadow: 0 1px 3px rgba(15,41,66,0.06);
+    }
+    .section-trigger:hover { background: #f8fafc; box-shadow: 0 2px 8px rgba(15,41,66,0.10); }
+    .section-trigger.open { border-radius: 12px 12px 0 0; border-bottom-color: transparent; }
+
+    .section-trigger-icon {
+      width: 32px; height: 32px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; flex-shrink: 0;
+    }
+    .section-trigger-label { flex: 1; }
+    .section-trigger-sub {
+      font-family: 'Roboto', sans-serif; font-weight: 400;
+      font-size: 0.68rem; color: #9ca3af; margin-top: 1px;
+    }
+    .section-chevron {
+      font-size: 0.7rem; color: #94a3b8;
+      transition: transform 0.22s; flex-shrink: 0;
+    }
+    .section-trigger.open .section-chevron { transform: rotate(180deg); }
+
+    .section-count {
+      font-size: 0.60rem; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+      background: #f3f4f6; color: #6b7280; flex-shrink: 0;
+    }
+
+    .section-body {
+      display: none;
+      background: #fff;
+      border: 1px solid #e5e7eb; border-top: none;
+      border-radius: 0 0 12px 12px;
+      overflow: hidden;
+    }
+    .section-body.open { display: block; }
+
+    /* ── Table ── */
+    .guide-table { width: 100%; border-collapse: collapse; }
+    .guide-table thead tr {
+      background: #f8fafc;
+    }
+    .guide-table th {
+      font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: #6b7280;
+      padding: 10px 14px; text-align: left;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .guide-table th:first-child { border-left: 4px solid transparent; }
+    .guide-table td {
+      font-size: 0.73rem; padding: 11px 14px;
+      border-bottom: 1px solid #f3f4f6;
+      vertical-align: top; line-height: 1.55;
+    }
+    .guide-table tr:last-child td { border-bottom: none; }
+    .guide-table tr:hover td { background: #fafbfc; }
+
+    /* col widths */
+    .col-topic   { width: 22%; font-weight: 700; color: #0f2942; }
+    .col-default { width: 14%; }
+    .col-guide   { width: 34%; font-family: 'Roboto', sans-serif; color: #374151; }
+    .col-impact  { width: 30%; font-family: 'Roboto', sans-serif; color: #374151; }
+
+    .guide-table td.col-topic { border-left: 4px solid transparent; }
+
+    /* sub-group header row inside table */
+    .guide-table tr.subgroup-row td {
+      background: #f0f9ff; font-size: 0.64rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px; color: #0284c7;
+      padding: 7px 14px; border-bottom: 1px solid #bae6fd;
+      border-left: 4px solid #0284c7;
+    }
+    .guide-table tr.subgroup-row.teal td {
+      background: #f0fdfa; color: #0d9488; border-left-color: #0d9488; border-bottom-color: #99f6e4;
+    }
+    .guide-table tr.subgroup-row.purple td {
+      background: #faf5ff; color: #7e22ce; border-left-color: #a855f7; border-bottom-color: #e9d5ff;
+    }
+    .guide-table tr.subgroup-row.amber td {
+      background: #fffbeb; color: #92400e; border-left-color: #f59e0b; border-bottom-color: #fde68a;
+    }
+    .guide-table tr.subgroup-row.slate td {
+      background: #f8fafc; color: #475569; border-left-color: #64748b; border-bottom-color: #e2e8f0;
+    }
+    .guide-table tr.subgroup-row.indigo td {
+      background: #eef2ff; color: #3730a3; border-left-color: #6366f1; border-bottom-color: #c7d2fe;
+    }
+
+    /* accent left border per sub-group */
+    .acc-blue  td.col-topic { border-left-color: #0284c7; }
+    .acc-teal  td.col-topic { border-left-color: #0d9488; }
+    .acc-purple td.col-topic { border-left-color: #a855f7; }
+    .acc-amber td.col-topic { border-left-color: #f59e0b; }
+    .acc-slate td.col-topic { border-left-color: #64748b; }
+    .acc-indigo td.col-topic { border-left-color: #6366f1; }
+
+    /* agentic pipeline subgroup */
+    .guide-table tr.subgroup-row.green td {
+      background: #f0fdf4; color: #166534; border-left-color: #16a34a; border-bottom-color: #bbf7d0;
+    }
+    .acc-green td.col-topic { border-left-color: #16a34a; }
+
+    /* badges */
+    .badge {
+      display: inline-block; font-size: 0.58rem; font-weight: 700;
+      padding: 2px 7px; border-radius: 10px; letter-spacing: 0.3px;
+      vertical-align: middle; margin-left: 4px;
+    }
+    .badge-rec  { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .badge-adv  { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .badge-on   { background: #e0f2fe; color: #0277bd; border: 1px solid #bae6fd; }
+    .badge-off  { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+    .badge-warn { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .badge-new  { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; }
+
+    code {
+      font-family: 'Roboto Mono', monospace; font-size: 0.69rem;
+      background: #f3f4f6; border-radius: 4px; padding: 1px 5px; color: #374151;
+    }
+
+    /* ── Tab color map ── */
+    .s1 .section-trigger { border-left: 4px solid #0284c7; }
+    .s1 .section-trigger-icon { background: #e0f2fe; color: #0284c7; }
+    .s2 .section-trigger { border-left: 4px solid #16a34a; }
+    .s2 .section-trigger-icon { background: #f0fdf4; color: #16a34a; }
+    .s3 .section-trigger { border-left: 4px solid #d97706; }
+    .s3 .section-trigger-icon { background: #fef9c3; color: #d97706; }
+    .s4 .section-trigger { border-left: 4px solid #9333ea; }
+    .s4 .section-trigger-icon { background: #fdf4ff; color: #9333ea; }
+    .s5 .section-trigger { border-left: 4px solid #ea580c; }
+    .s5 .section-trigger-icon { background: #fff7ed; color: #ea580c; }
+
+    /* ── Intro card ── */
+    .intro-card {
+      background: #fff; border-radius: 12px; border: 1px solid #e5e7eb;
+      padding: 16px 20px; margin-bottom: 20px;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .intro-card i { color: #17bcfe; font-size: 1.1rem; margin-top: 2px; flex-shrink: 0; }
+    .intro-card p {
+      margin: 0; font-family: 'Roboto', sans-serif;
+      font-size: 0.74rem; color: #374151; line-height: 1.6;
+    }
+
+    /* ── Expand all button ── */
+    .guide-controls {
+      display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 14px;
+    }
+    .ctrl-btn {
+      font-family: 'Montserrat', sans-serif; font-size: 0.68rem; font-weight: 700;
+      padding: 6px 14px; border-radius: 8px; border: 1px solid #e5e7eb;
+      background: #fff; color: #6b7280; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: background 0.15s;
+    }
+    .ctrl-btn:hover { background: #f3f4f6; color: #374151; }
+
+    @media (max-width: 700px) {
+      .guide-body { padding: 14px 10px 40px; }
+      .guide-table th, .guide-table td { padding: 8px 10px; }
+      .col-topic { width: 28%; }
+      .col-default { width: 18%; }
+      .col-guide { width: 54%; }
+      .col-impact { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="guide-header">
+    <h1><i class="fas fa-database"></i> RAG Configurator — User Guide</h1>
+    <p>Complete reference for every configurable parameter across all 6 pipeline stages. Includes the 3-stage Agentic RAG orchestration: Self-Directed Retrieval · Self-Correction · Goal-Persistent Multi-Step Reasoning.</p>
+    <div class="guide-header-meta">
+      <span class="guide-pill cyan"><i class="fas fa-layer-group"></i> &nbsp;6 Sections</span>
+      <span class="guide-pill"><i class="fas fa-sliders"></i> &nbsp;50+ Parameters</span>
+      <span class="guide-pill"><i class="fas fa-database"></i> &nbsp;Databricks AI</span>
+      <span class="guide-pill cyan"><i class="fas fa-robot"></i> &nbsp;True Agentic RAG</span>
+    </div>
+  </div>
+
+  <div class="guide-body">
+
+
+    <div class="guide-controls">
+      <button class="ctrl-btn" onclick="setAll(true)"><i class="fas fa-expand"></i> Expand All</button>
+      <button class="ctrl-btn" onclick="setAll(false)"><i class="fas fa-compress"></i> Collapse All</button>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════
+         TAB 1 — INGESTION
+    ════════════════════════════════════════════════════════ -->
+    <div class="section-block s1">
+      <button class="section-trigger" onclick="toggle(this)">
+        <span class="section-trigger-icon"><i class="fas fa-upload"></i></span>
+        <span class="section-trigger-label">
+          Tab 1 — Ingestion Pipeline
+          <div class="section-trigger-sub">Document loading · Chunking · Embeddings · Unity Catalog · Vector Search</div>
+        </span>
+        <span class="section-count">20 params</span>
+        <i class="fas fa-chevron-down section-chevron"></i>
+      </button>
+      <div class="section-body">
+        <table class="guide-table">
+          <thead>
+            <tr>
+              <th class="col-topic">Topic</th>
+              <th class="col-default">Default Value</th>
+              <th class="col-guide">Value Guide</th>
+              <th class="col-impact">Impact / Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="subgroup-row"><td colspan="4"><i class="fas fa-file-import"></i> &nbsp;Document Source &amp; Chunking</td></tr>
+            <tr class="acc-blue">
+              <td class="col-topic">Source Type</td>
+              <td class="col-default"><code>pdf</code></td>
+              <td class="col-guide"><code>pdf</code> PyPDFLoader · <code>html</code> UnstructuredHTMLLoader · <code>json</code> JSONLoader · <code>api</code> custom · <code>multi</code> multi-source</td>
+              <td class="col-impact">Determines which loader class is instantiated. Wrong type = parse errors or empty chunks.</td>
+            </tr>
+            <tr class="acc-blue">
+              <td class="col-topic">Chunking Strategy</td>
+              <td class="col-default"><code>semantic</code> <span class="badge badge-rec">Rec</span></td>
+              <td class="col-guide"><code>semantic</code> SemanticChunker (LLM-guided breaks) · <code>recursive</code> RecursiveCharacterTextSplitter · <code>fixed</code> fixed window</td>
+              <td class="col-impact">Semantic produces the best retrieval quality. Recursive is a solid fallback. Fixed is fastest but lowest quality.</td>
+            </tr>
+            <tr class="acc-blue">
+              <td class="col-topic">Dense Embedding Model</td>
+              <td class="col-default"><code>databricks-bge-large-en</code></td>
+              <td class="col-guide"><code>databricks-bge-large-en</code> (managed, no infra) · <code>BAAI/bge-large-en-v1.5</code> (self-hosted, best quality) · <code>models/text-embedding-004</code> Gemini · <code>BAAI/bge-base-en-v1.5</code> (balanced) · <code>models/embedding-001</code> (budget)</td>
+              <td class="col-impact">Must match the model used at query time. Changing post-index requires full re-ingestion.</td>
+            </tr>
+
+            <tr class="subgroup-row teal"><td colspan="4"><i class="fas fa-database"></i> &nbsp;Unity Catalog &amp; Vector Search</td></tr>
+            <tr class="acc-teal">
+              <td class="col-topic">Catalog</td>
+              <td class="col-default"><code>workspace</code></td>
+              <td class="col-guide">Databricks Unity Catalog name. Use your actual catalog (e.g. <code>prod_catalog</code>).</td>
+              <td class="col-impact">Must already exist in your Databricks workspace. Incorrect value → provision failure.</td>
+            </tr>
+            <tr class="acc-teal">
+              <td class="col-topic">Schema</td>
+              <td class="col-default"><code>agentic_rag</code></td>
+              <td class="col-guide">Schema (database) inside the catalog. Created automatically on Provision.</td>
+              <td class="col-impact">Keep consistent across all pipeline runs. Changing post-index orphans old chunks.</td>
+            </tr>
+            <tr class="acc-teal">
+              <td class="col-topic">Delta Table</td>
+              <td class="col-default"><code>documents</code></td>
+              <td class="col-guide">Name of the Delta table that stores raw chunks. E.g. <code>kb_chunks</code>.</td>
+              <td class="col-impact">Full qualified name becomes <code>catalog.schema.table</code>. Used by VS index sync.</td>
+            </tr>
+            <tr class="acc-teal">
+              <td class="col-topic">VS Endpoint</td>
+              <td class="col-default"><code>rag_endpoint</code></td>
+              <td class="col-guide">Name of the Databricks Vector Search endpoint. Must be created in Databricks UI first.</td>
+              <td class="col-impact">Endpoint must be in ONLINE state for retrieval to work. Provision step checks this.</td>
+            </tr>
+            <tr class="acc-teal">
+              <td class="col-topic">Index Name</td>
+              <td class="col-default"><code>rag_index</code></td>
+              <td class="col-guide">Name of the Vector Search index created under the endpoint.</td>
+              <td class="col-impact">Referenced in every retrieve call. Index must be ONLINE and synced before querying.</td>
+            </tr>
+
+            <tr class="subgroup-row slate"><td colspan="4"><i class="fas fa-sliders"></i> &nbsp;Advanced — Document Loader</td></tr>
+            <tr class="acc-slate">
+              <td class="col-topic">Metadata Enrichment <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>basic</code></td>
+              <td class="col-guide"><code>basic</code> source_type + ingested_at · <code>extended</code> + page, section, author · <code>custom</code> define your own fields</td>
+              <td class="col-impact">Richer metadata enables metadata-filtered retrieval and better citation traceability.</td>
+            </tr>
+
+            <tr class="subgroup-row purple"><td colspan="4"><i class="fas fa-scissors"></i> &nbsp;Advanced — Chunker</td></tr>
+            <tr class="acc-purple">
+              <td class="col-topic">Breakpoint Type <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>percentile</code></td>
+              <td class="col-guide"><code>percentile</code> split at sentence pairs where cosine distance exceeds Nth percentile · <code>std_deviation</code> · <code>interquartile</code></td>
+              <td class="col-impact">Percentile is most stable across document types. Use std_deviation for more aggressive splitting.</td>
+            </tr>
+            <tr class="acc-purple">
+              <td class="col-topic">Breakpoint Threshold <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>95</code></td>
+              <td class="col-guide">Range 50–99. Higher = fewer, larger chunks. Lower = more, smaller chunks.</td>
+              <td class="col-impact">Lower values over-split. Higher values under-split and degrade recall. 90–95 is the sweet spot for most docs.</td>
+            </tr>
+            <tr class="acc-purple">
+              <td class="col-topic">Fallback Chunk Size <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>1200</code> chars</td>
+              <td class="col-guide">Range 200–1,600 characters. Used when semantic chunker cannot find a breakpoint.</td>
+              <td class="col-impact">Too small → fragmented context. Too large → diluted relevance scores. 800–1,400 recommended.</td>
+            </tr>
+            <tr class="acc-purple">
+              <td class="col-topic">Chunk Overlap <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>150</code> chars</td>
+              <td class="col-guide">Range 0–250. Shared characters between adjacent chunks.</td>
+              <td class="col-impact">Prevents context loss at chunk boundaries. Too high = redundant storage and lower precision scores.</td>
+            </tr>
+
+            <tr class="subgroup-row indigo"><td colspan="4"><i class="fas fa-vector-square"></i> &nbsp;Advanced — Embeddings</td></tr>
+            <tr class="acc-indigo">
+              <td class="col-topic">Databricks Embedding Endpoint <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>databricks-bge-large-en</code></td>
+              <td class="col-guide">The serving endpoint name in Databricks Model Serving. Must match the dense model selected above.</td>
+              <td class="col-impact">Misconfiguration silently produces zero-vectors. Test with the Retrieval tab after ingestion.</td>
+            </tr>
+            <tr class="acc-indigo">
+              <td class="col-topic">Normalize Embeddings <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default">Yes</td>
+              <td class="col-guide"><code>Yes</code> L2-normalize vectors before storage · <code>No</code> store raw vectors</td>
+              <td class="col-impact">Normalization enables cosine similarity via dot product — required for most BGE models. Leave on.</td>
+            </tr>
+            <tr class="acc-indigo">
+              <td class="col-topic">Sparse (BM25) Embedding <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">Enable SPLADE sparse vectors alongside dense. Enables hybrid search in Tab 2.</td>
+              <td class="col-impact">Hybrid search consistently outperforms dense-only, especially for keyword-heavy queries. Keep on.</td>
+            </tr>
+            <tr class="acc-indigo">
+              <td class="col-topic">Sparse Model <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>splade-cocondenser-ensemble-distil</code></td>
+              <td class="col-guide"><code>naver/splade-cocondenser-ensemble-distil</code> best quality · <code>naver/splade-v3</code> newer, slightly faster</td>
+              <td class="col-impact">Only visible when Sparse is ON. Changing after indexing requires re-ingestion.</td>
+            </tr>
+
+            <tr class="subgroup-row amber"><td colspan="4"><i class="fas fa-table-columns"></i> &nbsp;Advanced — Index &amp; Sync</td></tr>
+            <tr class="acc-amber">
+              <td class="col-topic">Primary Key Column <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>chunk_id</code></td>
+              <td class="col-guide">Delta table column that uniquely identifies each chunk. Must be a string or integer column.</td>
+              <td class="col-impact">Wrong column name → VS index creation fails. Used by duplicate detection logic.</td>
+            </tr>
+            <tr class="acc-amber">
+              <td class="col-topic">Content Column <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>content</code></td>
+              <td class="col-guide">Delta table column containing the chunk text to be embedded.</td>
+              <td class="col-impact">This is what gets embedded and returned as context to the LLM. Must exist in the table schema.</td>
+            </tr>
+            <tr class="acc-amber">
+              <td class="col-topic">Pipeline Sync Type <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>TRIGGERED</code></td>
+              <td class="col-guide"><code>TRIGGERED</code> sync on demand after each ingest · <code>CONTINUOUS</code> auto-sync within seconds of Delta writes</td>
+              <td class="col-impact">TRIGGERED is cheaper and sufficient for batch ingestion. CONTINUOUS is for streaming or near-real-time pipelines.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════
+         TAB 2 — RETRIEVAL
+    ════════════════════════════════════════════════════════ -->
+    <div class="section-block s2">
+      <button class="section-trigger" onclick="toggle(this)">
+        <span class="section-trigger-icon"><i class="fas fa-magnifying-glass"></i></span>
+        <span class="section-trigger-label">
+          Tab 2 — Adaptive Retrieval
+          <div class="section-trigger-sub">Search scope · HyDE · Cross-encoder re-ranking</div>
+        </span>
+        <span class="section-count">10 params</span>
+        <i class="fas fa-chevron-down section-chevron"></i>
+      </button>
+      <div class="section-body">
+        <table class="guide-table">
+          <thead>
+            <tr>
+              <th class="col-topic">Topic</th>
+              <th class="col-default">Default Value</th>
+              <th class="col-guide">Value Guide</th>
+              <th class="col-impact">Impact / Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="subgroup-row"><td colspan="4"><i class="fas fa-filter"></i> &nbsp;Search Scope</td></tr>
+            <tr class="acc-blue">
+              <td class="col-topic">Top K</td>
+              <td class="col-default"><code>10</code></td>
+              <td class="col-guide">Range 1–50. Number of chunks fetched from the Vector Search index per query.</td>
+              <td class="col-impact">Higher K improves recall but increases latency and LLM context cost. 8–15 is typical. Re-ranker then trims to Top N.</td>
+            </tr>
+            <tr class="acc-blue">
+              <td class="col-topic">Query Type</td>
+              <td class="col-default"><code>hybrid</code></td>
+              <td class="col-guide"><code>hybrid</code> BM25 sparse + dense cosine (recommended) · <code>similarity</code> dense cosine only</td>
+              <td class="col-impact">Hybrid wins on keyword-heavy and mixed queries. Similarity-only is faster but misses exact-match cases.</td>
+            </tr>
+
+            <tr class="subgroup-row teal"><td colspan="4"><i class="fas fa-wand-magic-sparkles"></i> &nbsp;Retrieval Enhancements</td></tr>
+            <tr class="acc-teal">
+              <td class="col-topic">HyDE — Hypothetical Document Expansion</td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">Uses an LLM to rewrite the user query as a hypothetical answer document, then embeds that for retrieval.</td>
+              <td class="col-impact">Significantly improves embedding alignment for vague or short queries. Adds ~1 LLM call latency per query.</td>
+            </tr>
+            <tr class="acc-teal">
+              <td class="col-topic">Cross-Encoder Re-Ranking</td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">Passes each query+chunk pair through a cross-encoder model to reorder by true relevance.</td>
+              <td class="col-impact">Usually the single highest-value quality lever. Reduces hallucination by surfacing the best chunks. Small latency cost.</td>
+            </tr>
+
+            <tr class="subgroup-row slate"><td colspan="4"><i class="fas fa-sliders"></i> &nbsp;Advanced — Result Shaping</td></tr>
+            <tr class="acc-slate">
+              <td class="col-topic">Re-rank Top N <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>5</code></td>
+              <td class="col-guide">Range 1–20. After re-ranking, only the top N chunks are passed to the LLM as context.</td>
+              <td class="col-impact">Lower N = tighter, cheaper context. Higher N = more recall but larger prompt and higher cost. Keep ≤ Top K.</td>
+            </tr>
+            <tr class="acc-slate">
+              <td class="col-topic">Columns to Retrieve <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>chunk_id,source,page,content</code></td>
+              <td class="col-guide">Comma-separated Delta table columns returned per chunk. Must include <code>content</code>.</td>
+              <td class="col-impact">Adding metadata columns (e.g. <code>author</code>) enables richer citations. Removing <code>content</code> breaks synthesis.</td>
+            </tr>
+
+            <tr class="subgroup-row purple"><td colspan="4"><i class="fas fa-pen-fancy"></i> &nbsp;Advanced — HyDE</td></tr>
+            <tr class="acc-purple">
+              <td class="col-topic">HyDE LLM Model <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>databricks-meta-llama-3-3-70b-instruct</code></td>
+              <td class="col-guide">Any chat model accessible via your Databricks serving endpoint or external API.</td>
+              <td class="col-impact">Larger models produce better hypothetical docs. Smaller models are faster. Match to your latency budget.</td>
+            </tr>
+            <tr class="acc-purple">
+              <td class="col-topic">Apply HyDE On <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>retry</code></td>
+              <td class="col-guide"><code>retry</code> only on CRAG re-query iterations · <code>always</code> every query · <code>low_confidence</code> when retrieval confidence is low</td>
+              <td class="col-impact"><code>retry</code> is the best balance — saves latency on first-pass queries while rescuing weak ones.</td>
+            </tr>
+
+            <tr class="subgroup-row indigo"><td colspan="4"><i class="fas fa-ranking-star"></i> &nbsp;Advanced — Re-Ranker</td></tr>
+            <tr class="acc-indigo">
+              <td class="col-topic">Re-Ranker Model <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>BAAI/bge-reranker-large</code></td>
+              <td class="col-guide"><code>bge-reranker-large</code> best quality · <code>bge-reranker-base</code> balanced · <code>ms-marco-MiniLM-L-6-v2</code> fast · <code>ms-marco-TinyBERT-L-2-v2</code> fastest</td>
+              <td class="col-impact">Large model gives best precision. TinyBERT is 5× faster with acceptable quality for low-latency use cases.</td>
+            </tr>
+            <tr class="acc-indigo">
+              <td class="col-topic">Batch Size <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>32</code></td>
+              <td class="col-guide">Range 4–128. Number of query+chunk pairs processed per forward pass through the re-ranker.</td>
+              <td class="col-impact">Higher batch = faster throughput but higher GPU memory usage. 16–64 is practical for most deployments.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════
+         TAB 3 — CRAG
+    ════════════════════════════════════════════════════════ -->
+    <div class="section-block s3">
+      <button class="section-trigger" onclick="toggle(this)">
+        <span class="section-trigger-icon"><i class="fas fa-arrows-rotate"></i></span>
+        <span class="section-trigger-label">
+          Tab 3 — CRAG Loop (Agentic RAG)
+          <div class="section-trigger-sub">Self-directed retrieval · Query planning · Corrective grading · Re-query · Web fallback · Agent tools</div>
+        </span>
+        <span class="section-count">16 params</span>
+        <i class="fas fa-chevron-down section-chevron"></i>
+      </button>
+      <div class="section-body">
+        <table class="guide-table">
+          <thead>
+            <tr>
+              <th class="col-topic">Topic</th>
+              <th class="col-default">Default Value</th>
+              <th class="col-guide">Value Guide</th>
+              <th class="col-impact">Impact / Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="subgroup-row green"><td colspan="4"><i class="fas fa-robot"></i> &nbsp;Agentic Pipeline — 3-Stage Orchestration <span class="badge badge-new">NEW</span></td></tr>
+            <tr class="acc-green">
+              <td class="col-topic">Query Classifier <span class="badge badge-new">NEW</span></td>
+              <td class="col-default">Automatic</td>
+              <td class="col-guide">Runs automatically before any retrieval. An LLM decides: <code>direct</code> = answer from general knowledge, no retrieval needed (greetings, simple conversational turns) · <code>retrieve</code> = factual or domain-specific query, proceed to pipeline. Defaults to <code>retrieve</code> on any failure.</td>
+              <td class="col-impact"><strong>Point 1 — Self-Directed Retrieval.</strong> Conversational queries no longer hit the vector index. Response shows <code>decision: direct_answer</code>. Zero retrieval cost and latency for simple turns. No configuration needed.</td>
+            </tr>
+            <tr class="acc-green">
+              <td class="col-topic">Query Planner <span class="badge badge-new">NEW</span></td>
+              <td class="col-default">Automatic</td>
+              <td class="col-guide">Runs after classification, before retrieval. An LLM decides if the query is simple (1 hop) or complex (multi-hop). Simple queries pass through unchanged. Complex queries are decomposed into 2–3 atomic sub-questions, each processed through the full CRAG loop independently. Results are accumulated and synthesized into one unified response.</td>
+              <td class="col-impact"><strong>Point 3 — Goal-Persistent Multi-Step Reasoning.</strong> Multi-hop queries (comparisons, aggregations, multi-document summaries) get separate retrieval passes per sub-question. Response shows <code>decision: multi_step</code> with <code>sub_questions</code> and <code>sub_answers</code> fields in the trace. No configuration needed.</td>
+            </tr>
+            <tr class="acc-green">
+              <td class="col-topic">Pipeline Decision Values <span class="badge badge-new">NEW</span></td>
+              <td class="col-default">—</td>
+              <td class="col-guide">Every CRAG response includes a <code>decision</code> field: <code>direct_answer</code> classifier routed to general LLM, no retrieval · <code>multi_step</code> query decomposed and answered via multiple retrieval passes · <code>pass</code> retrieval scored above threshold, generated normally · <code>requery</code> low score triggered re-query loop · <code>web_fallback</code> retries exhausted, answered from web search · <code>fail</code> all sources failed, best-effort response returned</td>
+              <td class="col-impact">Use the <code>decision</code> value in the response tag (visible in the chat UI after every RAG reply) to understand which path was taken. Useful for debugging — if you see <code>requery</code> frequently, your chunks may be too large or your threshold too high.</td>
+            </tr>
+
+            <tr class="subgroup-row amber"><td colspan="4"><i class="fas fa-gauge-high"></i> &nbsp;Grading &amp; Retry — Self-Correction on Failure (Point 2)</td></tr>
+            <tr class="acc-amber">
+              <td class="col-topic">Relevance Threshold</td>
+              <td class="col-default"><code>0.60</code></td>
+              <td class="col-guide">Range 0–1. Minimum grade score for retrieved chunks to be considered acceptable. Below this → re-query.</td>
+              <td class="col-impact">Too high = excessive retries. Too low = poor chunks pass through. 0.55–0.65 works well. Must be > Web Fallback Trigger.</td>
+            </tr>
+            <tr class="acc-amber">
+              <td class="col-topic">Max Re-Query Iterations</td>
+              <td class="col-default"><code>2</code></td>
+              <td class="col-guide">Range 0–5. Hard cap on CRAG loop attempts. Recommended ≤ 2.</td>
+              <td class="col-impact">Each iteration adds full retrieval + grading latency. Values > 2 rarely improve quality and spike response time.</td>
+            </tr>
+
+            <tr class="subgroup-row teal"><td colspan="4"><i class="fas fa-globe"></i> &nbsp;Web Fallback</td></tr>
+            <tr class="acc-teal">
+              <td class="col-topic">Web Fallback Search</td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">When all CRAG retries still score below Relevance Threshold, fall back to live web search.</td>
+              <td class="col-impact">Ensures the pipeline never returns a null answer. Disable for air-gapped or strictly controlled knowledge bases.</td>
+            </tr>
+            <tr class="acc-teal">
+              <td class="col-topic">Web Search Provider</td>
+              <td class="col-default"><code>tavily</code></td>
+              <td class="col-guide"><code>tavily</code> best results, requires TAVILY_API_KEY · <code>serpapi</code> Google results, requires SERPAPI_KEY · <code>duckduckgo</code> no key needed, lower quality</td>
+              <td class="col-impact">Tavily is purpose-built for RAG and returns clean, structured web excerpts. DuckDuckGo is free but noisier.</td>
+            </tr>
+
+            <tr class="subgroup-row slate"><td colspan="4"><i class="fas fa-sliders"></i> &nbsp;Advanced — Relevance Grader</td></tr>
+            <tr class="acc-slate">
+              <td class="col-topic">Grader LLM Model <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>gemini-2.0-flash</code></td>
+              <td class="col-guide">LLM used to score each chunk 0.0–1.0 for relevance. Smaller/faster models work well here. Supported: <code>gemini-2.0-flash</code> (default, Gemini API) · <code>databricks-meta-llama-3-3-70b-instruct</code> (Databricks fallback). GPT models are not supported — the pipeline will fall back to Databricks automatically.</td>
+              <td class="col-impact">Used for all 3 agentic LLM calls (classifier, planner, grader). Gemini is preferred — faster and lower cost. Databricks is the automatic fallback when no Gemini key is present. Does not need to match the generation LLM.</td>
+            </tr>
+            <tr class="acc-slate">
+              <td class="col-topic">Docs Graded per Run <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>3</code></td>
+              <td class="col-guide">Range 1–10. How many of the Top K chunks are submitted to the grader LLM per iteration.</td>
+              <td class="col-impact">Grading all K chunks is expensive. 3–5 gives a reliable signal. The top chunks (by VS score) are always picked first.</td>
+            </tr>
+            <tr class="acc-slate">
+              <td class="col-topic">Grader Temperature <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>0.00</code></td>
+              <td class="col-guide">Range 0–1. Temperature for the grader LLM. Keep at 0 for deterministic yes/no relevance verdicts.</td>
+              <td class="col-impact">Any value above 0 introduces noise into grading decisions. Always keep at 0.</td>
+            </tr>
+
+            <tr class="subgroup-row purple"><td colspan="4"><i class="fas fa-rotate"></i> &nbsp;Advanced — Re-query Loop</td></tr>
+            <tr class="acc-purple">
+              <td class="col-topic">Re-query Strategy <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>hyde</code></td>
+              <td class="col-guide"><code>hyde</code> HyDE expansion (recommended) · <code>decompose</code> break into sub-questions · <code>rephrase</code> simple paraphrase</td>
+              <td class="col-impact">HyDE is most effective for retrieval improvement. Decompose is better for multi-part questions.</td>
+            </tr>
+            <tr class="acc-purple">
+              <td class="col-topic">Max Web Results <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>5</code></td>
+              <td class="col-guide">Range 1–20. Number of web search results retrieved during fallback.</td>
+              <td class="col-impact">More results = wider coverage but noisier context. 3–7 is ideal. Increase for highly specific or niche queries.</td>
+            </tr>
+            <tr class="acc-purple">
+              <td class="col-topic">Web Fallback Trigger Score <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>0.40</code></td>
+              <td class="col-guide">Range 0–1. Grade score below which web search is triggered. Must be &lt; Relevance Threshold.</td>
+              <td class="col-impact">Creates a "retry window" between trigger and threshold. If 0.40 trigger and 0.60 threshold, scores 0.40–0.60 trigger re-query, below 0.40 goes straight to web.</td>
+            </tr>
+
+            <tr class="subgroup-row indigo"><td colspan="4"><i class="fas fa-toolbox"></i> &nbsp;Advanced — Agent Tools</td></tr>
+            <tr class="acc-indigo">
+              <td class="col-topic">Sandboxed Python REPL <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">RestrictedPython sandbox for safe code execution. Used for data analysis tasks during CRAG.</td>
+              <td class="col-impact">Enable for analytical use cases (e.g. compute stats from retrieved data). Disable for pure text Q&amp;A to reduce attack surface.</td>
+            </tr>
+            <tr class="acc-indigo">
+              <td class="col-topic">Databricks SQL Tool <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">Runs SQL against the Databricks SQL Warehouse. Requires DATABRICKS_WAREHOUSE_ID env var.</td>
+              <td class="col-impact">Enables structured data queries alongside unstructured RAG. Disable if no SQL Warehouse is provisioned.</td>
+            </tr>
+            <tr class="acc-indigo">
+              <td class="col-topic">Calculator / Math Tool <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><span class="badge badge-off">OFF</span></td>
+              <td class="col-guide">Arithmetic and unit conversion tool. No external dependencies.</td>
+              <td class="col-impact">Enable for pipelines that involve numerical reasoning (finance, science). Negligible overhead.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════
+         TAB 4 — GENERATION
+    ════════════════════════════════════════════════════════ -->
+    <div class="section-block s4">
+      <button class="section-trigger" onclick="toggle(this)">
+        <span class="section-trigger-icon"><i class="fas fa-wand-magic-sparkles"></i></span>
+        <span class="section-trigger-label">
+          Tab 4 — Generation + Guardrails
+          <div class="section-trigger-sub">LLM provider · Temperature · Citations · NLI faithfulness · Guardrails</div>
+        </span>
+        <span class="section-count">12 params</span>
+        <i class="fas fa-chevron-down section-chevron"></i>
+      </button>
+      <div class="section-body">
+        <table class="guide-table">
+          <thead>
+            <tr>
+              <th class="col-topic">Topic</th>
+              <th class="col-default">Default Value</th>
+              <th class="col-guide">Value Guide</th>
+              <th class="col-impact">Impact / Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="subgroup-row"><td colspan="4"><i class="fas fa-robot"></i> &nbsp;LLM</td></tr>
+            <tr class="acc-blue">
+              <td class="col-topic">LLM Provider</td>
+              <td class="col-default"><code>gemini</code></td>
+              <td class="col-guide"><code>gemini</code> Google Gemini API · <code>databricks</code> DBRX / LLaMA via serving endpoint · <code>openai</code> OpenAI API · <code>anthropic</code> Claude · <code>azure_openai</code> Azure-hosted OpenAI</td>
+              <td class="col-impact">Sets the API client and authentication method. Requires corresponding API key in env vars.</td>
+            </tr>
+            <tr class="acc-blue">
+              <td class="col-topic">Model ID</td>
+              <td class="col-default"><code>gemini-2.0-flash</code></td>
+              <td class="col-guide">Provider-specific model identifier. E.g. <code>gpt-4o</code>, <code>claude-opus-4-6</code>, <code>gemini-2.0-flash</code>, <code>databricks-meta-llama-3-3-70b-instruct</code></td>
+              <td class="col-impact">Directly determines answer quality and cost. Flash models are 3–5× cheaper. Use pro/opus for complex reasoning tasks.</td>
+            </tr>
+            <tr class="acc-blue">
+              <td class="col-topic">Temperature</td>
+              <td class="col-default"><code>0.20</code></td>
+              <td class="col-guide">Range 0–1. Controls output randomness. ≤ 0.30 recommended for factual Q&amp;A.</td>
+              <td class="col-impact">Higher values produce more varied answers but increase hallucination risk. For strict RAG, keep ≤ 0.20.</td>
+            </tr>
+
+            <tr class="subgroup-row teal"><td colspan="4"><i class="fas fa-shield-halved"></i> &nbsp;Answer Quality Gate</td></tr>
+            <tr class="acc-teal">
+              <td class="col-topic">NLI Faithfulness Check</td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">Runs DeBERTa-v3 NLI entailment check: does the answer logically follow from the retrieved context?</td>
+              <td class="col-impact">Primary hallucination guard. Unfaithful answers are discarded and regenerated. Keep ON in production.</td>
+            </tr>
+            <tr class="acc-teal">
+              <td class="col-topic">Faithfulness Threshold</td>
+              <td class="col-default"><code>0.70</code></td>
+              <td class="col-guide">Range 0–1. NLI entailment score below which the answer is rejected and regeneration is triggered.</td>
+              <td class="col-impact">Lower threshold = more answers pass but more hallucinations slip through. Higher = stricter but more regenerations and latency.</td>
+            </tr>
+
+            <tr class="subgroup-row slate"><td colspan="4"><i class="fas fa-sliders"></i> &nbsp;Advanced — LLM</td></tr>
+            <tr class="acc-slate">
+              <td class="col-topic">Max Output Tokens <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>2048</code></td>
+              <td class="col-guide">Range 256–16,384. Maximum tokens the LLM can generate per answer.</td>
+              <td class="col-impact">Too low = truncated answers. Too high = unnecessary cost. 1,024–2,048 covers most Q&amp;A use cases.</td>
+            </tr>
+            <tr class="acc-slate">
+              <td class="col-topic">System Prompt <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default">Expert assistant with citation instructions</td>
+              <td class="col-guide">Free-text system prompt injected before synthesis. Must instruct citation format <code>[SOURCE: chunk_id]</code> if citations are enabled.</td>
+              <td class="col-impact">Most impactful single-field tuning lever. Tone, format, verbosity, and citation style all stem from here.</td>
+            </tr>
+
+            <tr class="subgroup-row purple"><td colspan="4"><i class="fas fa-bookmark"></i> &nbsp;Advanced — Citations</td></tr>
+            <tr class="acc-purple">
+              <td class="col-topic">Citation Injection <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">Instructs the LLM to append <code>[SOURCE: chunk_id]</code> inline for every factual claim.</td>
+              <td class="col-impact">Enables source traceability. Required by the Pre-Production Checklist. Keep ON for all production deployments.</td>
+            </tr>
+            <tr class="acc-purple">
+              <td class="col-topic">Citation ID Resolution Check <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">Post-generation: validates that every cited chunk_id actually exists in the Delta table.</td>
+              <td class="col-impact">Catches fabricated citations. Fabricated IDs are flagged in the UI with a warning badge.</td>
+            </tr>
+
+            <tr class="subgroup-row indigo"><td colspan="4"><i class="fas fa-shield-heart"></i> &nbsp;Advanced — NLI Model</td></tr>
+            <tr class="acc-indigo">
+              <td class="col-topic">NLI Model <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>nli-deberta-v3-base</code></td>
+              <td class="col-guide"><code>nli-deberta-v3-base</code> best quality/speed balance · <code>nli-deberta-v3-large</code> highest quality, slower · <code>nli-MiniLM2-L6-H768</code> fastest</td>
+              <td class="col-impact">Base is the default for good reason — 95% of large quality with 2× the speed. Use large only if faithfulness precision is critical.</td>
+            </tr>
+            <tr class="acc-indigo">
+              <td class="col-topic">Max Regeneration Attempts <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>2</code></td>
+              <td class="col-guide">Range 1–5. How many times the pipeline retries LLM generation if the faithfulness check fails.</td>
+              <td class="col-impact">Each attempt adds one full LLM call. Values &gt; 2 rarely recover and significantly inflate p99 latency.</td>
+            </tr>
+            <tr class="acc-blue">
+              <td class="col-topic">Guardrails AI <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><span class="badge badge-off">OFF</span></td>
+              <td class="col-guide">Apply Guardrails AI validators: banned topics, output format enforcement, PII detection.</td>
+              <td class="col-impact">Enable for customer-facing deployments requiring content policy. Requires <code>guardrails-ai</code> package and validator config.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════
+         TAB 5 — OBSERVABILITY
+    ════════════════════════════════════════════════════════ -->
+    <div class="section-block s5">
+      <button class="section-trigger" onclick="toggle(this)">
+        <span class="section-trigger-icon"><i class="fas fa-chart-line"></i></span>
+        <span class="section-trigger-label">
+          Tab 5 — Observability + Evaluation
+          <div class="section-trigger-sub">MLflow tracing · LangSmith · Ragas quality metrics · Environment vars</div>
+        </span>
+        <span class="section-count">13 params</span>
+        <i class="fas fa-chevron-down section-chevron"></i>
+      </button>
+      <div class="section-body">
+        <table class="guide-table">
+          <thead>
+            <tr>
+              <th class="col-topic">Topic</th>
+              <th class="col-default">Default Value</th>
+              <th class="col-guide">Value Guide</th>
+              <th class="col-impact">Impact / Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="subgroup-row"><td colspan="4"><i class="fas fa-chart-gantt"></i> &nbsp;Tracing</td></tr>
+            <tr class="acc-blue">
+              <td class="col-topic">MLflow Tracing</td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">Instruments every pipeline node with MLflow traces: latency, relevance scores, retrieval counts.</td>
+              <td class="col-impact">Essential for production monitoring and debugging. Very low overhead. Keep ON always.</td>
+            </tr>
+
+            <tr class="subgroup-row teal"><td colspan="4"><i class="fas fa-flask"></i> &nbsp;Evaluation</td></tr>
+            <tr class="acc-teal">
+              <td class="col-topic">Ragas Evaluation</td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">Enables the automated Ragas evaluation panel. Does not run automatically — triggered manually in the Test panel.</td>
+              <td class="col-impact">Enables quality scoring against a test set. Required by the Pre-Production Checklist.</td>
+            </tr>
+            <tr class="acc-teal">
+              <td class="col-topic">Metric: Faithfulness</td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">Measures whether the answer is grounded in the retrieved context (not hallucinated).</td>
+              <td class="col-impact">Most critical metric. Low faithfulness = hallucination problem. Target ≥ 0.70.</td>
+            </tr>
+            <tr class="acc-teal">
+              <td class="col-topic">Metric: Answer Relevancy</td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">Measures whether the answer directly addresses the question asked.</td>
+              <td class="col-impact">Low relevancy = LLM drifting off-topic or system prompt too loose. Target ≥ 0.75.</td>
+            </tr>
+            <tr class="acc-teal">
+              <td class="col-topic">Metric: Context Recall</td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">Requires ground truth. Measures how much of the expected answer is covered by retrieved chunks.</td>
+              <td class="col-impact">Low recall = retrieval missing key documents. Increase Top K or improve embedding model.</td>
+            </tr>
+            <tr class="acc-teal">
+              <td class="col-topic">Metric: Context Precision</td>
+              <td class="col-default"><span class="badge badge-on">ON</span></td>
+              <td class="col-guide">Requires ground truth. Measures the proportion of retrieved chunks that are actually relevant.</td>
+              <td class="col-impact">Low precision = too much noise in context. Enable re-ranker and lower Top N.</td>
+            </tr>
+
+            <tr class="subgroup-row slate"><td colspan="4"><i class="fas fa-sliders"></i> &nbsp;Advanced — MLflow</td></tr>
+            <tr class="acc-slate">
+              <td class="col-topic">Tracking URI <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>databricks</code></td>
+              <td class="col-guide"><code>databricks</code> uses MLFLOW_TRACKING_URI env var (managed) · or provide full URI e.g. <code>http://localhost:5000</code></td>
+              <td class="col-impact">Use <code>databricks</code> for Databricks-managed MLflow. Override for self-hosted tracking servers.</td>
+            </tr>
+            <tr class="acc-slate">
+              <td class="col-topic">Experiment Name <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>agentic-rag-prod</code></td>
+              <td class="col-guide">MLflow experiment that all pipeline runs are logged under. Created automatically if it doesn't exist.</td>
+              <td class="col-impact">Use descriptive names for multi-environment setups e.g. <code>rag-dev</code>, <code>rag-staging</code>, <code>rag-prod</code>.</td>
+            </tr>
+            <tr class="acc-slate">
+              <td class="col-topic">Latency Alert (ms) <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>5000</code></td>
+              <td class="col-guide">Milliseconds. Pipeline runs exceeding this threshold are flagged in MLflow.</td>
+              <td class="col-impact">Set to your SLA target. Common targets: 3,000ms (fast), 5,000ms (standard), 10,000ms (complex CRAG).</td>
+            </tr>
+
+            <tr class="subgroup-row purple"><td colspan="4"><i class="fas fa-diagram-project"></i> &nbsp;Advanced — LangSmith</td></tr>
+            <tr class="acc-purple">
+              <td class="col-topic">Enable LangSmith <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><span class="badge badge-off">OFF</span></td>
+              <td class="col-guide">Sends full execution graphs to LangSmith: every edge, state transition, and routing decision. Requires LANGSMITH_API_KEY.</td>
+              <td class="col-impact">Complementary to MLflow — MLflow for metrics, LangSmith for execution flow debugging. Enable during development.</td>
+            </tr>
+            <tr class="acc-purple">
+              <td class="col-topic">LangSmith Project <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>agentic-rag-prod</code></td>
+              <td class="col-guide">LangSmith project name. Runs are grouped here in the LangSmith dashboard.</td>
+              <td class="col-impact">Only active when LangSmith is enabled. Use separate projects per environment.</td>
+            </tr>
+
+            <tr class="subgroup-row indigo"><td colspan="4"><i class="fas fa-bullseye"></i> &nbsp;Advanced — Ragas Targets</td></tr>
+            <tr class="acc-indigo">
+              <td class="col-topic">Min Faithfulness Score <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>0.70</code></td>
+              <td class="col-guide">Range 0–1. Target minimum Ragas faithfulness score. Used in Pre-Production Checklist validation.</td>
+              <td class="col-impact">Acts as a quality gate — checklist fails if actual faithfulness &lt; this value. Align with your NLI threshold.</td>
+            </tr>
+            <tr class="acc-indigo">
+              <td class="col-topic">Min Answer Relevancy Score <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default"><code>0.75</code></td>
+              <td class="col-guide">Range 0–1. Target minimum Ragas answer relevancy score.</td>
+              <td class="col-impact">Checklist uses this to flag relevancy issues. 0.75 is a reasonable production baseline.</td>
+            </tr>
+            <tr class="acc-indigo">
+              <td class="col-topic">Log Ragas to MLflow <span class="badge badge-adv">ADV</span></td>
+              <td class="col-default">Yes</td>
+              <td class="col-guide"><code>Yes</code> Ragas scores are written as MLflow metrics on the current run · <code>No</code> scores shown in UI only</td>
+              <td class="col-impact">Enables trend analysis and score comparison across pipeline versions in MLflow. Keep Yes in production.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /guide-body -->
+
+  <script>
+    function toggle(trigger) {
+      const body = trigger.nextElementSibling;
+      const open = body.classList.toggle('open');
+      trigger.classList.toggle('open', open);
+    }
+    function setAll(expand) {
+      document.querySelectorAll('.section-trigger').forEach(t => {
+        const body = t.nextElementSibling;
+        t.classList.toggle('open', expand);
+        body.classList.toggle('open', expand);
+      });
+    }
+  </script>
+</body>
+</html>

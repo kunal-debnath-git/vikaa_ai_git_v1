@@ -303,6 +303,30 @@
       border: none;
       width: 100%;
     }
+    .tour-readonly-shield {
+      position: absolute;
+      inset: 0;
+      z-index: 15;
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 72px;
+      background: rgba(255, 255, 255, 0.02);
+      pointer-events: auto;
+    }
+    .tour-readonly-shield.visible {
+      display: flex;
+    }
+    .tour-readonly-pill {
+      border: 1px solid #fdba74;
+      background: #fff7ed;
+      color: #9a3412;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+    }
 
     .activity-header {
       padding: 15px 25px;
@@ -442,6 +466,65 @@
       background: #fee2e2;
       color: #991b1b;
       border: 1px solid #fca5a5;
+    }
+    .badge-soon {
+      background: #e0f2fe;
+      color: #075985;
+      border: 1px solid #7dd3fc;
+    }
+
+    /* Coming soon — missing or unpublished tool page */
+    .tool-coming-soon-wrap {
+      flex: 1;
+      min-height: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      background: linear-gradient(180deg, #f9fafb 0%, #f0f9ff 100%);
+    }
+    .tool-coming-soon-wrap.visible {
+      display: flex;
+    }
+    .tool-coming-soon-card {
+      max-width: 420px;
+      text-align: center;
+      background: #fff;
+      border-radius: 16px;
+      padding: 36px 32px 40px;
+      box-shadow: 0 10px 40px rgba(15, 118, 110, 0.08), 0 0 0 1px rgba(23, 188, 254, 0.12);
+    }
+    .tool-coming-soon-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #ecfeff 0%, #e0f2fe 100%);
+      color: #0891b2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+    .tool-coming-soon-title {
+      margin: 0 0 10px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #0c4a6e;
+      letter-spacing: -0.02em;
+    }
+    .tool-coming-soon-lead {
+      margin: 0 0 8px;
+      font-size: 0.78rem;
+      color: #64748b;
+      line-height: 1.55;
+    }
+    .tool-coming-soon-name {
+      margin: 0;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #17bcfe;
     }
     .tool-popup-backdrop {
       position: fixed;
@@ -634,8 +717,24 @@
       </div>
       <div id="accessModeBanner" class="access-mode-banner"></div>
 
+      <div id="toolComingSoon" class="tool-coming-soon-wrap" aria-live="polite">
+        <div class="tool-coming-soon-card">
+          <div class="tool-coming-soon-icon" aria-hidden="true">
+            <i class="fas fa-hourglass-half"></i>
+          </div>
+          <h3 class="tool-coming-soon-title">Coming soon</h3>
+          <p class="tool-coming-soon-lead">
+            This tool workspace is not available yet. Check back later or open the tool info panel from the sidebar for status details.
+          </p>
+          <p class="tool-coming-soon-name" id="comingSoonToolName"></p>
+        </div>
+      </div>
+
       <!-- iframe for tools that have their own page -->
       <iframe id="toolFrame" style="display:none; flex:1; min-height:0; border:none; width:100%;" allowfullscreen></iframe>
+      <div id="tourReadonlyShield" class="tour-readonly-shield" aria-hidden="true">
+        <div class="tour-readonly-pill">Tour mode: view only (execution disabled)</div>
+      </div>
 
       <!-- Generic feed for placeholder tools -->
       <div class="activity-content" id="activityFeed" style="display:flex;">
@@ -668,6 +767,23 @@
     }
 
     async function fetchAccessMode() {
+      const isTourGuest = (() => {
+        if (localStorage.getItem('vikaa_tour_mode') === '1') return true;
+        try {
+          const info = JSON.parse(localStorage.getItem('userInfo') || 'null');
+          return (info?.email || '').trim().toLowerCase() === 'guest@vikaa.ai';
+        } catch (_) {
+          return false;
+        }
+      })();
+      if (isTourGuest) {
+        return {
+          email: 'guest@vikaa.ai',
+          can_execute: false,
+          mode: 'read-only',
+          acl_status: 'guest-tour'
+        };
+      }
       const raw = localStorage.getItem('authData');
       let token = null;
       try { token = raw ? JSON.parse(raw)?.accessToken : null; } catch (_) { token = null; }
@@ -784,7 +900,7 @@
             e.stopPropagation();
             openToolInfoPopup(tool);
           });
-          li.addEventListener('click', () => selectTool(tool));
+          li.addEventListener('click', () => { void selectTool(tool); });
           targetList.appendChild(li);
         });
 
@@ -804,7 +920,7 @@
         document.getElementById('toolCatExperimental').open = true;
 
         // Activate the default tool on load
-        selectTool(defaultTool, false);
+        void selectTool(defaultTool, false);
 
       } catch (err) {
         const errHtml = '<li style="padding:6px 12px; color:#e53e3e; font-size:0.68rem;">Failed to load tools.</li>';
@@ -820,6 +936,22 @@
 
     let activeTool = null;
     let popupTool = null;
+    function isGuestTourUser() {
+      if (localStorage.getItem('vikaa_tour_mode') === '1') return true;
+      try {
+        const info = JSON.parse(localStorage.getItem('userInfo') || 'null');
+        return (info?.email || '').trim().toLowerCase() === 'guest@vikaa.ai';
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function toggleTourReadonlyShield(visible) {
+      const shield = document.getElementById('tourReadonlyShield');
+      if (!shield) return;
+      shield.classList.toggle('visible', !!visible);
+      shield.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    }
 
     const popupBackdrop = document.getElementById('toolPopupBackdrop');
     const popupTitle = document.getElementById('toolPopupTitle');
@@ -932,12 +1064,40 @@
       }
     });
 
-    function selectTool(tool, log = true) {
+    function resolveToolPageUrl(pagePath) {
+      if (!pagePath || !String(pagePath).trim()) return '';
+      try {
+        return new URL(String(pagePath).trim(), window.location.href).href;
+      } catch (_) {
+        return String(pagePath).trim();
+      }
+    }
+
+    /**
+     * @returns {Promise<boolean|null>} true if reachable, false if missing (e.g. 404), null if probe inconclusive (fallback to iframe)
+     */
+    async function probeToolPage(pagePath) {
+      const url = resolveToolPageUrl(pagePath);
+      if (!url) return false;
+      try {
+        const r = await fetch(url, { method: 'GET', cache: 'no-store' });
+        return r.ok;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function setComingSoonVisible(visible, toolName) {
+      const wrap = document.getElementById('toolComingSoon');
+      const nameEl = document.getElementById('comingSoonToolName');
+      if (nameEl && toolName) nameEl.textContent = toolName;
+      if (wrap) wrap.classList.toggle('visible', !!visible);
+    }
+
+    async function selectTool(tool, log = true) {
       activeTool = tool;
       document.getElementById('activeToolName').innerText = tool.name;
       const toolStatusEl = document.getElementById('toolStatus');
-      toolStatusEl.innerText = 'Status: Active';
-      toolStatusEl.className = 'badge badge-ready';
 
       document.querySelectorAll('.tool-item').forEach(item => {
         item.classList.toggle('active', item.dataset.toolId === tool.id);
@@ -947,22 +1107,41 @@
       const feed  = document.getElementById('activityFeed');
       const hub   = document.getElementById('communicationHub');
 
-      if (tool.page) {
-        // Tool has its own page — show iframe, hide generic feed & hub
+      setComingSoonVisible(false);
+      toggleTourReadonlyShield(false);
+      frame.style.display = 'none';
+      frame.src = '';
+
+      const wantsIframe = tool.page && String(tool.page).trim();
+      const forceSoon = tool.comingSoon === true;
+
+      if (forceSoon || (wantsIframe && (await probeToolPage(tool.page)) === false)) {
+        toolStatusEl.innerText = 'Status: Coming soon';
+        toolStatusEl.className = 'badge badge-soon';
+        feed.style.display  = 'none';
+        hub.style.display   = 'none';
+        setComingSoonVisible(true, tool.name);
+        return;
+      }
+
+      if (wantsIframe) {
+        toolStatusEl.innerText = 'Status: Active';
+        toolStatusEl.className = 'badge badge-ready';
         frame.src = tool.page;
         frame.style.display = 'block';
         feed.style.display  = 'none';
         hub.style.display   = 'none';
-      } else {
-        // Generic placeholder tool
-        frame.style.display = 'none';
-        frame.src = '';
-        feed.style.display  = 'flex';
-        hub.style.display   = 'flex';
-        document.getElementById('toolPrompt').placeholder =
-          'Type your instruction for the selected tool…';
-        if (log) logActivity(`Switched to <strong>${tool.name}</strong>`);
+        toggleTourReadonlyShield(isGuestTourUser());
+        return;
       }
+
+      toolStatusEl.innerText = 'Status: Active';
+      toolStatusEl.className = 'badge badge-ready';
+      feed.style.display  = 'flex';
+      hub.style.display   = 'flex';
+      document.getElementById('toolPrompt').placeholder =
+        'Type your instruction for the selected tool…';
+      if (log) logActivity(`Switched to <strong>${tool.name}</strong>`);
     }
 
     async function executePrompt() {
@@ -1047,6 +1226,7 @@
       localStorage.removeItem("authData");
       localStorage.removeItem("session_id");
       localStorage.removeItem("userEmail");
+      localStorage.removeItem("vikaa_tour_mode");
       const base = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
       window.location.href = base + "/index.html";
     }

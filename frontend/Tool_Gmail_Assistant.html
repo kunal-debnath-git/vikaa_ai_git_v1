@@ -741,13 +741,13 @@
             accessBanner.style.display = 'block';
             const noTok = !hasAuthToken();
             accessBanner.innerHTML =
-              '<strong>Local test</strong>' +
+              '<strong>Local / trusted dev</strong>' +
               (noTok
-                ? ' - Trusted dev allows calls without Bearer. '
+                ? ' — the API may accept requests without a Bearer token. '
                 : ' ') +
-              'Only mailbox: <code>' +
+              'Mailbox used: <code>' +
               escapeHtml(localDefault) +
-              '</code>. <em>Production: your Google login email only (Gmail OAuth).</em>';
+              '</code>. On <strong>vikaa.ai</strong>, sign in with Google; the server must hold a Gmail API token for the same address as your login.';
           }
         }
       } catch(_) {

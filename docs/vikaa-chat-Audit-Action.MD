@@ -165,7 +165,7 @@ Render restarts on every deploy. All `InMemoryHistoryManager` sessions are lost.
 ---
 
 ## 5. Tool Documentation
-See `docs/tools/vikaa-chat-tool.MD` — created as part of this audit.
+See `docs/tools/vikaa-chat-tool.md` — created as part of this audit.
 
 ---
 

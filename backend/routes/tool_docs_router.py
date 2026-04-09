@@ -18,6 +18,7 @@ _ALLOWED_DOCS = {
     "RAG_Configurator.md",
     "Twitter_Assistant.md",
     "Chat_with_Files.md",
+    "vikaa-chat-tool.md",
 }
 
 

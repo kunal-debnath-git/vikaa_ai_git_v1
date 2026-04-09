@@ -585,13 +585,26 @@
             </div>
             <div>
               <label for="llmModelName">Databricks model</label>
-              <select id="llmModelName">
-                <option value="databricks-sonnet-4-5">databricks-sonnet-4-5 (fidelity)</option>
-                <option value="databricks-claude-opus-4-1">databricks-claude-opus-4-1</option>
-                <option value="databricks-claude-sonnet-4">databricks-claude-sonnet-4</option>
+              <select id="llmModelName" title="Serving endpoint used for generative mode (table-order planner). Sample mode still records the model for audit.">
+                <option value="databricks-mixtral-8x7b-instruct">databricks-mixtral-8x7b-instruct (~ lowest)</option>
                 <option value="databricks-llama-3-3-70b-instruct">databricks-llama-3-3-70b-instruct</option>
-                <option value="databricks-mixtral-8x7b-instruct">databricks-mixtral-8x7b-instruct</option>
+                <option value="databricks-claude-sonnet-4">databricks-claude-sonnet-4</option>
+                <option value="databricks-sonnet-4-5" selected>databricks-sonnet-4-5 (strong fidelity)</option>
+                <option value="databricks-claude-opus-4-1">databricks-claude-opus-4-1 (~ highest)</option>
               </select>
+            </div>
+          </div>
+          <div class="row2" style="margin-top:10px;">
+            <div>
+              <label for="syntheticMode">Synthetic mode</label>
+              <select id="syntheticMode" title="Sample: deterministic TABLESAMPLE (+ shared REPEATABLE seed). Generative: LLM proposes parent-first table order; row data still comes from warehouse SQL.">
+                <option value="sample" selected>Sample (deterministic SQL)</option>
+                <option value="generative">Generative (LLM table order + SQL)</option>
+              </select>
+            </div>
+            <div>
+              <label for="synthSeed">TABLESAMPLE seed (optional)</label>
+              <input id="synthSeed" type="number" step="1" placeholder="default = hash(run_id)" style="max-width:220px;" title="Shared REPEATABLE seed across tables in one run for coherent subsets." />
             </div>
           </div>
           <div class="step3-dest-section" style="margin-top:10px;">
@@ -661,6 +674,10 @@
           </div>
         </div>
         <div id="progressHost"></div>
+        <details id="manifestDetails" style="display:none; margin-top:10px; font-size:0.75rem;">
+          <summary style="cursor:pointer; font-weight:600;">Manifest / QA / lineage</summary>
+          <pre id="manifestPre" class="summary-modal-pre" style="max-height:min(320px,40vh); margin-top:8px; font-size:0.65rem;"></pre>
+        </details>
         <div id="logHost" class="logs"></div>
       </div>
 
@@ -1439,7 +1456,16 @@
           ? Math.max(1, Math.floor(Number(document.getElementById('deltaLookbackDays').value || 5))) * 1440
           : null,
         llm_model_name: document.getElementById('llmModelName').value.trim(),
+        synthetic_mode: (document.getElementById('syntheticMode') && document.getElementById('syntheticMode').value) || 'sample',
         warehouse_id: document.getElementById('warehouseId').value.trim(),
+        seed: (() => {
+          const el = document.getElementById('synthSeed');
+          if (!el) return null;
+          const v = String(el.value || '').trim();
+          if (!v) return null;
+          const n = Number(v);
+          return Number.isFinite(n) ? Math.floor(n) : null;
+        })(),
         max_rows_cap: (() => {
           const v = document.getElementById('maxRowsCap').value.trim();
           if (!v) return null;
@@ -1532,6 +1558,32 @@
       }, 1000);
     }
     function stopTimer() { clearInterval(LAST_RUN_TIMER); LAST_RUN_TIMER = null; }
+    function showRunLineage(res) {
+      const det = document.getElementById('manifestDetails');
+      const pre = document.getElementById('manifestPre');
+      if (!det || !pre) return;
+      const block = {
+        synthetic_mode: res.synthetic_mode,
+        qa_gate: res.qa_gate,
+        qa_report: res.qa_report,
+        repeatable_seed: res.repeatable_seed,
+        table_execution_order: res.table_execution_order,
+        manifest: res.manifest,
+        workflow_spec_hint: res.workflow_spec_hint,
+      };
+      const has =
+        res.manifest ||
+        res.qa_report ||
+        (Array.isArray(res.table_execution_order) && res.table_execution_order.length > 0) ||
+        res.repeatable_seed != null;
+      if (!has) {
+        det.style.display = 'none';
+        pre.textContent = '';
+        return;
+      }
+      det.style.display = '';
+      pre.textContent = JSON.stringify(block, null, 2);
+    }
     function renderExecution(data) {
       const host = document.getElementById('progressHost');
       const ex = data.executions || [];
@@ -1785,11 +1837,16 @@
         startTimer();
         setRunExecutionProgress(true, 'Synthetic run in progress — waiting for Databricks SQL…');
         logLine('info', 'Run started.');
+        const md = document.getElementById('manifestDetails');
+        const mp = document.getElementById('manifestPre');
+        if (md) md.style.display = 'none';
+        if (mp) mp.textContent = '';
         const payload = payloadFromUi();
         const res = await call('POST', PREFIX_SYNTH, '/run', payload);
         document.getElementById('runStatusBadge').textContent = String(res.status || 'COMPLETED').toUpperCase();
         document.getElementById('runIdView').textContent = String(res.run_id || '');
         renderExecution(res);
+        showRunLineage(res);
         stopTimer();
         setRunExecutionProgress(false);
         logLine(

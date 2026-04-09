@@ -15,7 +15,8 @@ Credential resolution order:
   Render.com : Secret Files at /etc/secrets/token1.json, token2.json, ...
                GMAIL_ACCOUNTS env var = comma-separated email list (same order as token files)
                e.g. GMAIL_ACCOUNTS=debnath.kunal@gmail.com,story360degree@gmail.com
-               Legacy: /etc/secrets/token.json + GMAIL_DEFAULT_EMAIL for single account
+               Legacy: /etc/secrets/token.json (or token.json); GMAIL_DEFAULT_EMAIL optional —
+               if unset, the service mailbox is resolved once via Gmail users.getProfile.
 
 Until real credentials are provided every call returns DEMO_MODE = True
 with mock data so the UI can be developed and tested independently.
@@ -79,6 +80,24 @@ def _get_gmail_credentials(account: Optional[str] = None):
 
 def _build_gmail(account: Optional[str] = None):
     """Return an authorised Gmail API service object."""
+    ...
+
+
+# Cached label for legacy single-token.json setups (avoids "default" mismatch vs JWT email in production).
+_legacy_single_account_resolved: Optional[str] = None
+
+
+def _gmail_me_email_safe(account: Optional[str] = None) -> Optional[str]:
+    """Return mailbox address for this token via Gmail API; None on failure."""
+    ...
+
+
+def _resolved_legacy_single_account_label() -> str:
+    """
+    When only a single token file exists and GMAIL_DEFAULT_EMAIL is unset, list_accounts()
+    used to return ['default'], so production users signing in with their real @gmail.com
+    never matched. Resolve the actual mailbox from the token once and cache it.
+    """
     ...
 
 

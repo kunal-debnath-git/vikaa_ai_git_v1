@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Vikaa.AI - Demo Page</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="icon" type="image/png" href="image/Logo4.jpeg">
+
+  <style>
+    :root {
+      --brand: #17bcfe;
+      --brand-dark: #0891b2;
+      --bg: #eaeaea;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --card: #ffffff;
+      --border: #dbe3ea;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Montserrat", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      padding: 10px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      color: #575757;
+      font-size: 0.98rem;
+    }
+    .logo img {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      object-fit: contain;
+    }
+    nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+    }
+    nav a {
+      text-decoration: none;
+      color: var(--brand);
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+    nav a:hover { color: var(--brand-dark); }
+    .tour-btn {
+      border: 1px solid var(--brand);
+      border-radius: 999px;
+      padding: 6px 11px;
+      background: #fff;
+      color: var(--brand);
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 700;
+      font-family: inherit;
+    }
+    .tour-btn:hover {
+      color: var(--brand-dark);
+      border-color: var(--brand-dark);
+      background: #ecfeff;
+    }
+    .top-border {
+      height: 4px;
+      background: var(--brand);
+    }
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 28px 20px 34px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 28px rgba(2, 132, 199, 0.08);
+    }
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 1.4rem;
+      letter-spacing: -0.02em;
+    }
+    .hero p {
+      margin: 0;
+      color: #475569;
+      line-height: 1.6;
+      font-size: 0.92rem;
+      font-family: "Roboto", sans-serif;
+    }
+    .quick-actions {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .quick-actions a,
+    .quick-actions button {
+      border: 1px solid #c6e6ff;
+      background: #fff;
+      color: #0369a1;
+      border-radius: 10px;
+      padding: 9px 12px;
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .quick-actions a:hover,
+    .quick-actions button:hover {
+      background: #eff8ff;
+    }
+    .section-title {
+      margin: 22px 0 10px;
+      color: #0f172a;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      min-height: 145px;
+    }
+    /* Stronger tint (~25% sky) so it reads clearly next to white cards */
+    .card.card-tint {
+      background: #e8f2fb;
+      background: color-mix(in srgb, var(--card) 75%, #bfdbfe 25%);
+      border-color: #c5d9ed;
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 0.86rem;
+      color: #0c4a6e;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p {
+      margin: 0 0 9px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.5;
+      font-family: "Roboto", sans-serif;
+    }
+    .pill {
+      display: inline-block;
+      border: 1px solid #c7d2fe;
+      background: #eef2ff;
+      color: #3730a3;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 0.66rem;
+      font-weight: 700;
+    }
+    @media (max-width: 880px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 620px) {
+      header {
+        padding: 10px 14px;
+        flex-wrap: wrap;
+      }
+      .grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <img src="image/Logo4.jpeg" alt="Vikaa Logo" />
+      <span>Vikaa.AI - Demo</span>
+    </div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="AboutUs.html">About Us</a>
+      <button type="button" class="tour-btn" onclick="startGuestTour(event)">Take a Tour</button>
+      <a href="#" onclick="openLogin()">Login</a>
+    </nav>
+  </header>
+  <div class="top-border"></div>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Showcase Mode: Lightweight Product Demo</h1>
+      <p>
+        This page is a local-friendly showcase surface for visitors. Use it to demonstrate capabilities without
+        backend-authenticated execution. "Take a Tour" opens the app as <strong>guest@vikaa.ai</strong> in view-only mode.
+      </p>
+      <div class="quick-actions">
+        <button type="button" onclick="startGuestTour(event)"><i class="fas fa-route"></i> Start Guest Tour</button>
+        <a href="ToolIndex.html"><i class="fas fa-toolbox"></i> Open Tools Workspace</a>
+        <a href="vikaa_ai_agent.html"><i class="fas fa-comments"></i> Open Chat Workspace</a>
+      </div>
+    </section>
+
+    <h2 class="section-title">Demo Scenarios (Showcase Ideas)</h2>
+    <section class="grid">
+      <article class="card">
+        <h3><i class="fas fa-file-alt"></i> Document Summary</h3>
+        <p>Demonstrate upload + concise highlights for long policy or research documents.</p>
+        <span class="pill">Low cost</span>
+      </article>
+      <article class="card">
+        <h3><i class="fas fa-magnifying-glass-chart"></i> Quick Research Brief</h3>
+        <p>Show synthesis of web findings into executive bullets and key follow-up questions.</p>
+        <span class="pill">High showcase value</span>
+      </article>
+      <article class="card">
+        <h3><i class="fas fa-envelope-open-text"></i> Gmail Intelligence</h3>
+        <p>Preview structured drafting flow and communication automation concepts.</p>
+        <span class="pill">Audience favorite</span>
+      </article>
+      <article class="card">
+        <h3><i class="fas fa-database"></i> Databricks Read-Only Views</h3>
+        <p>Surface catalog and SQL insights while keeping run access controlled by ACL.</p>
+        <span class="pill">Enterprise-ready story</span>
+      </article>
+      <article class="card">
+        <h3><i class="fas fa-vials"></i> Synthetic Data Experience</h3>
+        <p>Show job setup, scheduling intent, and output format expectations.</p>
+        <span class="pill">Operational demo</span>
+      </article>
+      <article class="card card-tint">
+        <h3><i class="fas fa-diagram-project"></i> Roadmap + Coming Soon</h3>
+        <p>Use status labels to show what is live, in-development, and planned next.</p>
+        <span class="pill">Trust builder</span>
+      </article>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=20260404"></script>
+  <script src="LoginPage.js?v=20260404"></script>
+  <script>
+    function startGuestTour(event) {
+      if (event && typeof event.preventDefault === "function") {
+        event.preventDefault();
+      }
+      try {
+        localStorage.removeItem("authData");
+        localStorage.removeItem("session_id");
+        localStorage.setItem("access_mode", "read-only");
+        localStorage.setItem("acl_status", "guest");
+        localStorage.setItem("userType", "0");
+        localStorage.setItem("vikaa_tour_mode", "1");
+        localStorage.setItem("userInfo", JSON.stringify({
+          email: "guest@vikaa.ai",
+          full_name: "Guest Tour User",
+          provider: "tour",
+          avatar_url: ""
+        }));
+      } catch (e) {
+        console.error("Failed to initialize guest tour mode:", e);
+      }
+      window.location.href = "LandingPage.html";
+    }
+
+    document.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    document.onkeydown = function (e) {
+      if (e.ctrlKey && ["u", "s", "c"].includes(String(e.key || "").toLowerCase())) {
+        e.preventDefault();
+      }
+    };
+  </script>
+</body>
+</html>

@@ -46,6 +46,11 @@ from backend.routes.databricks_synth_data_router import (
     router_root as databricks_synth_data_root,
 )
 from backend.routing.tool_mounts import include_router_triplet
+from backend.routes.rag_configurator_router import (
+    router as rag_configurator_router,
+    router_api_alias as rag_configurator_api_alias,
+    router_root as rag_configurator_root,
+)
 # from backend.routes.config_rag_router import router as config_rag_router
 # from backend.routes.flashcard_router import router as flashcard_router
 # from backend.routes.lead_router import router as lead_router
@@ -63,6 +68,7 @@ def _log_critical_tool_routes() -> None:
             "catalog-search" in p
             or "databricks-query" in p
             or "databricks-synth-data" in p
+            or "rag-configurator" in p
         ):
             logger.info("Tool route registered: %s", p)
 
@@ -118,6 +124,14 @@ include_router_triplet(
         databricks_synth_data_router,
         databricks_synth_data_api_alias,
         databricks_synth_data_root,
+    ),
+)
+include_router_triplet(
+    app,
+    (
+        rag_configurator_router,
+        rag_configurator_api_alias,
+        rag_configurator_root,
     ),
 )
 # app.include_router(config_rag_router)
